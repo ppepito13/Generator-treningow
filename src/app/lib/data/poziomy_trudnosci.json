@@ -1,0 +1,5 @@
+[
+  { "level": "Początkujący", "min_participants": 1, "max_participants": 14, "difficulty_params": {} },
+  { "level": "Średniozaawansowany", "min_participants": 1, "max_participants": 14, "difficulty_params": {} },
+  { "level": "Zaawansowany", "min_participants": 1, "max_participants": 14, "difficulty_params": {} }
+]

@@ -1,0 +1,66 @@
+[
+  {
+    "name": "Pompki Klasyczne",
+    "description": "Podstawowe ćwiczenie klatki piersiowej i tricepsów.",
+    "tags": ["chest", "push", "bodyweight"],
+    "equipment": ["Brak"],
+    "segment": "PUSH",
+    "difficulty_level": { "min": 1, "max": 3 }
+  },
+  {
+    "name": "Podciąganie na drążku",
+    "description": "Budowanie siły pleców i bicepsów.",
+    "tags": ["back", "pull", "upper body"],
+    "equipment": ["Drążek"],
+    "segment": "PULL",
+    "difficulty_level": { "min": 2, "max": 5 }
+  },
+  {
+    "name": "Przysiady ze sztangą",
+    "description": "Królewskie ćwiczenie nóg.",
+    "tags": ["legs", "squat", "compound"],
+    "equipment": ["Sztanga"],
+    "segment": "PUSH",
+    "difficulty_level": { "min": 2, "max": 5 }
+  },
+  {
+    "name": "Swing Kettlebell",
+    "description": "Dynamiczny ruch bioder.",
+    "tags": ["hips", "glutes", "explosive"],
+    "equipment": ["Kettlebell"],
+    "segment": "DYNAMIKA",
+    "difficulty_level": { "min": 1, "max": 4 }
+  },
+  {
+    "name": "Plank (Deska)",
+    "description": "Izometryczne napięcie brzucha.",
+    "tags": ["abs", "core", "stability"],
+    "equipment": ["Brak"],
+    "segment": "CORE",
+    "difficulty_level": { "min": 1, "max": 3 }
+  },
+  {
+    "name": "Wyciskanie Hantli stojąc",
+    "description": "Siła barków i stabilizacja.",
+    "tags": ["shoulders", "push"],
+    "equipment": ["Hantle"],
+    "segment": "PUSH",
+    "difficulty_level": { "min": 2, "max": 4 }
+  },
+  {
+    "name": "Wiosłowanie Hantlem",
+    "description": "Jednostronne budowanie pleców.",
+    "tags": ["back", "pull"],
+    "equipment": ["Hantle"],
+    "segment": "PULL",
+    "difficulty_level": { "min": 1, "max": 4 }
+  },
+  {
+    "name": "Box Jumps",
+    "description": "Skoki na skrzynię dla mocy.",
+    "tags": ["legs", "explosive", "jump"],
+    "equipment": ["Pudełko (Plyo Box)"],
+    "segment": "DYNAMIKA",
+    "difficulty_level": { "min": 2, "max": 4 }
+  }
+]

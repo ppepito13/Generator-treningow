@@ -1,0 +1,9 @@
+[
+  { "name": "Kettlebell", "description": "Ciężarek w kształcie kuli z uchwytem." },
+  { "name": "Sztanga", "description": "Długi gryf z obciążeniem." },
+  { "name": "Drążek", "description": "Przyrząd do podciągania." },
+  { "name": "Hantle", "description": "Krótkie gryfy z obciążeniem." },
+  { "name": "Guma oporowa", "description": "Elastyczna taśma do ćwiczeń." },
+  { "name": "Pudełko (Plyo Box)", "description": "Skrzynia do skoków." },
+  { "name": "Brak", "description": "Ćwiczenie z masą własnego ciała." }
+]

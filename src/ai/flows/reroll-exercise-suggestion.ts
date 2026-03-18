@@ -86,34 +86,34 @@ const rerollExercisePrompt = ai.definePrompt({
   prompt: `You are an AI personal trainer assistant specializing in group training programs. Your goal is to suggest a single, compatible alternative exercise for a given station context and a current exercise that needs replacement. You must ensure the suggested exercise fits all constraints.
 
 Here is the current exercise to replace:
-\```json
+\`\`\`json
 {{{currentExerciseJson}}}
-\```
+\`\`\`
 
 Here is the context of the training station where the exercise will be performed:
-\```json
+\`\`\`json
 {{{stationContextJson}}}
-\```
+\`\`\`
 
 Here are all available exercises from the exercise database:
-\```json
+\`\`\`json
 {{{allExercisesData}}}
-\```
+\`\`\`
 
 Here are all available equipment items:
-\```json
+\`\`\`json
 {{{allEquipmentData}}}
-\```
+\`\`\`
 
 Here are all defined difficulty levels:
-\```json
+\`\`\`json
 {{{allDifficultyLevelsData}}}
-\```
+\`\`\`
 
 Here are all defined segments:
-\```json
+\`\`\`json
 {{{allSegmentsData}}}
-\```
+\`\`\`
 
 Considering the 'stationContext', specifically 'availableEquipmentAtStation', 'difficultyLevelName', and 'segmentType', and trying to find an exercise that is functionally similar or complementary to the 'currentExercise' (e.g., targeting similar muscle groups, using similar movement patterns, or fitting the same segment type), suggest ONE alternative exercise. The alternative exercise MUST use only equipment available at the station and match the overall difficulty level and segment type. The suggested exercise MUST NOT be the same as the 'currentExercise' or any of the 'otherExercisesInStation'. If no perfectly matching exercise can be found, prioritize equipment and segment type over exact difficulty match, but explain the compromise in the 'reasoning'.
 

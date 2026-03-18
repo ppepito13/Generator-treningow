@@ -1,0 +1,6 @@
+[
+  { "name": "PUSH", "description": "Ruchy pchające", "type": "STRENGHT" },
+  { "name": "PULL", "description": "Ruchy ciągnące", "type": "STRENGHT" },
+  { "name": "DYNAMIKA", "description": "Ruchy eksplozywne", "type": "POWER" },
+  { "name": "CORE", "description": "Stabilizacja centralna", "type": "STABILITY" }
+]
