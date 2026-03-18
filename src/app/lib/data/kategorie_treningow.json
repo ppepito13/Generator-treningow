@@ -1,0 +1,42 @@
+[
+  {
+    "id": "kalistenika",
+    "nazwa": "Kalistenika",
+    "opis": "Fundament naszej bazy. Została przypisana domyślnie do większości ćwiczeń, ze szczególnym uwzględnieniem tych na drążkach, kółkach, poręczach (dipy), TRX oraz pracy z masą własnego ciała."
+  },
+  {
+    "id": "fbw",
+    "nazwa": "FBW (Full Body Workout)",
+    "opis": "Przypisywana do ćwiczeń wielostawowych, angażujących do pracy taśmy całego ciała. Otrzymał ją m.in. cały segment nóg (przysiady, wykroki), ćwiczenia z partnerem oraz ruchy siłowe z kettlebellami (np. Wiosłowanie Batwing, Przysiad kozacki)."
+  },
+  {
+    "id": "cross",
+    "nazwa": "Cross",
+    "opis": "Kategoria dla typowych, hybrydowych ruchów z crosstreningu. Otrzymały ją balistyczne, eksplozywne ćwiczenia z ciężarem wolnym: np. rwania (Snatch), zarzuty (Clean), swingi, Tureckie Wstawanie (TGU) oraz rzuty piłkami lekarskimi (Wall Ball)."
+  },
+  {
+    "id": "cardio_kondycja",
+    "nazwa": "Cardio / Kondycja",
+    "opis": "Zarezerwowana dla segmentu DYNAMIKA. Trafiły tu ruchy budujące wydolność tlenową i beztlenową, takie jak padnij-powstań (Burpee), skakanka, czy Alpinista (Climbers)."
+  },
+  {
+    "id": "moc",
+    "nazwa": "Moc",
+    "opis": "Kategoria bliźniacza dla Cardio, ale podkreślająca plyometryczny charakter ćwiczenia (np. wskoki na skrzynię, skoki w dal, eksplozywne odepchnięcia, rzuty piłką). Skupia się na generowaniu jak największej siły w jak najkrótszym czasie."
+  },
+  {
+    "id": "neuro",
+    "nazwa": "Neuro",
+    "opis": "Elitarna kategoria dla segmentu NEURO. Oznacza ćwiczenia zdejmujące nacisk z mięśni na rzecz centralnego układu nerwowego, kognityki, balansu, błędnika i czasu reakcji (np. żonglowanie na BOSU, rzuty piłeczkami, chwyt w locie)."
+  },
+  {
+    "id": "mobility",
+    "nazwa": "Mobility",
+    "opis": "Zarezerwowana dla segmentu MOBILITY. Ćwiczenia celowane ściśle w zwiększanie aktywnego zakresu ruchu w stawach, otwieranie bioder/barków i dekompresję kręgosłupa (np. Jefferson Curl, Dislocates)."
+  },
+  {
+    "id": "regeneracja",
+    "nazwa": "Regeneracja",
+    "opis": "Tagi przypisane do ćwiczeń wyciszających układ nerwowy i uwalniających powięź (np. rolowanie odcinka piersiowego, pozycja motyla, Koci grzbiet/Krowa). Przeznaczone do cool-downu lub dni wolnych."
+  }
+]

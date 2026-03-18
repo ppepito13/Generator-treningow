@@ -1,0 +1,115 @@
+{
+  "sale": [
+    {
+      "id_sali": "balaton",
+      "nazwa_sali": "Sala Balaton",
+      "maksymalna_pojemnosc": {
+        "osoby": 14,
+        "stacje": 7
+      },
+      "inwentarz": {
+        "box do treningu pośladków": 1,
+        "chwyty w kształcie kulek na drążek": 2,
+        "drabinka pozioma (w power rag)": 1,
+        "drabinki pionowe ścienne": 2,
+        "drążki": 8,
+        "gryfy olimpijskie": 4,
+        "gumy oporowe długie": 6,
+        "gumy oporowe mini": 4,
+        "hantle": 10,
+        "kamizelka obciążeniowa": 1,
+        "kettlebells": 20,
+        "kije drewniane": 10,
+        "klatka treningowa rack / brama rig": 1,
+        "kółka do ćwiczeń brzucha (ab wheel)": 2,
+        "kółka gimnastyczne": 1,
+        "mały cienki materac": 6,
+        "maty": 6,
+        "miękkie bloczki do jogi": 4,
+        "nunczako piankowe": 2,
+        "obciążenia na kostki": 2,
+        "obciążenia (talerze)": 20,
+        "paraletki": 2,
+        "piłeczki małe tenisowe": 2,
+        "piłki balansujące bosu": 2,
+        "piłki gimnastyczne duże": 2,
+        "piłki lekarskie obciążeniowe": 10,
+        "piłki materiałowe obciążeniowe": 2,
+        "poręcze DIP (v-shape)": 1,
+        "ramiona asekuracyjne do klatki RIG": 4,
+        "rollery": 3,
+        "ręcznik": 2,
+        "skakanki": 4,
+        "skrzynie/boxy plyometryczne drewniane": 2,
+        "skrzynie/boxy plyometryczne miękkie, ciężkie": 2,
+        "steppery": 3,
+        "sztangi 5kg": 10,
+        "taśmy TRX": 2,
+        "uchwyty na sztangę do klatki RIG": 8,
+        "worki obciążeniowe do ćwiczeń": 4,
+        "ściany (do handstand)": 5
+      },
+      "strefy": [
+        {
+          "id": "Strefa_Modul_0",
+          "nazwa": "Ściana Startowa i Tarcze",
+          "typ": "staly",
+          "pojemnosc_stacji": 1,
+          "ograniczenia": ["odrzuc_segment_dynamika", "odrzuc_kategorie_moc"]
+        },
+        {
+          "id": "Strefa_Modul_1",
+          "nazwa": "Klatka - Lewa (Drążki)",
+          "typ": "klatka_rig",
+          "pojemnosc_stacji": 1,
+          "akceptuje_pelen_obrot": true
+        },
+        {
+          "id": "Strefa_Modul_2",
+          "nazwa": "Klatka - Środek (Poprzeczka)",
+          "typ": "klatka_rig",
+          "pojemnosc_stacji": 1,
+          "akceptuje_pelen_obrot": false,
+          "uwagi": "Fizyczna blokada wymyków i pełnych obrotów"
+        },
+        {
+          "id": "Strefa_Modul_3",
+          "nazwa": "Klatka - Prawa (Drążki)",
+          "typ": "klatka_rig",
+          "pojemnosc_stacji": 1,
+          "akceptuje_pelen_obrot": true
+        },
+        {
+          "id": "Strefa_Kolka",
+          "nazwa": "Kółka Gimnastyczne (Wysięgnik)",
+          "typ": "staly",
+          "pojemnosc_stacji": 1,
+          "przypisany_sprzet": ["kółka gimnastyczne"]
+        },
+        {
+          "id": "Strefa_Drabinki",
+          "nazwa": "Drabinki Boczne",
+          "typ": "staly",
+          "pojemnosc_stacji": 1
+        },
+        {
+          "id": "Strefa_Sciana",
+          "nazwa": "Czysta Ściana",
+          "typ": "staly",
+          "pojemnosc_stacji": 1
+        },
+        {
+          "id": "Strefa_Wolna_Przestrzen",
+          "nazwa": "Wolna Podłoga (Środek)",
+          "typ": "elastyczny",
+          "bazowa_pojemnosc_stacji": 3
+        }
+      ],
+      "reguly_przeplywu_i_kolizji": {
+        "kierunek": "anti-clockwise",
+        "regula_kolizji_przestrzeni": "IF (Strefa_Drabinki == zajeęta OR Strefa_Sciana == zajęta) THEN Strefa_Wolna_Przestrzen.bazowa_pojemnosc_stacji -= 1",
+        "regula_kolizji_glebokosci": "IF (Strefa_Modul_3.cwiczenie.hasTag('Wymaga Głębi') AND Strefa_Kolka.cwiczenie.hasTag('Wymaga Głębi')) THEN odrzuc_i_losuj_ponownie()"
+      }
+    }
+  ]
+}

@@ -1,6 +1,11 @@
 [
-  { "name": "PUSH", "description": "Ruchy pchające", "type": "STRENGHT" },
-  { "name": "PULL", "description": "Ruchy ciągnące", "type": "STRENGHT" },
-  { "name": "DYNAMIKA", "description": "Ruchy eksplozywne", "type": "POWER" },
-  { "name": "CORE", "description": "Stabilizacja centralna", "type": "STABILITY" }
+  { "id": 1, "nazwa": "PULL" },
+  { "id": 2, "nazwa": "PUSH" },
+  { "id": 3, "nazwa": "LEGS" },
+  { "id": 4, "nazwa": "CORE" },
+  { "id": 5, "nazwa": "SKILLS" },
+  { "id": 6, "nazwa": "DYNAMIKA" },
+  { "id": 7, "nazwa": "NEURO" },
+  { "id": 8, "nazwa": "PARTNER" },
+  { "id": 9, "nazwa": "MOBILITY" }
 ]
