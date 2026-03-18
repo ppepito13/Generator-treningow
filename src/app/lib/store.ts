@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { 
@@ -116,10 +117,12 @@ export const useAppStore = create<AppState>()(
             zoneExercises = zoneExercises.filter(ex => !ex.tagi_specjalne.includes('Pełen Obrót'));
           }
 
-          // Sztywny filtr sprzętowy (np. Kółka, Drabinki)
+          // Sztywny filtr sprzętowy (np. Kółka, Drabinki, Drążki)
           if (zone.przypisany_sprzet && zone.przypisany_sprzet.length > 0) {
             zoneExercises = zoneExercises.filter(ex => 
-              zone.przypisany_sprzet?.some(item => ex.wymagany_sprzet.toLowerCase().includes(item.toLowerCase()))
+              zone.przypisany_sprzet?.some(item => 
+                ex.wymagany_sprzet.toLowerCase().includes(item.toLowerCase())
+              )
             );
           }
 
@@ -127,17 +130,17 @@ export const useAppStore = create<AppState>()(
           let preferred = zoneExercises;
           
           if (zone.id === 'Strefa_Sciana') {
-            // Ściana musi mieć ćwiczenia "przy ścianie", "w staniu na rękach" lub rzuty o ścianę
             preferred = zoneExercises.filter(ex => 
               ex.nazwa.toLowerCase().includes('ścian') || 
               ex.instrukcja.toLowerCase().includes('ścian') ||
               ex.nazwa.toLowerCase().includes('rękach')
             );
           } else if (zone.typ === 'klatka_rig') {
-            // Klatka preferuje zwisy i podciągania
-            preferred = zoneExercises.filter(ex => ex.segment_nazwa === 'PULL' || ex.segment_nazwa === 'CORE');
+            // Klatka preferuje zwisy i podciągania, jeśli nie ma sztywnego przypisania sprzętu
+            if (!zone.przypisany_sprzet) {
+              preferred = zoneExercises.filter(ex => ex.segment_nazwa === 'PULL' || ex.segment_nazwa === 'CORE');
+            }
           } else if (zone.id === 'Strefa_Wolna_Przestrzen') {
-            // Wolna podłoga nie powinna brać ćwiczeń wymagających stałego osprzętu (np. drążków)
             preferred = zoneExercises.filter(ex => 
               !ex.wymagany_sprzet.toLowerCase().includes('drążek') && 
               !ex.wymagany_sprzet.toLowerCase().includes('kółka') &&

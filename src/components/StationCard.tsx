@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -34,7 +35,7 @@ export const StationCard = ({ station }: Props) => {
           stationName: station.zone.nazwa,
           numParticipants: participants,
           difficultyLevelName: difficulty.nazwa_grupy,
-          availableEquipmentAtStation: ALL_EQUIPMENT, // W uproszczeniu, AI dobierze z bazy
+          availableEquipmentAtStation: station.zone.przypisany_sprzet || ALL_EQUIPMENT,
           segmentType: currentEx.segment_nazwa,
           otherExercisesInStation: [
             type === 'A' ? (station.exerciseB?.nazwa || '') : station.exerciseA.nazwa
@@ -46,8 +47,7 @@ export const StationCard = ({ station }: Props) => {
         allSegmentsData: JSON.stringify(SEGMENTS)
       });
 
-      // Transformacja z powrotem na format lokalny (AI zwraca camelCase zgodnie ze schematem flow)
-      // W rzeczywistości powinniśmy użyć mapowania, tutaj upraszczamy:
+      // Transformacja z powrotem na format lokalny
       const transformed: any = {
         ...result.suggestedExercise,
         nazwa: (result.suggestedExercise as any).name || (result.suggestedExercise as any).nazwa,

@@ -1,3 +1,4 @@
+
 {
   "sale": [
     {
@@ -62,7 +63,8 @@
           "nazwa": "Klatka - Lewa (Drążki)",
           "typ": "klatka_rig",
           "pojemnosc_stacji": 1,
-          "akceptuje_pelen_obrot": true
+          "akceptuje_pelen_obrot": true,
+          "przypisany_sprzet": ["drążki"]
         },
         {
           "id": "Strefa_Modul_2",
@@ -70,6 +72,7 @@
           "typ": "klatka_rig",
           "pojemnosc_stacji": 1,
           "akceptuje_pelen_obrot": false,
+          "przypisany_sprzet": ["drążki"],
           "uwagi": "Fizyczna blokada wymyków i pełnych obrotów"
         },
         {
@@ -77,7 +80,8 @@
           "nazwa": "Klatka - Prawa (Drążki)",
           "typ": "klatka_rig",
           "pojemnosc_stacji": 1,
-          "akceptuje_pelen_obrot": true
+          "akceptuje_pelen_obrot": true,
+          "przypisany_sprzet": ["drążki"]
         },
         {
           "id": "Strefa_Kolka",
@@ -90,13 +94,15 @@
           "id": "Strefa_Drabinki",
           "nazwa": "Drabinki Boczne",
           "typ": "staly",
-          "pojemnosc_stacji": 1
+          "pojemnosc_stacji": 1,
+          "przypisany_sprzet": ["drabinki"]
         },
         {
           "id": "Strefa_Sciana",
           "nazwa": "Czysta Ściana",
           "typ": "staly",
-          "pojemnosc_stacji": 1
+          "pojemnosc_stacji": 1,
+          "przypisany_sprzet": ["ściany"]
         },
         {
           "id": "Strefa_Wolna_Przestrzen",
@@ -107,7 +113,7 @@
       ],
       "reguly_przeplywu_i_kolizji": {
         "kierunek": "anti-clockwise",
-        "regula_kolizji_przestrzeni": "IF (Strefa_Drabinki == zajeęta OR Strefa_Sciana == zajęta) THEN Strefa_Wolna_Przestrzen.bazowa_pojemnosc_stacji -= 1",
+        "regula_kolizji_przestrzeni": "IF (Strefa_Drabinki == zajęta OR Strefa_Sciana == zajęta) THEN Strefa_Wolna_Przestrzen.bazowa_pojemnosc_stacji -= 1",
         "regula_kolizji_glebokosci": "IF (Strefa_Modul_3.cwiczenie.hasTag('Wymaga Głębi') AND Strefa_Kolka.cwiczenie.hasTag('Wymaga Głębi')) THEN odrzuc_i_losuj_ponownie()"
       }
     }
