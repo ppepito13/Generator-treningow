@@ -56,7 +56,8 @@
           "nazwa": "Ściana Startowa i Tarcze",
           "typ": "staly",
           "pojemnosc_stacji": 1,
-          "ograniczenia": ["odrzuc_segment_dynamika", "odrzuc_kategorie_moc"]
+          "ograniczenia": ["odrzuc_segment_dynamika", "odrzuc_kategorie_moc"],
+          "przypisany_sprzet": ["ściany", "maty"]
         },
         {
           "id": "Strefa_Modul_1",
@@ -73,7 +74,7 @@
           "pojemnosc_stacji": 1,
           "akceptuje_pelen_obrot": false,
           "przypisany_sprzet": ["drążki"],
-          "uwagi": "Fizyczna blokada wymyków i pełnych obrotów"
+          "uwagi": "Brak wymyków i pełnych obrotów"
         },
         {
           "id": "Strefa_Modul_3",
@@ -85,7 +86,7 @@
         },
         {
           "id": "Strefa_Kolka",
-          "nazwa": "Kółka Gimnastyczne (Wysięgnik)",
+          "nazwa": "Kółka Gimnastyczne",
           "typ": "staly",
           "pojemnosc_stacji": 1,
           "przypisany_sprzet": ["kółka gimnastyczne"]
@@ -113,8 +114,8 @@
       ],
       "reguly_przeplywu_i_kolizji": {
         "kierunek": "anti-clockwise",
-        "regula_kolizji_przestrzeni": "IF (Strefa_Drabinki == zajęta OR Strefa_Sciana == zajęta) THEN Strefa_Wolna_Przestrzen.bazowa_pojemnosc_stacji -= 1",
-        "regula_kolizji_glebokosci": "IF (Strefa_Modul_3.cwiczenie.hasTag('Wymaga Głębi') AND Strefa_Kolka.cwiczenie.hasTag('Wymaga Głębi')) THEN odrzuc_i_losuj_ponownie()"
+        "regula_kolizji_przestrzeni": "Zajęcie Drabinek/Ściany dekrementuje Podłogę o 1",
+        "regula_kolizji_glebokosci": "Tylko jedna stacja 'Wymaga Głębi' między Kółkami a Modułem 3"
       }
     }
   ]

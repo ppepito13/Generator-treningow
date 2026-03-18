@@ -5,10 +5,12 @@ import {
   Exercise, 
   Station, 
   ALL_EXERCISES, 
+  ALL_EQUIPMENT,
   ROOM_CONFIG, 
   getDifficultyById, 
   DifficultyLevel,
-  Zone
+  Zone,
+  SEGMENTS
 } from './data';
 
 interface AppState {
@@ -39,11 +41,10 @@ export const useAppStore = create<AppState>()(
         const { participants, difficultyId } = get();
         const diff = getDifficultyById(difficultyId);
         
-        // 1. Matematyka Stacji
         const isPairMode = participants > 7;
         const numStations = isPairMode ? Math.min(Math.ceil(participants / 2), 7) : participants;
 
-        // 2. Filtrowanie bazowe ćwiczeń
+        // 1. Filtrowanie bazowe (Poziom Trudności)
         let validExercises = ALL_EXERCISES.filter(ex => 
           ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom
         );
@@ -56,33 +57,27 @@ export const useAppStore = create<AppState>()(
           );
         }
 
-        // 3. Przygotowanie stref (Routing)
+        // 2. Routing Stref
         const availableZones = [...ROOM_CONFIG.strefy];
         const selectedZones: Zone[] = [];
 
-        // Reguła: Stacja 1 -> Modul_0, Stacja 2 -> Modul_1
+        // Stacja 1 -> Modul_0 (Ściana Startowa), Stacja 2 -> Modul_1 (Klatka Lewa)
         const mod0 = availableZones.find(z => z.id === 'Strefa_Modul_0');
         const mod1 = availableZones.find(z => z.id === 'Strefa_Modul_1');
         
         if (mod0) selectedZones.push(mod0);
         if (mod1 && numStations > 1) selectedZones.push(mod1);
 
-        // Reszta stref elastycznie
         const restZones = availableZones.filter(z => z.id !== 'Strefa_Modul_0' && z.id !== 'Strefa_Modul_1');
-        
-        // Logika dekrementacji pojemności Wolnej Podłogi
         let freeSpaceCapacity = ROOM_CONFIG.strefy.find(z => z.id === 'Strefa_Wolna_Przestrzen')?.bazowa_pojemnosc_stacji || 3;
         
-        // Funkcja do wybierania stref uwzględniająca pojemność i reguły kolizji
         while (selectedZones.length < numStations && (restZones.length > 0 || freeSpaceCapacity > 0)) {
           const randomIndex = Math.floor(Math.random() * restZones.length);
           const zone = restZones[randomIndex];
 
-          if (zone) {
+          if (zone && zone.id !== 'Strefa_Wolna_Przestrzen') {
             selectedZones.push(zone);
             restZones.splice(randomIndex, 1);
-            
-            // Reguła kolizji przestrzeni: Drabinki/Sciana zabierają miejsce na podłodze
             if (zone.id === 'Strefa_Drabinki' || zone.id === 'Strefa_Sciana') {
               freeSpaceCapacity -= 1;
             }
@@ -95,16 +90,16 @@ export const useAppStore = create<AppState>()(
           }
         }
 
-        // 4. Dobieranie ćwiczeń (Constraint Solver)
+        // 3. Dobieranie ćwiczeń
         const generated: Station[] = [];
         const usedExercises = new Set<string>();
 
         selectedZones.forEach((zone, idx) => {
           let zoneExercises = validExercises.filter(ex => !usedExercises.has(ex.id_cwiczenia));
 
-          // SZTYWNE KONSTRYKTY (Hard Constraints)
+          // SZTYWNE FILTRY (Hard Constraints)
           
-          // Ograniczenia Modul_0
+          // Ograniczenia Modul_0 (Station 1)
           if (zone.id === 'Strefa_Modul_0') {
             zoneExercises = zoneExercises.filter(ex => 
               ex.segment_nazwa !== 'DYNAMIKA' && 
@@ -112,12 +107,12 @@ export const useAppStore = create<AppState>()(
             );
           }
 
-          // Ograniczenia Modul_2 (brak pełnego obrotu)
+          // Ograniczenia Modul_2 (Brak pełnego obrotu)
           if (zone.id === 'Strefa_Modul_2') {
             zoneExercises = zoneExercises.filter(ex => !ex.tagi_specjalne.includes('Pełen Obrót'));
           }
 
-          // Sztywny filtr sprzętowy (np. Kółka, Drabinki, Drążki)
+          // Filtr sprzętowy (Stałe strefy jak Kółka, Drabinki, Drążki)
           if (zone.przypisany_sprzet && zone.przypisany_sprzet.length > 0) {
             zoneExercises = zoneExercises.filter(ex => 
               zone.przypisany_sprzet?.some(item => 
@@ -126,25 +121,23 @@ export const useAppStore = create<AppState>()(
             );
           }
 
-          // Fallbacki i preferencje (Soft/Hard Constraints)
+          // PREFERENCJE (Soft Constraints)
           let preferred = zoneExercises;
           
-          if (zone.id === 'Strefa_Sciana') {
-            preferred = zoneExercises.filter(ex => 
+          if (zone.id === 'Strefa_Sciana' || zone.id === 'Strefa_Modul_0') {
+            const wallRelated = zoneExercises.filter(ex => 
               ex.nazwa.toLowerCase().includes('ścian') || 
               ex.instrukcja.toLowerCase().includes('ścian') ||
-              ex.nazwa.toLowerCase().includes('rękach')
+              ex.nazwa.toLowerCase().includes('rękach') ||
+              ex.nazwa.toLowerCase().includes('tarcze')
             );
-          } else if (zone.typ === 'klatka_rig') {
-            // Klatka preferuje zwisy i podciągania, jeśli nie ma sztywnego przypisania sprzętu
-            if (!zone.przypisany_sprzet) {
-              preferred = zoneExercises.filter(ex => ex.segment_nazwa === 'PULL' || ex.segment_nazwa === 'CORE');
-            }
+            if (wallRelated.length > 0) preferred = wallRelated;
           } else if (zone.id === 'Strefa_Wolna_Przestrzen') {
             preferred = zoneExercises.filter(ex => 
               !ex.wymagany_sprzet.toLowerCase().includes('drążek') && 
               !ex.wymagany_sprzet.toLowerCase().includes('kółka') &&
-              !ex.wymagany_sprzet.toLowerCase().includes('drabink')
+              !ex.wymagany_sprzet.toLowerCase().includes('drabink') &&
+              !ex.wymagany_sprzet.toLowerCase().includes('ściana')
             );
           }
 
