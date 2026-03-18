@@ -42,10 +42,18 @@ export const useAppStore = create<AppState>()(
         const numStations = participants <= 7 ? participants : Math.min(Math.ceil(participants / 2), 7);
         const isPairMode = participants > 7;
 
-        // 2. Filtrowanie ćwiczeń wg poziomu
-        const validExercises = ALL_EXERCISES.filter(ex => 
+        // 2. Filtrowanie bazowe ćwiczeń wg poziomu trudności
+        let validExercises = ALL_EXERCISES.filter(ex => 
           ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom
         );
+
+        // REGULA: Jeśli Tryb Solo (N <= 7), odrzuć PARTNER i W_Parze
+        if (!isPairMode) {
+          validExercises = validExercises.filter(ex => 
+            ex.segment_nazwa !== 'PARTNER' && 
+            ex.tryb_pracy !== 'W_Parze'
+          );
+        }
 
         // 3. Przygotowanie stref (Routing)
         const availableZones = [...ROOM_CONFIG.strefy];

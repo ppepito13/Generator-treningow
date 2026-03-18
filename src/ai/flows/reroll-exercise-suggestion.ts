@@ -11,38 +11,22 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const ExerciseSchema = z.object({
-  name: z.string().describe('The name of the exercise.'),
-  description: z.string().describe('A brief description of the exercise.'),
-  tags: z.array(z.string()).describe('Keywords or categories associated with the exercise (e.g., "chest", "compound").'),
-  equipment: z.array(z.string()).describe('A list of equipment names required for the exercise.'),
-  segment: z.string().describe('The segment type the exercise belongs to (e.g., PUSH, PULL, DYNAMIKA).'),
-  difficulty_level: z.object({
-    min: z.number().describe('Minimum difficulty level for the exercise.'),
-    max: z.number().describe('Maximum difficulty level for the exercise.'),
-  }).describe('The recommended difficulty level range for the exercise.'),
+  id_cwiczenia: z.string().optional(),
+  nazwa: z.string().describe('The name of the exercise.'),
+  wariant: z.string().optional(),
+  segment_id: z.number().optional(),
+  segment_nazwa: z.string().describe('The segment type the exercise belongs to (e.g., PUSH, PULL, DYNAMIKA).'),
+  tryb_pracy: z.enum(['Solo', 'W_Parze']).describe('Work mode.'),
+  wymagany_sprzet: z.string().describe('Equipment string.'),
+  biomechanika: z.string().optional(),
+  poziom: z.number().describe('Difficulty level.'),
+  glowne_partie: z.array(z.string()).describe('Main body parts.'),
+  zaangazowane_miesnie: z.string().optional(),
+  tagi_specjalne: z.array(z.string()).describe('Tags.'),
+  kategorie_treningu: z.array(z.string()).describe('Categories.'),
+  instrukcja: z.string().describe('Brief instruction.'),
 });
 export type Exercise = z.infer<typeof ExerciseSchema>;
-
-const EquipmentSchema = z.object({
-  name: z.string().describe('The name of the equipment.'),
-  description: z.string().describe('A description of the equipment.'),
-});
-export type Equipment = z.infer<typeof EquipmentSchema>;
-
-const DifficultyLevelSchema = z.object({
-  level: z.string().describe('The name of the difficulty level (e.g., "Beginner", "Intermediate").'),
-  min_participants: z.number().describe('Minimum number of participants for this difficulty.'),
-  max_participants: z.number().describe('Maximum number of participants for this difficulty.'),
-  difficulty_params: z.any().describe('Additional parameters for this difficulty level.'),
-});
-export type DifficultyLevel = z.infer<typeof DifficultyLevelSchema>;
-
-const SegmentSchema = z.object({
-  name: z.string().describe('The name of the segment (e.g., PUSH, PULL, DYNAMIKA).'),
-  description: z.string().describe('A description of the segment.'),
-  type: z.string().describe('The type or category of the segment.'),
-});
-export type Segment = z.infer<typeof SegmentSchema>;
 
 const StationContextSchema = z.object({
   stationName: z.string().describe('The name of the training station (e.g., "Stacja 1: Ściana Startowa").'),
@@ -55,12 +39,12 @@ const StationContextSchema = z.object({
 export type StationContext = z.infer<typeof StationContextSchema>;
 
 const RerollExerciseSuggestionInputSchema = z.object({
-  currentExercise: ExerciseSchema.describe('The exercise object that needs to be replaced.'),
+  currentExercise: z.any().describe('The exercise object that needs to be replaced.'),
   stationContext: StationContextSchema.describe('Contextual information about the training station.'),
-  allExercisesData: z.string().describe('JSON string of all available exercises (from lista_cwiczen.json).'),
-  allEquipmentData: z.string().describe('JSON string of all available equipment (from lista_sprzetu.json).'),
-  allDifficultyLevelsData: z.string().describe('JSON string of all defined difficulty levels (from poziomy_trudnosci.json).'),
-  allSegmentsData: z.string().describe('JSON string of all defined segments (from segmenty.json).'),
+  allExercisesData: z.string().describe('JSON string of all available exercises.'),
+  allEquipmentData: z.string().describe('JSON string of all available equipment.'),
+  allDifficultyLevelsData: z.string().describe('JSON string of all defined difficulty levels.'),
+  allSegmentsData: z.string().describe('JSON string of all defined segments.'),
 }).describe('Input for requesting an alternative exercise suggestion.');
 export type RerollExerciseSuggestionInput = z.infer<typeof RerollExerciseSuggestionInputSchema>;
 
@@ -83,41 +67,35 @@ const rerollExercisePrompt = ai.definePrompt({
     }) 
   },
   output: { schema: RerollExerciseSuggestionOutputSchema },
-  prompt: `You are an AI personal trainer assistant specializing in group training programs. Your goal is to suggest a single, compatible alternative exercise for a given station context and a current exercise that needs replacement. You must ensure the suggested exercise fits all constraints.
+  prompt: `You are an AI personal trainer assistant specializing in group training programs. Your goal is to suggest a single, compatible alternative exercise for a given station context.
+
+CRITICAL RULE:
+If 'numParticipants' in 'stationContext' is 7 or less, the workout is in SOLO mode. In SOLO mode, you MUST NOT suggest any exercise where 'tryb_pracy' is 'W_Parze' or the segment is 'PARTNER'.
 
 Here is the current exercise to replace:
 \`\`\`json
 {{{currentExerciseJson}}}
 \`\`\`
 
-Here is the context of the training station where the exercise will be performed:
+Here is the context of the training station:
 \`\`\`json
 {{{stationContextJson}}}
 \`\`\`
 
-Here are all available exercises from the exercise database:
+Here are all available exercises from the database:
 \`\`\`json
 {{{allExercisesData}}}
 \`\`\`
 
-Here are all available equipment items:
-\`\`\`json
-{{{allEquipmentData}}}
-\`\`\`
+Considering the 'stationContext' (equipment, difficulty, segment), find an exercise that is functionally similar to 'currentExercise'. 
+The suggested exercise MUST:
+1. Use equipment available at the station.
+2. Match the difficulty level range.
+3. Match the segment type.
+4. NOT be the same as 'currentExercise' or 'otherExercisesInStation'.
+5. If numParticipants <= 7, it MUST be a 'Solo' exercise.
 
-Here are all defined difficulty levels:
-\`\`\`json
-{{{allDifficultyLevelsData}}}
-\`\`\`
-
-Here are all defined segments:
-\`\`\`json
-{{{allSegmentsData}}}
-\`\`\`
-
-Considering the 'stationContext', specifically 'availableEquipmentAtStation', 'difficultyLevelName', and 'segmentType', and trying to find an exercise that is functionally similar or complementary to the 'currentExercise' (e.g., targeting similar muscle groups, using similar movement patterns, or fitting the same segment type), suggest ONE alternative exercise. The alternative exercise MUST use only equipment available at the station and match the overall difficulty level and segment type. The suggested exercise MUST NOT be the same as the 'currentExercise' or any of the 'otherExercisesInStation'. If no perfectly matching exercise can be found, prioritize equipment and segment type over exact difficulty match, but explain the compromise in the 'reasoning'.
-
-Provide the suggestion in the following JSON format, including a 'reasoning' field:
+Provide the suggestion in the following JSON format, preserving all original fields from the database schema:
 `,
 });
 
