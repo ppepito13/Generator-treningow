@@ -99,21 +99,34 @@ export const useAppStore = create<AppState>()(
 
           // SZTYWNE FILTRY (Hard Constraints)
           
-          // Ograniczenia Modul_0 (Station 1)
+          // Ograniczenia Strefa_Modul_0 (Ściana Startowa i Tarcze)
           if (zone.id === 'Strefa_Modul_0') {
-            zoneExercises = zoneExercises.filter(ex => 
-              ex.segment_nazwa !== 'DYNAMIKA' && 
-              !ex.kategorie_treningu.includes('Moc')
-            );
+            zoneExercises = zoneExercises.filter(ex => {
+              const forbiddenEquipment = ['drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 'bosu'];
+              const hasForbidden = forbiddenEquipment.some(s => ex.wymagany_sprzet.toLowerCase().includes(s));
+              const isPull = ex.segment_nazwa === 'PULL';
+              
+              // Wyjątek: pozwalamy na rzuty piłką o ścianę/tarcze nawet jeśli są w Dynamice/Mocy
+              const isWallThrow = (ex.nazwa.toLowerCase().includes('rzut') || ex.instrukcja.toLowerCase().includes('rzut')) && 
+                                  (ex.nazwa.toLowerCase().includes('ścian') || ex.instrukcja.toLowerCase().includes('ścian') || ex.nazwa.toLowerCase().includes('tarcze'));
+              
+              const isDynamicOrPower = ex.segment_nazwa === 'DYNAMIKA' || ex.kategorie_treningu.includes('Moc');
+              
+              if (hasForbidden || isPull) return false;
+              if (isDynamicOrPower && !isWallThrow) return false;
+              
+              return true;
+            });
           }
 
-          // Ograniczenia Modul_2 (Brak pełnego obrotu)
+          // Ograniczenia Modul_2 (Brak pełnego obrotu / wymyków)
           if (zone.id === 'Strefa_Modul_2') {
             zoneExercises = zoneExercises.filter(ex => !ex.tagi_specjalne.includes('Pełen Obrót'));
           }
 
-          // Filtr sprzętowy (Stałe strefy jak Kółka, Drabinki, Drążki)
-          if (zone.przypisany_sprzet && zone.przypisany_sprzet.length > 0) {
+          // Filtr sprzętowy dla stref stałych (Klatka, Kółka, Drabinki, Ściana)
+          const strictZones = ['Strefa_Modul_1', 'Strefa_Modul_2', 'Strefa_Modul_3', 'Strefa_Kolka', 'Strefa_Drabinki', 'Strefa_Sciana'];
+          if (strictZones.includes(zone.id) && zone.przypisany_sprzet && zone.przypisany_sprzet.length > 0) {
             zoneExercises = zoneExercises.filter(ex => 
               zone.przypisany_sprzet?.some(item => 
                 ex.wymagany_sprzet.toLowerCase().includes(item.toLowerCase())
@@ -129,16 +142,19 @@ export const useAppStore = create<AppState>()(
               ex.nazwa.toLowerCase().includes('ścian') || 
               ex.instrukcja.toLowerCase().includes('ścian') ||
               ex.nazwa.toLowerCase().includes('rękach') ||
-              ex.nazwa.toLowerCase().includes('tarcze')
+              ex.nazwa.toLowerCase().includes('tarcze') ||
+              ex.nazwa.toLowerCase().includes('rzut')
             );
             if (wallRelated.length > 0) preferred = wallRelated;
           } else if (zone.id === 'Strefa_Wolna_Przestrzen') {
-            preferred = zoneExercises.filter(ex => 
+            // Preferuj ćwiczenia bez sprzętu stacjonarnego na środku
+            const floorExercises = zoneExercises.filter(ex => 
               !ex.wymagany_sprzet.toLowerCase().includes('drążek') && 
               !ex.wymagany_sprzet.toLowerCase().includes('kółka') &&
               !ex.wymagany_sprzet.toLowerCase().includes('drabink') &&
               !ex.wymagany_sprzet.toLowerCase().includes('ściana')
             );
+            if (floorExercises.length > 0) preferred = floorExercises;
           }
 
           const finalPool = preferred.length > 0 ? preferred : zoneExercises;
@@ -149,6 +165,7 @@ export const useAppStore = create<AppState>()(
 
           let exB: Exercise | undefined = undefined;
           if (isPairMode) {
+            // Reguła A/B: jeśli solo i nie drabinka pozioma, dobierz B na tę samą partię bez sprzętu
             if (exA.tryb_pracy === 'W_Parze' || exA.wymagany_sprzet.includes('drabinka pozioma')) {
               exB = exA;
             } else {
@@ -170,7 +187,7 @@ export const useAppStore = create<AppState>()(
           });
         });
 
-        // Kolizja Głębokości: Kolka vs Modul_3
+        // Kolizja Głębokości: Kółka vs Moduł 3 (Klatka Prawa)
         const kolkaStation = generated.find(s => s.zone.id === 'Strefa_Kolka');
         const m3Station = generated.find(s => s.zone.id === 'Strefa_Modul_3');
         if (kolkaStation && m3Station) {

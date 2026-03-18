@@ -56,7 +56,7 @@
           "nazwa": "Ściana Startowa i Tarcze",
           "typ": "staly",
           "pojemnosc_stacji": 1,
-          "ograniczenia": ["odrzuc_segment_dynamika", "odrzuc_kategorie_moc"],
+          "ograniczenia": ["odrzuc_segment_dynamika", "odrzuc_kategorie_moc", "zakaz_drazkow_i_drabinek"],
           "przypisany_sprzet": ["ściany", "maty"]
         },
         {
