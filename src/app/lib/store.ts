@@ -39,10 +39,10 @@ export const useAppStore = create<AppState>()(
         const diff = getDifficultyById(difficultyId);
         
         // 1. Matematyka Stacji
-        const numStations = participants <= 7 ? participants : Math.min(Math.ceil(participants / 2), 7);
         const isPairMode = participants > 7;
+        const numStations = isPairMode ? Math.min(Math.ceil(participants / 2), 7) : participants;
 
-        // 2. Filtrowanie bazowe ćwiczeń wg poziomu trudności
+        // 2. Filtrowanie bazowe ćwiczeń
         let validExercises = ALL_EXERCISES.filter(ex => 
           ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom
         );
@@ -68,9 +68,30 @@ export const useAppStore = create<AppState>()(
 
         // Reszta stref elastycznie
         const restZones = availableZones.filter(z => z.id !== 'Strefa_Modul_0' && z.id !== 'Strefa_Modul_1');
-        while (selectedZones.length < numStations && restZones.length > 0) {
+        
+        // Logika dekrementacji pojemności Wolnej Podłogi
+        let freeSpaceCapacity = ROOM_CONFIG.strefy.find(z => z.id === 'Strefa_Wolna_Przestrzen')?.bazowa_pojemnosc_stacji || 3;
+        
+        // Funkcja do wybierania stref uwzględniająca pojemność i reguły kolizji
+        while (selectedZones.length < numStations && (restZones.length > 0 || freeSpaceCapacity > 0)) {
           const randomIndex = Math.floor(Math.random() * restZones.length);
-          selectedZones.push(restZones.splice(randomIndex, 1)[0]);
+          const zone = restZones[randomIndex];
+
+          if (zone) {
+            selectedZones.push(zone);
+            restZones.splice(randomIndex, 1);
+            
+            // Reguła kolizji przestrzeni: Drabinki/Sciana zabierają miejsce na podłodze
+            if (zone.id === 'Strefa_Drabinki' || zone.id === 'Strefa_Sciana') {
+              freeSpaceCapacity -= 1;
+            }
+          } else if (freeSpaceCapacity > 0) {
+            const freeSpace = ROOM_CONFIG.strefy.find(z => z.id === 'Strefa_Wolna_Przestrzen');
+            if (freeSpace) selectedZones.push(freeSpace);
+            freeSpaceCapacity -= 1;
+          } else {
+            break;
+          }
         }
 
         // 4. Dobieranie ćwiczeń (Constraint Solver)
@@ -78,9 +99,10 @@ export const useAppStore = create<AppState>()(
         const usedExercises = new Set<string>();
 
         selectedZones.forEach((zone, idx) => {
-          // Filtruj pod strefę
           let zoneExercises = validExercises.filter(ex => !usedExercises.has(ex.id_cwiczenia));
 
+          // SZTYWNE KONSTRYKTY (Hard Constraints)
+          
           // Ograniczenia Modul_0
           if (zone.id === 'Strefa_Modul_0') {
             zoneExercises = zoneExercises.filter(ex => 
@@ -94,16 +116,33 @@ export const useAppStore = create<AppState>()(
             zoneExercises = zoneExercises.filter(ex => !ex.tagi_specjalne.includes('Pełen Obrót'));
           }
 
-          // Fallbacks: Core (zwis) i Handstand
-          const isCage = zone.typ === 'klatka_rig' || zone.id === 'Strefa_Drabinki';
-          const isWall = zone.id === 'Strefa_Sciana' || zone.id === 'Strefa_Drabinki';
+          // Sztywny filtr sprzętowy (np. Kółka, Drabinki)
+          if (zone.przypisany_sprzet && zone.przypisany_sprzet.length > 0) {
+            zoneExercises = zoneExercises.filter(ex => 
+              zone.przypisany_sprzet?.some(item => ex.wymagany_sprzet.toLowerCase().includes(item.toLowerCase()))
+            );
+          }
 
-          // Preferuj ćwiczenia pasujące do strefy
+          // Fallbacki i preferencje (Soft/Hard Constraints)
           let preferred = zoneExercises;
-          if (zone.typ === 'klatka_rig') {
+          
+          if (zone.id === 'Strefa_Sciana') {
+            // Ściana musi mieć ćwiczenia "przy ścianie", "w staniu na rękach" lub rzuty o ścianę
+            preferred = zoneExercises.filter(ex => 
+              ex.nazwa.toLowerCase().includes('ścian') || 
+              ex.instrukcja.toLowerCase().includes('ścian') ||
+              ex.nazwa.toLowerCase().includes('rękach')
+            );
+          } else if (zone.typ === 'klatka_rig') {
+            // Klatka preferuje zwisy i podciągania
             preferred = zoneExercises.filter(ex => ex.segment_nazwa === 'PULL' || ex.segment_nazwa === 'CORE');
-          } else if (zone.id === 'Strefa_Sciana') {
-            preferred = zoneExercises.filter(ex => ex.nazwa.toLowerCase().includes('rękach') || ex.nazwa.toLowerCase().includes('ścianie'));
+          } else if (zone.id === 'Strefa_Wolna_Przestrzen') {
+            // Wolna podłoga nie powinna brać ćwiczeń wymagających stałego osprzętu (np. drążków)
+            preferred = zoneExercises.filter(ex => 
+              !ex.wymagany_sprzet.toLowerCase().includes('drążek') && 
+              !ex.wymagany_sprzet.toLowerCase().includes('kółka') &&
+              !ex.wymagany_sprzet.toLowerCase().includes('drabink')
+            );
           }
 
           const finalPool = preferred.length > 0 ? preferred : zoneExercises;
@@ -114,11 +153,9 @@ export const useAppStore = create<AppState>()(
 
           let exB: Exercise | undefined = undefined;
           if (isPairMode) {
-            // Reguła A/B Wyjątki: W_Parze lub drabinka pozioma
             if (exA.tryb_pracy === 'W_Parze' || exA.wymagany_sprzet.includes('drabinka pozioma')) {
               exB = exA;
             } else {
-              // Szukaj Ex B: Ta sama partia, Bodyweight/Maty
               const potentialB = validExercises.filter(ex => 
                 ex.id_cwiczenia !== exA.id_cwiczenia &&
                 ex.glowne_partie.some(p => exA.glowne_partie.includes(p)) &&
@@ -143,7 +180,6 @@ export const useAppStore = create<AppState>()(
         if (kolkaStation && m3Station) {
           if (kolkaStation.exerciseA.tagi_specjalne.includes('Wymaga Głębi') && 
               m3Station.exerciseA.tagi_specjalne.includes('Wymaga Głębi')) {
-            // Przelosuj Modul 3 (prostsze niż kółka)
             const backup = validExercises.filter(ex => !usedExercises.has(ex.id_cwiczenia) && !ex.tagi_specjalne.includes('Wymaga Głębi'));
             if (backup.length > 0) m3Station.exerciseA = backup[0];
           }
