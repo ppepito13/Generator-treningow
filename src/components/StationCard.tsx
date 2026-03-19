@@ -1,9 +1,9 @@
 "use client";
 
 import React from 'react';
-import { Station, Exercise, SEGMENTS, getDifficultyById } from '@/app/lib/data';
+import { Station, Exercise, SEGMENTS, getDifficultyById, ROOM_CONFIG } from '@/app/lib/data';
 import { useAppStore, getValidExercisesForZone } from '@/app/lib/store';
-import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity } from 'lucide-react';
+import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,7 +26,7 @@ interface Props {
 }
 
 export const StationCard = ({ station }: Props) => {
-  const { rerollExercise, difficultyId, participants } = useAppStore();
+  const { rerollExercise, changeStationZone, difficultyId, participants, circuit } = useAppStore();
   const currentDiff = getDifficultyById(difficultyId);
   const isPairMode = participants > 7;
 
@@ -50,11 +50,39 @@ export const StationCard = ({ station }: Props) => {
     return ex.zaangazowane_miesnie || "Praca ogólna";
   };
 
-  // Filtrujemy segmenty dostępne dla tej konkretnej stacji
-  const availableSegments = SEGMENTS.filter(seg => {
+  // Filtrujemy segmenty dostępne dla tej konkretnej stacji (A)
+  const availableSegmentsA = SEGMENTS.filter(seg => {
     const pool = getValidExercisesForZone(station.zone, currentDiff, new Set(), isPairMode, seg.id, true);
     return pool.length > 0;
   });
+
+  // Logika dostępnych stref dla zmiany (tylko dla stacji 2-7)
+  const isFixedStation = station.zone.id === 'Strefa_Modul_0';
+  
+  const getAvailableZones = () => {
+    const currentZones = circuit.map(s => s.zone.id);
+    const hasDrabinki = currentZones.includes('Strefa_Drabinki');
+    const hasSciana = currentZones.includes('Strefa_Sciana');
+    
+    const floorLimit = (ROOM_CONFIG.strefy.find(z => z.id === 'Strefa_Wolna_Przestrzen')?.bazowa_pojemnosc_stacji || 3)
+      - (hasDrabinki ? 1 : 0) - (hasSciana ? 1 : 0);
+    
+    const floorCount = circuit.filter(s => s.zone.id === 'Strefa_Wolna_Przestrzen').length;
+
+    return ROOM_CONFIG.strefy.filter(z => {
+      if (z.id === station.zone.id) return false; // Nie ta sama
+      if (z.id === 'Strefa_Modul_0') return false; // Moduł 0 zawsze stały
+      
+      if (z.id === 'Strefa_Wolna_Przestrzen') {
+        return floorCount < floorLimit || (station.zone.id === 'Strefa_Wolna_Przestrzen');
+      }
+      
+      // Dla sztywnych stref - tylko jeśli nie ma jej w obwodzie
+      return !currentZones.includes(z.id);
+    });
+  };
+
+  const availableZones = getAvailableZones();
 
   const ExerciseSubCard = ({ ex, type, shared = false }: { ex: Exercise, type: 'A' | 'B', shared?: boolean }) => (
     <div className={`relative p-5 rounded-2xl border transition-all ${shared ? 'bg-primary/5 border-primary/20' : type === 'B' ? 'bg-secondary/5 border-secondary/10' : 'bg-white/5 border-white/5'}`}>
@@ -164,9 +192,9 @@ export const StationCard = ({ station }: Props) => {
                 Losuj dowolne
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-white/5" />
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Dostępne segmenty</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Segment (kompatybilny)</DropdownMenuLabel>
               <div className="grid grid-cols-1 gap-0.5">
-                {availableSegments.map(seg => (
+                {availableSegmentsA.map(seg => (
                   <DropdownMenuItem 
                     key={seg.id} 
                     onClick={() => handleReroll(type, seg.id)}
@@ -202,7 +230,39 @@ export const StationCard = ({ station }: Props) => {
           <div className="bg-primary/20 p-2 rounded-lg">
             <MapPin className="h-5 w-5 text-primary" />
           </div>
-          <h2 className="text-sm font-bold uppercase tracking-wide text-white">{station.zone.nazwa}</h2>
+          <div className="flex flex-col">
+            <h2 className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Lokalizacja</h2>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-white uppercase">{station.zone.nazwa}</span>
+              {!isFixedStation && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded-md glass-button text-primary/50 hover:text-primary">
+                      <Settings2 className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="glass-card border-white/10 text-white min-w-[200px] z-[100]">
+                    <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Przenieś Stację</DropdownMenuLabel>
+                    <div className="max-h-[300px] overflow-y-auto">
+                      {availableZones.length > 0 ? (
+                        availableZones.map(zone => (
+                          <DropdownMenuItem 
+                            key={zone.id} 
+                            onClick={() => changeStationZone(station.id, zone.id)}
+                            className="text-xs font-medium focus:bg-primary focus:text-primary-foreground cursor-pointer py-2.5"
+                          >
+                            {zone.nazwa}
+                          </DropdownMenuItem>
+                        ))
+                      ) : (
+                        <p className="text-[10px] text-center py-4 text-muted-foreground italic">Brak dostępnych stref</p>
+                      )}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
         </div>
         {station.zone.uwagi && (
           <span className="text-[9px] text-destructive font-bold uppercase px-2 py-1 bg-destructive/10 rounded-md">
