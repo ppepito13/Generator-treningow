@@ -1,13 +1,10 @@
-
 "use client";
 
-import React, { useState } from 'react';
-import { Station, Exercise, ALL_EXERCISES, ALL_EQUIPMENT, DIFFICULTY_LEVELS, SEGMENTS, getDifficultyById } from '@/app/lib/data';
+import React from 'react';
+import { Station, Exercise } from '@/app/lib/data';
 import { useAppStore } from '@/app/lib/store';
 import { RefreshCw, MapPin, Dumbbell, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { rerollExerciseSuggestion } from '@/ai/flows/reroll-exercise-suggestion';
-import { toast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Props {
@@ -15,60 +12,13 @@ interface Props {
 }
 
 export const StationCard = ({ station }: Props) => {
-  const { updateExercise, participants, difficultyId } = useAppStore();
-  const [loadingA, setLoadingA] = useState(false);
-  const [loadingB, setLoadingB] = useState(false);
+  const { rerollExercise } = useAppStore();
 
-  const difficulty = getDifficultyById(difficultyId);
-
-  const handleReroll = async (type: 'A' | 'B') => {
-    const setLoading = type === 'A' ? setLoadingA : setLoadingB;
-    const currentEx = type === 'A' ? station.exerciseA : station.exerciseB;
-    
-    if (!currentEx) return;
-
-    setLoading(true);
-    try {
-      const result = await rerollExerciseSuggestion({
-        currentExercise: currentEx,
-        stationContext: {
-          stationName: station.zone.nazwa,
-          numParticipants: participants,
-          difficultyLevelName: difficulty.nazwa_grupy,
-          availableEquipmentAtStation: station.zone.przypisany_sprzet || ALL_EQUIPMENT,
-          segmentType: currentEx.segment_nazwa,
-          otherExercisesInStation: [
-            type === 'A' ? (station.exerciseB?.nazwa || '') : station.exerciseA.nazwa
-          ].filter(Boolean)
-        },
-        allExercisesData: JSON.stringify(ALL_EXERCISES),
-        allEquipmentData: JSON.stringify(ALL_EQUIPMENT),
-        allDifficultyLevelsData: JSON.stringify(DIFFICULTY_LEVELS),
-        allSegmentsData: JSON.stringify(SEGMENTS)
-      });
-
-      // Transformacja z powrotem na format lokalny
-      const transformed: any = {
-        ...result.suggestedExercise,
-        nazwa: (result.suggestedExercise as any).name || (result.suggestedExercise as any).nazwa,
-        instrukcja: (result.suggestedExercise as any).description || (result.suggestedExercise as any).instrukcja,
-        wymagany_sprzet: Array.isArray((result.suggestedExercise as any).equipment) ? (result.suggestedExercise as any).equipment.join(', ') : (result.suggestedExercise as any).wymagany_sprzet
-      };
-
-      updateExercise(station.id, type, transformed);
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Błąd re-rollu",
-        description: "Nie udało się zaproponować nowego ćwiczenia. Spróbuj ponownie.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleReroll = (type: 'A' | 'B') => {
+    rerollExercise(station.id, type);
   };
 
-  const ExerciseSubCard = ({ ex, type, isLoading }: { ex: Exercise, type: 'A' | 'B', isLoading: boolean }) => (
+  const ExerciseSubCard = ({ ex, type }: { ex: Exercise, type: 'A' | 'B' }) => (
     <div className={`relative p-5 rounded-2xl border transition-all ${type === 'B' ? 'bg-secondary/5 border-secondary/10' : 'bg-white/5 border-white/5'}`}>
       <div className="flex justify-between items-start gap-2">
         <div className="space-y-1">
@@ -93,11 +43,10 @@ export const StationCard = ({ station }: Props) => {
           <Button 
             variant="ghost" 
             size="icon" 
-            disabled={isLoading}
             onClick={() => handleReroll(type)}
             className={`h-8 w-8 rounded-lg glass-button ${type === 'B' ? 'text-secondary' : 'text-primary'}`}
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -133,9 +82,9 @@ export const StationCard = ({ station }: Props) => {
       </div>
       
       <div className="p-4 space-y-4">
-        <ExerciseSubCard ex={station.exerciseA} type="A" isLoading={loadingA} />
+        <ExerciseSubCard ex={station.exerciseA} type="A" />
         {station.exerciseB && station.exerciseB.id_cwiczenia !== station.exerciseA.id_cwiczenia && (
-          <ExerciseSubCard ex={station.exerciseB} type="B" isLoading={loadingB} />
+          <ExerciseSubCard ex={station.exerciseB} type="B" />
         )}
         {station.exerciseB && station.exerciseB.id_cwiczenia === station.exerciseA.id_cwiczenia && (
           <div className="p-3 rounded-xl bg-secondary/10 border border-secondary/20 text-center">
