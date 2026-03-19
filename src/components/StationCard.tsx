@@ -51,6 +51,11 @@ export const StationCard = ({ station }: Props) => {
             {shared && <Users className="h-3 w-3 text-primary" />}
           </div>
           <h3 className="text-lg font-bold leading-tight">{ex.nazwa}</h3>
+          {ex.wariant && (
+            <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide opacity-80">
+              {ex.wariant}
+            </p>
+          )}
         </div>
         <div className="flex gap-1">
           <Dialog>
@@ -61,9 +66,16 @@ export const StationCard = ({ station }: Props) => {
             </DialogTrigger>
             <DialogContent className="glass-card border-white/10 text-white sm:max-w-md outline-none">
               <DialogHeader>
-                <DialogTitle className="text-primary flex items-center gap-2 text-xl font-bold">
-                  <Info className="h-5 w-5" />
-                  {ex.nazwa}
+                <DialogTitle className="text-primary flex flex-col items-start gap-1">
+                  <div className="flex items-center gap-2 text-xl font-bold">
+                    <Info className="h-5 w-5" />
+                    {ex.nazwa}
+                  </div>
+                  {ex.wariant && (
+                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest ml-7">
+                      Wariant: {ex.wariant}
+                    </span>
+                  )}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-6 py-4">
