@@ -5,13 +5,27 @@ import { useAppStore } from '@/app/lib/store';
 import { DIFFICULTY_LEVELS } from '@/app/lib/data';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Plus, Minus, Zap, Trophy } from 'lucide-react';
+import { Plus, Minus, Zap, Trophy, LayoutGrid } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 
 export const ConfigurationForm = () => {
-  const { participants, setParticipants, difficultyId, setDifficulty, generateCircuit } = useAppStore();
+  const { 
+    participants, 
+    setParticipants, 
+    difficultyId, 
+    setDifficulty, 
+    generateCircuit,
+    stationCount,
+    setStationCount 
+  } = useAppStore();
 
   const currentDiff = DIFFICULTY_LEVELS.find(d => d.id === difficultyId);
+
+  // Obliczenia dla ograniczeń stacji
+  const minStations = Math.ceil(participants / 2);
+  const maxStations = Math.min(participants, 7);
+  const numPairs = participants - stationCount;
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-md mx-auto py-12 px-6">
@@ -23,11 +37,12 @@ export const ConfigurationForm = () => {
       </div>
 
       <div className="glass-card p-8 rounded-3xl space-y-8">
+        {/* Sekcja Uczestników */}
         <div className="space-y-4">
           <div className="flex justify-between items-end">
             <Label className="text-lg font-medium">Uczestnicy</Label>
-            <span className="text-xs text-primary font-bold bg-primary/10 px-2 py-1 rounded-md">
-              {participants <= 7 ? 'TRYB SOLO' : 'TRYB PAR'}
+            <span className="text-xs text-primary font-bold bg-primary/10 px-2 py-1 rounded-md uppercase tracking-tighter">
+              {participants} OSÓB
             </span>
           </div>
           <div className="flex items-center justify-between gap-4">
@@ -35,6 +50,7 @@ export const ConfigurationForm = () => {
               variant="outline" 
               size="icon" 
               onClick={() => setParticipants(participants - 1)}
+              disabled={participants <= 1}
               className="h-12 w-12 rounded-xl glass-button"
             >
               <Minus className="h-6 w-6" />
@@ -46,16 +62,45 @@ export const ConfigurationForm = () => {
               variant="outline" 
               size="icon" 
               onClick={() => setParticipants(participants + 1)}
+              disabled={participants >= 14}
               className="h-12 w-12 rounded-xl glass-button"
             >
               <Plus className="h-6 w-6" />
             </Button>
           </div>
-          <p className="text-[10px] text-muted-foreground text-center italic">
-            {participants > 7 ? `Wygenerujemy ${Math.ceil(participants/2)} stacji z podziałem A/B` : `Wygenerujemy ${participants} stacji solo`}
-          </p>
         </div>
 
+        {/* Sekcja Liczby Stacji */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-end">
+            <div className="flex items-center gap-2">
+              <LayoutGrid className="h-4 w-4 text-secondary" />
+              <Label className="text-lg font-medium">Liczba Stacji</Label>
+            </div>
+            <span className="text-xs text-secondary font-bold bg-secondary/10 px-2 py-1 rounded-md">
+              {stationCount} STACJI
+            </span>
+          </div>
+          <Slider 
+            value={[stationCount]} 
+            onValueChange={(vals) => setStationCount(vals[0])}
+            min={minStations}
+            max={maxStations}
+            step={1}
+            className="py-4"
+          />
+          <div className="flex justify-between text-[10px] text-muted-foreground uppercase font-bold px-1">
+            <span>Minimum: {minStations}</span>
+            <span>Maksimum: {maxStations}</span>
+          </div>
+          {numPairs > 0 && (
+            <p className="text-[10px] text-primary/80 text-center font-medium bg-primary/5 py-2 rounded-lg border border-primary/10">
+              W tym układzie wygenerujemy {numPairs} {numPairs === 1 ? 'stację podwójną' : 'stacje podwójne'}.
+            </p>
+          )}
+        </div>
+
+        {/* Sekcja Poziomu */}
         <div className="space-y-4">
           <Label className="text-lg font-medium">Poziom Grupy</Label>
           <Select value={difficultyId} onValueChange={setDifficulty}>

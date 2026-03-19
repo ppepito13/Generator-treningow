@@ -12,27 +12,26 @@ import {
 
 interface AppState {
   participants: number;
+  stationCount: number;
   difficultyId: string;
   circuit: Station[];
   isGenerated: boolean;
   
   setParticipants: (val: number) => void;
+  setStationCount: (val: number) => void;
   setDifficulty: (id: string) => void;
   generateCircuit: () => void;
   rerollExercise: (stationId: string, type: 'A' | 'B') => void;
   reset: () => void;
 }
 
-// Helper sprawdzający, czy sprzęt pozwala na wykonanie tego samego ćwiczenia przez 2 osoby
 const canExerciseBeShared = (ex: Exercise): boolean => {
   const req = ex.wymagany_sprzet.toLowerCase();
   if (req.includes('brak') || req.includes('masa ciała') || req.includes('maty')) return true;
   
-  // Lista sprzętów, których mamy tylko 1 sztukę (z sala.json)
   const singleItems = ['kółka gimnastyczne', 'poręcze dip (v-shape)', 'kamizelka obciążeniowa', 'drabinka pozioma'];
   const isLimited = singleItems.some(item => req.includes(item));
   
-  // Jeśli sprzęt jest na liście limitowanej, sprawdzamy inwentarz
   if (isLimited) {
     const itemKey = Object.keys(ROOM_CONFIG.inwentarz).find(k => k.toLowerCase().includes(req)) || "";
     const count = (ROOM_CONFIG.inwentarz as any)[itemKey] || 0;
@@ -45,7 +44,7 @@ const canExerciseBeShared = (ex: Exercise): boolean => {
 const getValidExercisesForZone = (
   zone: Zone, 
   diff: DifficultyLevel, 
-  isPairMode: boolean, 
+  isAnyPairInCircuit: boolean, 
   usedIds: Set<string>
 ): Exercise[] => {
   let pool = ALL_EXERCISES.filter(ex => 
@@ -53,12 +52,10 @@ const getValidExercisesForZone = (
     !usedIds.has(ex.id_cwiczenia)
   );
 
-  // Reguła Solo: Jeśli N <= 7, usuwamy wszystko co partnerskie
-  if (!isPairMode) {
+  if (!isAnyPairInCircuit) {
     pool = pool.filter(ex => ex.segment_nazwa !== 'PARTNER' && ex.tryb_pracy !== 'W_Parze');
   }
 
-  // Ograniczenia Modul_0 (Ściana Startowa) - BRAK DRĄŻKÓW I DRABINEK
   if (zone.id === 'Strefa_Modul_0') {
     pool = pool.filter(ex => {
       const forbiddenTerms = ['drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 'bosu', 'pull', 'nunczako'];
@@ -66,25 +63,20 @@ const getValidExercisesForZone = (
         ex.wymagany_sprzet.toLowerCase().includes(term) || 
         ex.segment_nazwa.toLowerCase().includes(term)
       );
-      
-      // Wyjątek: Akceptujemy rzuty o ścianę nawet jeśli są dynamiczne
       const isWallExercise = ex.nazwa.toLowerCase().includes('ścian') || 
                              ex.instrukcja.toLowerCase().includes('ścian') ||
                              ex.nazwa.toLowerCase().includes('tarcze');
 
       if (hasForbidden) return false;
       if ((ex.segment_nazwa === 'DYNAMIKA' || ex.kategorie_treningu.includes('Moc')) && !isWallExercise) return false;
-      
       return true;
     });
   }
 
-  // Ograniczenia Modul_2 (Brak pełnego obrotu)
   if (zone.id === 'Strefa_Modul_2') {
     pool = pool.filter(ex => !ex.tagi_specjalne.includes('Pełen Obrót'));
   }
 
-  // Filtr sprzętowy dla stref stałych (Klatka, Kółka, Drabinki)
   const strictZones = ['Strefa_Modul_1', 'Strefa_Modul_2', 'Strefa_Modul_3', 'Strefa_Kolka', 'Strefa_Drabinki', 'Strefa_Sciana'];
   if (strictZones.includes(zone.id) && zone.przypisany_sprzet && zone.przypisany_sprzet.length > 0) {
     pool = pool.filter(ex => 
@@ -100,33 +92,48 @@ const getValidExercisesForZone = (
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
-      participants: 6,
+      participants: 8,
+      stationCount: 7,
       difficultyId: 'baza_silowa_standard',
       circuit: [],
       isGenerated: false,
 
-      setParticipants: (val) => set({ participants: Math.min(Math.max(val, 1), 14) }),
+      setParticipants: (val) => {
+        const newParticipants = Math.min(Math.max(val, 1), 14);
+        const minStations = Math.ceil(newParticipants / 2);
+        const maxStations = Math.min(newParticipants, 7);
+        const currentStations = get().stationCount;
+        
+        set({ 
+          participants: newParticipants,
+          stationCount: Math.min(Math.max(currentStations, minStations), maxStations)
+        });
+      },
+
+      setStationCount: (val) => set({ stationCount: val }),
       setDifficulty: (id) => set({ difficultyId: id }),
 
       generateCircuit: () => {
-        const { participants, difficultyId } = get();
+        const { participants, difficultyId, stationCount } = get();
         const diff = getDifficultyById(difficultyId);
-        const isPairMode = participants > 7;
-        const numStations = isPairMode ? Math.min(Math.ceil(participants / 2), 7) : participants;
+        
+        // Obliczamy ile stacji musi być podwójnych
+        // Np. N=8, S=7 -> 8-7 = 1 stacja podwójna, 6 solo
+        // Np. N=14, S=7 -> 14-7 = 7 stacji podwójnych
+        const numPairs = participants - stationCount;
 
         const availableZones = [...ROOM_CONFIG.strefy];
         const selectedZones: Zone[] = [];
 
-        // Routing Stacja 1 i 2 (Standard Balaton)
         const mod0 = availableZones.find(z => z.id === 'Strefa_Modul_0');
         const mod1 = availableZones.find(z => z.id === 'Strefa_Modul_1');
         if (mod0) selectedZones.push(mod0);
-        if (mod1 && numStations > 1) selectedZones.push(mod1);
+        if (mod1 && stationCount > 1) selectedZones.push(mod1);
 
         const restZones = availableZones.filter(z => z.id !== 'Strefa_Modul_0' && z.id !== 'Strefa_Modul_1');
         let freeSpaceCapacity = ROOM_CONFIG.strefy.find(z => z.id === 'Strefa_Wolna_Przestrzen')?.bazowa_pojemnosc_stacji || 3;
         
-        while (selectedZones.length < numStations && (restZones.length > 0 || freeSpaceCapacity > 0)) {
+        while (selectedZones.length < stationCount && (restZones.length > 0 || freeSpaceCapacity > 0)) {
           const randomIndex = Math.floor(Math.random() * restZones.length);
           const zone = restZones[randomIndex];
 
@@ -145,7 +152,10 @@ export const useAppStore = create<AppState>()(
         const usedIds = new Set<string>();
 
         selectedZones.forEach((zone, idx) => {
-          const pool = getValidExercisesForZone(zone, diff, isPairMode, usedIds);
+          // Sprawdzamy czy ta konkretna stacja ma być podwójna (pary trafiają na pierwsze stacje)
+          const isThisStationPair = idx < numPairs;
+          
+          const pool = getValidExercisesForZone(zone, diff, isThisStationPair, usedIds);
           
           let preferred = pool;
           if (zone.id === 'Strefa_Sciana' || zone.id === 'Strefa_Modul_0') {
@@ -161,12 +171,10 @@ export const useAppStore = create<AppState>()(
           usedIds.add(exA.id_cwiczenia);
 
           let exB: Exercise | undefined = undefined;
-          if (isPairMode) {
-            // Reguła: Jeśli można robić to samo (sprzęt pozwala) lub ćwiczenie jest partnerskie -> ExB = ExA
+          if (isThisStationPair) {
             if (exA.tryb_pracy === 'W_Parze' || canExerciseBeShared(exA)) {
               exB = exA;
             } else {
-              // Brak sprzętu dla dwojga -> dobierz inne na tę samą partię bezsprzętowe
               const potentialB = ALL_EXERCISES.filter(ex => 
                 ex.id_cwiczenia !== exA.id_cwiczenia &&
                 ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
@@ -177,28 +185,32 @@ export const useAppStore = create<AppState>()(
             }
           }
 
-          generated.push({ id: `station-${idx}`, zone, exerciseA: exA, exerciseB: exB, isPair: isPairMode });
+          generated.push({ 
+            id: `station-${idx}`, 
+            zone, 
+            exerciseA: exA, 
+            exerciseB: exB, 
+            isPair: isThisStationPair 
+          });
         });
 
         set({ circuit: generated, isGenerated: true });
       },
 
       rerollExercise: (stationId, type) => {
-        const { circuit, difficultyId, participants } = get();
+        const { circuit, difficultyId } = get();
         const station = circuit.find(s => s.id === stationId);
         if (!station) return;
 
         const diff = getDifficultyById(difficultyId);
-        const isPairMode = participants > 7;
         const usedIds = new Set(circuit.flatMap(s => [s.exerciseA.id_cwiczenia, s.exerciseB?.id_cwiczenia].filter(Boolean)));
 
         if (type === 'A') {
-          const pool = getValidExercisesForZone(station.zone, diff, isPairMode, usedIds);
+          const pool = getValidExercisesForZone(station.zone, diff, station.isPair, usedIds);
           const newExA = pool[Math.floor(Math.random() * pool.length)];
           if (newExA) {
-            // Przy zmianie A, zaktualizuj też B zgodnie z nową logiką dostępności
             let newExB = undefined;
-            if (isPairMode) {
+            if (station.isPair) {
               if (newExA.tryb_pracy === 'W_Parze' || canExerciseBeShared(newExA)) {
                 newExB = newExA;
               } else {
