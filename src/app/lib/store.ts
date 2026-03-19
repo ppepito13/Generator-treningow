@@ -39,7 +39,6 @@ const canExerciseBeShared = (ex: Exercise): boolean => {
   const itemKey = Object.keys(ROOM_CONFIG.inwentarz).find(k => req.includes(k.toLowerCase()));
   if (itemKey) {
     const count = (ROOM_CONFIG.inwentarz as any)[itemKey] || 0;
-    // Jeśli mamy przynajmniej 2 sztuki sprzętu, para może robić to samo
     return count >= 2;
   }
 
@@ -70,13 +69,13 @@ const getValidExercisesForZone = (
   if (zone.id === 'Strefa_Modul_0') {
     pool = pool.filter(ex => {
       const equip = getEquipmentString(ex);
-      const forbidden = ['drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 'bosu', 'piłka gimnastyczna', 'piłki gimnastyczne', 'pull', 'nunczako'];
-      const hasForbidden = forbidden.some(term => equip.includes(term) || ex.segment_nazwa.toLowerCase().includes(term));
+      const forbiddenTerms = ['drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 'bosu', 'piłka gimnastyczna', 'piłki gimnastyczne', 'pull', 'nunczako'];
+      const hasForbidden = forbiddenTerms.some(term => 
+        equip.includes(term) || 
+        ex.segment_nazwa.toLowerCase().includes(term)
+      );
       if (hasForbidden) return false;
-
-      // Odrzucamy PULL dla Modułu 0
       if (ex.segment_nazwa === 'PULL') return false;
-
       return true;
     });
   }
@@ -107,7 +106,6 @@ export const useAppStore = create<AppState>()(
       setParticipants: (val) => {
         const newParticipants = Math.min(Math.max(val, 1), 14);
         const maxStations = Math.min(newParticipants, 7);
-        // Domyślnie sugerujemy maksymalną liczbę stacji dla komfortu
         set({ 
           participants: newParticipants,
           stationCount: maxStations
@@ -126,47 +124,45 @@ export const useAppStore = create<AppState>()(
         const allZones = ROOM_CONFIG.strefy;
         const selectedZones: Zone[] = [];
 
-        // 1. Zawsze Moduł 0 (Ściana Startowa)
+        // 1. MODUŁ 0 I MODUŁ 1 SĄ ZAWSZE (jeśli liczba stacji pozwala)
         const mod0 = allZones.find(z => z.id === 'Strefa_Modul_0');
         if (mod0) selectedZones.push(mod0);
 
-        // 2. Losuj resztę stref do osiągnięcia stationCount
+        const mod1 = allZones.find(z => z.id === 'Strefa_Modul_1');
+        if (mod1 && stationCount > 1) selectedZones.push(mod1);
+
+        // 2. Dolosuj resztę stref
         while (selectedZones.length < stationCount) {
           const pickedIds = selectedZones.map(z => z.id);
           const hasDrabinki = pickedIds.includes('Strefa_Drabinki');
           const hasSciana = pickedIds.includes('Strefa_Sciana');
           
-          // Reguła kolizji: Drabinki/Ściana zabierają miejsce na podłodze
           let floorCapacity = allZones.find(z => z.id === 'Strefa_Wolna_Przestrzen')?.bazowa_pojemnosc_stacji || 3;
           if (hasDrabinki) floorCapacity -= 1;
           if (hasSciana) floorCapacity -= 1;
 
           const currentFloorCount = selectedZones.filter(z => z.id === 'Strefa_Wolna_Przestrzen').length;
-
-          // Budujemy listę dostępnych kandydatów
           const candidates: Zone[] = [];
           
-          // Stałe urządzenia, których jeszcze nie ma
           allZones.forEach(z => {
-            if (z.id !== 'Strefa_Modul_0' && z.id !== 'Strefa_Wolna_Przestrzen' && !pickedIds.includes(z.id)) {
+            // Urządzenia stałe, których jeszcze nie ma
+            if (!['Strefa_Modul_0', 'Strefa_Modul_1', 'Strefa_Wolna_Przestrzen'].includes(z.id) && !pickedIds.includes(z.id)) {
               candidates.push(z);
             }
           });
 
-          // Podłoga (jeśli limit pozwala)
+          // Podłoga jako równorzędny kandydat
           if (currentFloorCount < floorCapacity) {
             const floorZone = allZones.find(z => z.id === 'Strefa_Wolna_Przestrzen');
             if (floorZone) candidates.push(floorZone);
           }
 
           if (candidates.length === 0) break;
-
-          // Losowy wybór kandydata
           const chosen = candidates[Math.floor(Math.random() * candidates.length)];
           selectedZones.push(chosen);
         }
 
-        // 3. Sortowanie zgodnie z ruchem wskazówek zegara (Flow sali)
+        // 3. Sortowanie zgodnie z ruchem wskazówek zegara (Flow sali Balaton)
         const zoneOrder = [
           'Strefa_Modul_0',
           'Strefa_Modul_1',
@@ -184,7 +180,6 @@ export const useAppStore = create<AppState>()(
         const usedIds = new Set<string>();
 
         selectedZones.forEach((zone, idx) => {
-          // Pierwsze stacje (zgodnie z różnicą N-S) są podwójne
           const isThisStationPair = idx < numDoubleStations;
           const pool = getValidExercisesForZone(zone, diff, usedIds, isPairMode);
           
@@ -195,11 +190,9 @@ export const useAppStore = create<AppState>()(
 
           let exB: Exercise | undefined = undefined;
           if (isThisStationPair) {
-            // Próba współdzielenia ćwiczenia (jeśli sprzęt pozwala lub jest to praca z partnerem)
             if (exA.tryb_pracy === 'W_Parze' || canExerciseBeShared(exA)) {
               exB = exA;
             } else {
-              // Brak sprzętu dla dwojga - szukamy Ćwiczenia B na tę samą partię mięśniową (bodyweight)
               const potentialB = ALL_EXERCISES.filter(ex => 
                 ex.id_cwiczenia !== exA.id_cwiczenia &&
                 !usedIds.has(ex.id_cwiczenia) &&
