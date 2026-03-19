@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { 
@@ -78,6 +77,7 @@ export const useAppStore = create<AppState>()(
           if (zone && zone.id !== 'Strefa_Wolna_Przestrzen') {
             selectedZones.push(zone);
             restZones.splice(randomIndex, 1);
+            // Reguła dekrementacji podłogi
             if (zone.id === 'Strefa_Drabinki' || zone.id === 'Strefa_Sciana') {
               freeSpaceCapacity -= 1;
             }
@@ -100,6 +100,7 @@ export const useAppStore = create<AppState>()(
           // SZTYWNE FILTRY (Hard Constraints)
           
           // Ograniczenia Strefa_Modul_0 (Ściana Startowa i Tarcze)
+          // Brak drążków, kółek, drabinek. Odrzucenie dynamiki/mocy z wyjątkiem rzutów o ścianę.
           if (zone.id === 'Strefa_Modul_0') {
             zoneExercises = zoneExercises.filter(ex => {
               const forbiddenEquipment = ['drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 'bosu'];

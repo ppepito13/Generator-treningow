@@ -1,10 +1,11 @@
 'use server';
 /**
  * @fileOverview This file defines a Genkit flow for suggesting alternative exercises.
- *
- * - rerollExerciseSuggestion - A function that handles the exercise re-roll process.
- * - RerollExerciseSuggestionInput - The input type for the rerollExerciseSuggestion function.
- * - RerollExerciseSuggestionOutput - The return type for the rerollExerciseSuggestion function.
+ * Gemini AI is used here as an "intelligent assistant" to suggest smart replacements 
+ * based on complex station constraints.
+ * 
+ * Note: The core generator remains offline-first (client-side). 
+ * This AI flow is an online-only enhancement.
  */
 
 import { ai } from '@/ai/genkit';
