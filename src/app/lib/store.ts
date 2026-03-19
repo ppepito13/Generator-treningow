@@ -66,8 +66,18 @@ const getValidExercisesForZone = (
   if (zone.id === 'Strefa_Modul_0') {
     pool = pool.filter(ex => {
       const req = getEquipmentString(ex);
-      // Całkowity zakaz drążków, kółek i drabinek w tej strefie
-      const forbiddenTerms = ['drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 'pull', 'nunczako'];
+      // Całkowity zakaz drążków, kółek, drabinek, BOSU i DUŻYCH piłek w tej strefie
+      const forbiddenTerms = [
+        'drążek', 
+        'drążki', 
+        'drabink', 
+        'kółka gimnastyczne', 
+        'bosu', 
+        'piłka gimnastyczna', 
+        'piłki gimnastyczne', 
+        'pull', 
+        'nunczako'
+      ];
       const hasForbidden = forbiddenTerms.some(term => 
         req.includes(term) || 
         ex.segment_nazwa.toLowerCase().includes(term)
