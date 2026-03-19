@@ -1405,7 +1405,7 @@
     "tryb_pracy": "Solo",
     "wymagany_sprzet": "brak (masa ciała)",
     "biomechanika": "Naprzemienne",
-    "poziom": 3,
+    "poziom": 4,
     "glowne_partie": [
       "Barki",
       "Core"
@@ -1849,7 +1849,7 @@
     "tryb_pracy": "Solo",
     "wymagany_sprzet": "ściany (do handstand)",
     "biomechanika": "Bilateralny",
-    "poziom": 7,
+    "poziom": 8,
     "glowne_partie": [
       "Barki",
       "Ramiona"
@@ -4190,11 +4190,11 @@
   {
     "id_cwiczenia": "ex_178",
     "nazwa": "Stanie na rękach",
-    "wariant": "Hold w dolnej fazie (ugięte)",
+    "wariant": "Hold w dolnej fazie (ugięte) przy ścianie",
     "segment_id": 5,
     "segment_nazwa": "SKILLS",
     "tryb_pracy": "Solo",
-    "wymagany_sprzet": "brak (masa ciała)",
+    "wymagany_sprzet": "ściany (do handstand)",
     "biomechanika": "Bilateralny",
     "poziom": 7,
     "glowne_partie": [
@@ -4213,36 +4213,40 @@
   {
     "id_cwiczenia": "ex_179",
     "nazwa": "Stanie na rękach",
-    "wariant": "Kick-ups (wejścia dynamiczne)",
+    "wariant": "Nogi na podwyższeniu (skrzynia)",
     "segment_id": 5,
     "segment_nazwa": "SKILLS",
     "tryb_pracy": "Solo",
-    "wymagany_sprzet": "brak (masa ciała)",
+    "wymagany_sprzet": [
+      "ściany (do handstand)", 
+      "skrzynie/boxy plyometryczne miękkie, ciężkie"
+    ],
     "biomechanika": "Bilateralny",
-    "poziom": 4,
+    "poziom": 3,
     "glowne_partie": [
-      "Barki"
+      "Barki",
+      "Core",
+      "Ramiona"
     ],
     "zaangazowane_miesnie": "Praca ogólna",
     "tagi_specjalne": [
-      "Koordynacja",
-      "Równowaga"
+      "Stabilizacja (ogólna)"
     ],
     "kategorie_treningu": [
       "Kalistenika"
     ],
-    "instrukcja": "Dynamiczne wejścia do stania na rękach. Ćwiczący z pozycji wykroku wielokrotnie wykonuje wymach nogą w tył z odbiciem (kick-up), dążąc do znalezienia punktu balansu (sweet spot) bez oparcia i powrotu do startu. Koncentracja na stałym zablokowaniu łokci podczas lądowania na dłoniach."
+    "instrukcja": "Ruch rozpoczyna się od ustawienia dłoni na podłodze przed skrzynią. Ćwiczący umieszcza stopy na skrzyni i podchodzi dłońmi w stronę przeszkody, aż tułów znajdzie się w linii pionowej nad barkami, a nogi pozostaną wyprostowane poziomo na podwyższeniu (kształt litery L). Należy aktywnie wypychać się z barków."
   },
   {
     "id_cwiczenia": "ex_180",
     "nazwa": "Stanie na rękach",
-    "wariant": "Klatką do ściany (Wall Walk)",
+    "wariant": "Klatką do ściany",
     "segment_id": 5,
     "segment_nazwa": "SKILLS",
     "tryb_pracy": "Solo",
     "wymagany_sprzet": "ściany (do handstand)",
     "biomechanika": "Bilateralny",
-    "poziom": 3,
+    "poziom": 5,
     "glowne_partie": [
       "Barki",
       "Core",
@@ -4264,17 +4268,20 @@
     "segment_id": 5,
     "segment_nazwa": "SKILLS",
     "tryb_pracy": "Solo",
-    "wymagany_sprzet": "paraletki, ściany (do handstand)",
+    "wymagany_sprzet": [
+      "ściany (do handstand)", 
+      "paraletki"
+    ],
     "biomechanika": "Bilateralny",
-    "poziom": 4,
+    "poziom": 5,
     "glowne_partie": [
       "Barki",
+      "Core",
       "Ramiona"
     ],
     "zaangazowane_miesnie": "triceps",
     "tagi_specjalne": [
-      "Mobilność",
-      "Równowaga"
+      "Stabilizacja (ogólna)"
     ],
     "kategorie_treningu": [
       "Kalistenika"
@@ -4290,15 +4297,15 @@
     "tryb_pracy": "Solo",
     "wymagany_sprzet": "paraletki, ściany (do handstand)",
     "biomechanika": "Bilateralny",
-    "poziom": 6,
+    "poziom": 5,
     "glowne_partie": [
       "Barki",
+      "Core",
       "Ramiona"
     ],
     "zaangazowane_miesnie": "triceps",
     "tagi_specjalne": [
-      "Mobilność",
-      "Równowaga"
+      "Stabilizacja (ogólna)"
     ],
     "kategorie_treningu": [
       "Kalistenika"
@@ -4322,7 +4329,7 @@
     ],
     "zaangazowane_miesnie": "triceps",
     "tagi_specjalne": [
-      "Baza ruchowa"
+      "Stabilizacja (ogólna)"
     ],
     "kategorie_treningu": [
       "Kalistenika"
@@ -4431,7 +4438,7 @@
     "tryb_pracy": "Solo",
     "wymagany_sprzet": "ściany (do handstand)",
     "biomechanika": "Bilateralny",
-    "poziom": 5,
+    "poziom": 4,
     "glowne_partie": [
       "Barki",
       "Core",
@@ -6464,5 +6471,61 @@
       "Regeneracja"
     ],
     "instrukcja": "Z leżenia na plecach (stopy podkulone płasko przy pośladkach, dłonie płasko przy uszach, palce pod barki). Ćwiczący powoli spina pośladki, a z wydechem odpycha się równomiernie z czterech kończyn uwalniając miednicę i lędźwia w łuk mostka, co zapewnia ekstremalną dekompresję klatki piersiowej i przednich partii."
+  },
+  {
+    "id_cwiczenia": "ex_269",
+    "nazwa": "Stanie na rękach",
+    "wariant": "Klatką do ściany (nogi ugięte - krzesełko)",
+    "segment_id": 4,
+    "segment_nazwa": "SKILLS",
+    "tryb_pracy": "Solo",
+    "wymagany_sprzet": "ściany (do handstand)",
+    "biomechanika": "Bilateralny",
+    "poziom": 5,
+    "glowne_partie": [
+      "Barki",
+      "Core",
+      "Ramiona"
+    ],
+    "zaangazowane_miesnie": [
+      "triceps", 
+      "naramienny"
+    ],
+    "tagi_specjalne": [
+      "Stabilizacja (ogólna)"
+    ],
+    "kategorie_treningu": [
+      "Kalistenika"
+    ],
+    "instrukcja": "Ruch rozpoczyna się od wejścia stopami na ścianę klatką do muru (Wall Walk). Ćwiczący podchodzi dłońmi blisko ściany, ale zamiast prostować nogi, zgina je w biodrach i kolanach do kąta 90 stopni, opierając stopy płasko o ścianę (pozycja krzesełka). Wymusza to pełną pionizację tułowia i większe obciążenie barków niż w wariancie ze skrzynią."
+  },{
+    "id_cwiczenia": "ex_270",
+    "nazwa": "Stanie na rękach",
+    "wariant": "Na paraletkach (klatką do ściany, nogi ugięte - krzesełko)",
+    "segment_id": 5,
+    "segment_nazwa": "SKILLS",
+    "tryb_pracy": "Solo",
+    "wymagany_sprzet": [
+      "paraletki", 
+      "ściany (do handstand)"
+    ],
+    "biomechanika": "Bilateralny",
+    "poziom": 4,
+    "glowne_partie": [
+      "Barki",
+      "Core",
+      "Ramiona"
+    ],
+    "zaangazowane_miesnie": [
+      "triceps", 
+      "naramienny"
+    ],
+    "tagi_specjalne": [
+      "Stabilizacja (ogólna)"
+    ],
+    "kategorie_treningu": [
+      "Kalistenika"
+    ],
+    "instrukcja": "Ćwiczący chwyta paraletki ustawione przy ścianie i wchodzi stopami na mur klatką do ściany. Nogi zostają ugięte w kolanach i biodrach pod kątem prostym, stopy oparte o ścianę. Należy aktywnie wypychać się z barków (depresja łopatek), utrzymując tułów idealnie w pionie nad dłońmi."
   }
 ]

@@ -11,11 +11,11 @@ export interface Exercise {
   segment_id: number;
   segment_nazwa: string;
   tryb_pracy: "Solo" | "W_Parze";
-  wymagany_sprzet: string;
+  wymagany_sprzet: string | string[];
   biomechanika: string;
   poziom: number;
   glowne_partie: string[];
-  zaangazowane_miesnie: string;
+  zaangazowane_miesnie: string | string[];
   tagi_specjalne: string[];
   kategorie_treningu: string[];
   instrukcja: string;

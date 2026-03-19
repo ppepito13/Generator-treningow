@@ -26,6 +26,20 @@ export const StationCard = ({ station }: Props) => {
 
   const isShared = station.exerciseB && station.exerciseB.id_cwiczenia === station.exerciseA.id_cwiczenia;
 
+  const getEquipmentDisplay = (ex: Exercise) => {
+    if (Array.isArray(ex.wymagany_sprzet)) {
+      return ex.wymagany_sprzet.join(", ");
+    }
+    return ex.wymagany_sprzet;
+  };
+
+  const getMusclesDisplay = (ex: Exercise) => {
+    if (Array.isArray(ex.zaangazowane_miesnie)) {
+      return ex.zaangazowane_miesnie.join(", ");
+    }
+    return ex.zaangazowane_miesnie || "Praca ogólna";
+  };
+
   const ExerciseSubCard = ({ ex, type, shared = false }: { ex: Exercise, type: 'A' | 'B', shared?: boolean }) => (
     <div className={`relative p-5 rounded-2xl border transition-all ${shared ? 'bg-primary/5 border-primary/20' : type === 'B' ? 'bg-secondary/5 border-secondary/10' : 'bg-white/5 border-white/5'}`}>
       <div className="flex justify-between items-start gap-2">
@@ -63,7 +77,7 @@ export const StationCard = ({ station }: Props) => {
                     <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Wymagany Sprzęt</h4>
                     <div className="flex items-center gap-2">
                       <Dumbbell className="h-3.5 w-3.5 text-secondary" />
-                      <span className="text-xs font-bold text-secondary uppercase">{ex.wymagany_sprzet}</span>
+                      <span className="text-xs font-bold text-secondary uppercase">{getEquipmentDisplay(ex)}</span>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -84,7 +98,7 @@ export const StationCard = ({ station }: Props) => {
                     <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Zaangażowane Mięśnie</h4>
                     <div className="flex items-start gap-2">
                       <Activity className="h-3.5 w-3.5 text-accent mt-0.5" />
-                      <p className="text-xs text-white/80 font-medium">{ex.zaangazowane_miesnie || "Praca ogólna"}</p>
+                      <p className="text-xs text-white/80 font-medium">{getMusclesDisplay(ex)}</p>
                     </div>
                   </div>
                 </div>
@@ -116,7 +130,7 @@ export const StationCard = ({ station }: Props) => {
       
       <div className="flex items-center gap-2 mt-3 text-xs font-bold uppercase tracking-tight text-white/80">
         <Dumbbell className={`h-3.5 w-3.5 ${shared ? 'text-primary' : type === 'B' ? 'text-secondary' : 'text-primary'}`} />
-        <span>{ex.wymagany_sprzet}</span>
+        <span>{getEquipmentDisplay(ex)}</span>
       </div>
 
       <div className="flex gap-1 mt-3 flex-wrap">
