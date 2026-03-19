@@ -1,15 +1,51 @@
+
 "use client";
 
 import React from 'react';
 import { useAppStore } from '@/app/lib/store';
 import { StationCard } from './StationCard';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Share2, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Share2, ClipboardList, Copy, Check } from 'lucide-react';
 import { DIFFICULTY_LEVELS } from '@/app/lib/data';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { toast } from '@/hooks/use-toast';
 
 export const CircuitList = () => {
   const { circuit, reset, difficultyId, participants } = useAppStore();
   const currentDiff = DIFFICULTY_LEVELS.find(d => d.id === difficultyId);
+  const [copied, setCopied] = React.useState(false);
+
+  const getSummary = () => {
+    return circuit.map((station, idx) => {
+      let line = `${idx + 1}. ${station.exerciseA.nazwa}`;
+      if (station.exerciseA.wariant) line += ` - ${station.exerciseA.wariant}`;
+      
+      // Jeśli mamy partnera z innym ćwiczeniem, dodajemy je pod spodem
+      if (station.exerciseB && station.exerciseB.id_cwiczenia !== station.exerciseA.id_cwiczenia) {
+        line += `\n   Partner: ${station.exerciseB.nazwa}`;
+        if (station.exerciseB.wariant) line += ` - ${station.exerciseB.wariant}`;
+      }
+      return line;
+    }).join('\n');
+  };
+
+  const handleCopy = () => {
+    if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText(getSummary());
+      setCopied(true);
+      toast({
+        title: "Skopiowano!",
+        description: "Podsumowanie treningu trafiło do schowka.",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full max-w-2xl mx-auto pb-12">
@@ -27,9 +63,34 @@ export const CircuitList = () => {
             {currentDiff?.nazwa_grupy || 'Trening'} • {participants} osób
           </p>
         </div>
-        <Button variant="ghost" size="icon" className="glass-button rounded-xl text-secondary">
-          <Share2 className="h-5 w-5" />
-        </Button>
+        
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="glass-button rounded-xl text-secondary">
+              <Share2 className="h-5 w-5" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="glass-card border-white/10 text-white sm:max-w-md outline-none">
+            <DialogHeader>
+              <DialogTitle className="text-secondary flex items-center gap-2">
+                <Share2 className="h-5 w-5" />
+                Podsumowanie Treningu
+              </DialogTitle>
+            </DialogHeader>
+            <div className="mt-4 space-y-4">
+              <div className="bg-white/5 p-5 rounded-2xl font-mono text-[13px] whitespace-pre-wrap border border-white/5 leading-relaxed max-h-[50vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
+                {getSummary()}
+              </div>
+              <Button 
+                onClick={handleCopy} 
+                className="w-full h-12 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold rounded-xl flex gap-2 transition-all active:scale-95"
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Skopiowano do schowka" : "Kopiuj listę ćwiczeń"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="px-6 pt-6 space-y-6 overflow-y-auto">
