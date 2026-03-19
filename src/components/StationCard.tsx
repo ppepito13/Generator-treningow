@@ -58,12 +58,30 @@ export const StationCard = ({ station }: Props) => {
 
   const isFixedStation = station.zone.id === 'Strefa_Modul_0';
   
-  // Sprawdzamy czy ten moduł jest powtórzony w trybie par
+  // Dynamiczna kalkulacja pojemności strefy
+  const getZoneCapacity = (zoneId: string) => {
+    const zone = ROOM_CONFIG.strefy.find(z => z.id === zoneId);
+    if (!zone) return 1;
+
+    if (zoneId === 'Strefa_Wolna_Przestrzen') {
+      const hasDrabinki = circuit.some(s => s.zone.id === 'Strefa_Drabinki');
+      const hasSciana = circuit.some(s => s.zone.id === 'Strefa_Sciana');
+      const floorBase = zone.bazowa_pojemnosc_stacji || 5;
+      return floorBase - (hasDrabinki ? 1 : 0) - (hasSciana ? 1 : 0);
+    }
+
+    // Dla modułów RIG i Drabinek w trybie par limit to 1 (zajmują cały pion)
+    const isRigOrDrabinki = zoneId.startsWith('Strefa_Modul') || zoneId === 'Strefa_Drabinki' || zoneId === 'Strefa_Kolka';
+    if (isPairMode && isRigOrDrabinki) return 1;
+
+    return zone.pojemnosc_stacji || 1;
+  };
+
   const stationsInSameZone = circuit.filter(s => s.zone.id === station.zone.id);
-  const isOvercrowded = isPairMode && stationsInSameZone.length > 1;
+  const currentZoneCapacity = getZoneCapacity(station.zone.id);
+  const isOvercrowded = stationsInSameZone.length > currentZoneCapacity;
 
   const getAvailableZones = () => {
-    // W trybie ręcznym pozwalamy na wszystko oprócz Modułu 0, żeby trener mógł "wymusić"
     return ROOM_CONFIG.strefy.filter(z => z.id !== 'Strefa_Modul_0');
   };
 

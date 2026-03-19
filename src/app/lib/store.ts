@@ -47,15 +47,16 @@ const canExerciseBeShared = (ex: Exercise): boolean => {
   return true;
 };
 
+// Naturalny ruch wskazówek zegara na sali Balaton
 const zoneOrder = [
-  'Strefa_Modul_0',
-  'Strefa_Modul_1',
-  'Strefa_Modul_2',
-  'Strefa_Modul_3',
-  'Strefa_Kolka',
-  'Strefa_Sciana',
-  'Strefa_Drabinki',
-  'Strefa_Wolna_Przestrzen'
+  'Strefa_Modul_0',           // Start (Ściana wejściowa)
+  'Strefa_Modul_1',           // Klatka Lewa
+  'Strefa_Modul_2',           // Klatka Środek
+  'Strefa_Modul_3',           // Klatka Prawa
+  'Strefa_Kolka',             // Kółka
+  'Strefa_Sciana',            // Ściana czysta (przed drabinkami boczny dla lepszego flow)
+  'Strefa_Drabinki',          // Drabinki boczne
+  'Strefa_Wolna_Przestrzen'   // Podłoga (środek)
 ];
 
 export const getValidExercisesForZone = (
@@ -76,19 +77,23 @@ export const getValidExercisesForZone = (
     pool = pool.filter(ex => ex.segment_id === segmentId);
   }
 
+  // Filtr stacji podwójnych: tylko dla nich pozwalamy na segment PARTNER lub tryb W_Parze
   if (!isThisStationPair) {
     pool = pool.filter(ex => ex.segment_id !== 8 && ex.tryb_pracy !== 'W_Parze');
   }
 
+  // Limit Ludzkiej Flagi: tylko jedna w zestawie
   if (hasFlagAlready) {
     pool = pool.filter(ex => !ex.nazwa.toLowerCase().includes('flaga'));
   }
 
   const zoneEquip = zone.przypisany_sprzet || [];
 
+  // Specyficzne filtry dla stref
   if (zone.id === 'Strefa_Wolna_Przestrzen') {
     pool = pool.filter(ex => {
       const equip = getEquipmentString(ex);
+      // Wykluczamy sprzęt montowany na stałe ze środka podłogi
       const forbidden = ['drążki', 'drabinki', 'kółka gimnastyczne', 'ściany'];
       return !forbidden.some(f => equip.includes(f));
     });
@@ -98,9 +103,14 @@ export const getValidExercisesForZone = (
     pool = pool.filter(ex => {
       const equip = getEquipmentString(ex);
       const name = ex.nazwa.toLowerCase();
-      const forbiddenTerms = ['drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 'bosu', 'piłka gimnastyczna', 'piłki gimnastyczne', 'nunczako'];
+      // Moduł 0: brak dużego sprzętu i drążków
+      const forbiddenTerms = [
+        'drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 
+        'bosu', 'piłka gimnastyczna', 'piłki gimnastyczne', 'nunczako'
+      ];
       const hasForbidden = forbiddenTerms.some(term => equip.includes(term) || name.includes(term));
       if (hasForbidden) return false;
+      // Wykluczamy PULL i DYNAMIKĘ ze startu dla płynności grupy
       if (ex.segment_id === 1 || ex.segment_id === 6) return false;
       return true;
     });
@@ -151,12 +161,14 @@ export const useAppStore = create<AppState>()(
         const allZones = ROOM_CONFIG.strefy;
         const selectedZones: Zone[] = [];
 
+        // Moduły stałe dla startu
         const mod0 = allZones.find(z => z.id === 'Strefa_Modul_0');
         if (mod0) selectedZones.push(mod0);
 
         const mod1 = allZones.find(z => z.id === 'Strefa_Modul_1');
         if (mod1 && stationCount > 1) selectedZones.push(mod1);
 
+        // Losowanie pozostałych stacji
         while (selectedZones.length < stationCount) {
           const currentCounts = selectedZones.reduce((acc, z) => {
             acc[z.id] = (acc[z.id] || 0) + 1;
@@ -174,9 +186,15 @@ export const useAppStore = create<AppState>()(
             if (z.id === 'Strefa_Modul_0' || z.id === 'Strefa_Modul_1') return;
             const current = currentCounts[z.id] || 0;
             
-            // Jeśli mamy pary, ograniczamy każdy moduł do max 1 stacji (z wyjątkiem ewentualnie podłogi, ale user chce limitu ogólnego)
-            const baseCap = isPairMode ? 1 : (z.pojemnosc_stacji || 1);
-            const cap = z.id === 'Strefa_Wolna_Przestrzen' ? (isPairMode ? Math.min(floorLimit, 2) : floorLimit) : baseCap;
+            let cap = z.pojemnosc_stacji || 1;
+            if (z.id === 'Strefa_Wolna_Przestrzen') {
+              cap = floorLimit;
+            } else if (z.id === 'Strefa_Sciana') {
+              cap = 2; // Ściana ma 2 fizyczne sloty
+            } else if (isPairMode && (z.id.startsWith('Strefa_Modul') || z.id === 'Strefa_Drabinki' || z.id === 'Strefa_Kolka')) {
+              // W trybie par stałe moduły sprzętowe tylko 1x (zajmują cały pion)
+              cap = 1;
+            }
             
             if (current < cap) candidates.push(z);
           });
