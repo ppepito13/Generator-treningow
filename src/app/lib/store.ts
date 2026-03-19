@@ -207,32 +207,24 @@ export const useAppStore = create<AppState>()(
         selectedZones.forEach((zone, idx) => {
           const isThisStationPair = idx < numDoubleStations;
           
-          // Logika regresji poziomu
           let currentRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
-          
-          // Co 3. stacja (nr 3 i 6) jest lżejsza, jeśli nie jest włączony tryb ścisły
           const isBreatherStation = !isStrictDifficulty && (idx + 1) % 3 === 0;
           
           if (isBreatherStation) {
-            // Regresja o 2 punkty w dół od minimum obecnego poziomu
             currentRange = {
               min: Math.max(1, mainDiff.min_poziom - 2),
               max: Math.max(1, mainDiff.min_poziom - 1)
             };
           }
 
-          const pool = getValidExercisesForZone(zone, currentRange, usedIds, isThisStationPair, undefined, false, hasFlagAlready);
+          let pool = getValidExercisesForZone(zone, currentRange, usedIds, isThisStationPair, undefined, false, hasFlagAlready);
           
           if (pool.length === 0) {
-            // Backup do głównego poziomu jeśli w regresji nic nie ma
-            const backupPool = getValidExercisesForZone(zone, { min: mainDiff.min_poziom, max: mainDiff.max_poziom }, new Set(), isThisStationPair, undefined, true, hasFlagAlready);
-            if (backupPool.length > 0) {
-              const exA = backupPool[Math.floor(Math.random() * backupPool.length)];
-              if (exA.nazwa.toLowerCase().includes('flaga')) hasFlagAlready = true;
-              generated.push({ id: `st-${idx}-${Date.now()}-${Math.random()}`, zone, exerciseA: exA, isPair: isThisStationPair });
-            }
-            return;
+            // Backup do głównego poziomu jeśli w regresji nic nie ma, ale NADAL sprawdzamy usedIds
+            pool = getValidExercisesForZone(zone, { min: mainDiff.min_poziom, max: mainDiff.max_poziom }, usedIds, isThisStationPair, undefined, false, hasFlagAlready);
           }
+
+          if (pool.length === 0) return;
 
           const exA = pool[Math.floor(Math.random() * pool.length)];
           usedIds.add(exA.id_cwiczenia);
@@ -278,12 +270,27 @@ export const useAppStore = create<AppState>()(
         const station = circuit[stationIndex];
 
         const mainDiff = getDifficultyById(difficultyId);
-        const usedIds = new Set(circuit.flatMap(s => [s.exerciseA.id_cwiczenia, s.exerciseB?.id_cwiczenia].filter(Boolean)));
+        
+        // Budujemy listę użytych ID wykluczając to, które właśnie zmieniamy
+        const usedIds = new Set<string>();
+        circuit.forEach(s => {
+          if (s.id !== stationId) {
+            usedIds.add(s.exerciseA.id_cwiczenia);
+            if (s.exerciseB) usedIds.add(s.exerciseB.id_cwiczenia);
+          } else {
+            if (type === 'A' && s.exerciseB && s.exerciseB.id_cwiczenia !== s.exerciseA.id_cwiczenia) {
+              usedIds.add(s.exerciseB.id_cwiczenia);
+            }
+            if (type === 'B') {
+              usedIds.add(s.exerciseA.id_cwiczenia);
+            }
+          }
+        });
+
         const hasFlagAlready = circuit.some(s => 
           s.id !== stationId && (s.exerciseA.nazwa.toLowerCase().includes('flaga') || s.exerciseB?.nazwa.toLowerCase().includes('flaga'))
         );
 
-        // Zachowujemy intencję poziomu stacji (czy była regresyjna czy nie)
         const isCurrentlyBreather = !isStrictDifficulty && (stationIndex + 1) % 3 === 0;
         let currentRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
         if (isCurrentlyBreather) {
@@ -294,7 +301,11 @@ export const useAppStore = create<AppState>()(
         }
 
         if (type === 'A') {
-          const pool = getValidExercisesForZone(station.zone, currentRange, usedIds, station.isPair, segmentId, false, hasFlagAlready);
+          let pool = getValidExercisesForZone(station.zone, currentRange, usedIds, station.isPair, segmentId, false, hasFlagAlready);
+          if (pool.length === 0) {
+            pool = getValidExercisesForZone(station.zone, { min: mainDiff.min_poziom, max: mainDiff.max_poziom }, usedIds, station.isPair, segmentId, false, hasFlagAlready);
+          }
+          
           if (pool.length === 0) return;
           const newExA = pool[Math.floor(Math.random() * pool.length)];
           
@@ -353,7 +364,14 @@ export const useAppStore = create<AppState>()(
         if (!newZone) return;
 
         const mainDiff = getDifficultyById(difficultyId);
-        const usedExerciseIds = new Set(circuit.flatMap(s => s.id !== stationId ? [s.exerciseA.id_cwiczenia, s.exerciseB?.id_cwiczenia].filter(Boolean) : []));
+        const usedExerciseIds = new Set<string>();
+        circuit.forEach(s => {
+          if (s.id !== stationId) {
+            usedExerciseIds.add(s.exerciseA.id_cwiczenia);
+            if (s.exerciseB) usedExerciseIds.add(s.exerciseB.id_cwiczenia);
+          }
+        });
+
         const hasFlagAlready = circuit.some(s => 
           s.id !== stationId && (s.exerciseA.nazwa.toLowerCase().includes('flaga') || s.exerciseB?.nazwa.toLowerCase().includes('flaga'))
         );
@@ -367,7 +385,11 @@ export const useAppStore = create<AppState>()(
           };
         }
 
-        const pool = getValidExercisesForZone(newZone, currentRange, usedExerciseIds, circuit[stationIndex].isPair, undefined, false, hasFlagAlready);
+        let pool = getValidExercisesForZone(newZone, currentRange, usedExerciseIds, circuit[stationIndex].isPair, undefined, false, hasFlagAlready);
+        if (pool.length === 0) {
+          pool = getValidExercisesForZone(newZone, { min: mainDiff.min_poziom, max: mainDiff.max_poziom }, usedExerciseIds, circuit[stationIndex].isPair, undefined, false, hasFlagAlready);
+        }
+        
         if (pool.length === 0) return;
 
         const exA = pool[Math.floor(Math.random() * pool.length)];
