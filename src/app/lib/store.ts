@@ -15,12 +15,14 @@ interface AppState {
   participants: number;
   stationCount: number;
   difficultyId: string;
+  isStrictDifficulty: boolean;
   circuit: Station[];
   isGenerated: boolean;
   
   setParticipants: (val: number) => void;
   setStationCount: (val: number) => void;
   setDifficulty: (id: string) => void;
+  setStrictDifficulty: (val: boolean) => void;
   generateCircuit: () => void;
   rerollExercise: (stationId: string, type: 'A' | 'B', segmentId?: number) => void;
   changeStationZone: (stationId: string, newZoneId: string) => void;
@@ -47,21 +49,20 @@ const canExerciseBeShared = (ex: Exercise): boolean => {
   return true;
 };
 
-// Naturalny ruch wskazówek zegara na sali Balaton
 const zoneOrder = [
-  'Strefa_Modul_0',           // Start (Ściana wejściowa)
-  'Strefa_Modul_1',           // Klatka Lewa
-  'Strefa_Modul_2',           // Klatka Środek
-  'Strefa_Modul_3',           // Klatka Prawa
-  'Strefa_Kolka',             // Kółka
-  'Strefa_Sciana',            // Ściana czysta (przed drabinkami boczny dla lepszego flow)
-  'Strefa_Drabinki',          // Drabinki boczne
-  'Strefa_Wolna_Przestrzen'   // Podłoga (środek)
+  'Strefa_Modul_0',
+  'Strefa_Modul_1',
+  'Strefa_Modul_2',
+  'Strefa_Modul_3',
+  'Strefa_Kolka',
+  'Strefa_Sciana',
+  'Strefa_Drabinki',
+  'Strefa_Wolna_Przestrzen'
 ];
 
 export const getValidExercisesForZone = (
   zone: Zone, 
-  diff: DifficultyLevel, 
+  diffRange: { min: number, max: number }, 
   usedIds: Set<string>,
   isThisStationPair: boolean,
   segmentId?: number,
@@ -69,7 +70,7 @@ export const getValidExercisesForZone = (
   hasFlagAlready: boolean = false
 ): Exercise[] => {
   let pool = ALL_EXERCISES.filter(ex => 
-    ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
+    ex.poziom >= diffRange.min && ex.poziom <= diffRange.max &&
     (ignoreUsed ? true : !usedIds.has(ex.id_cwiczenia))
   );
 
@@ -77,23 +78,19 @@ export const getValidExercisesForZone = (
     pool = pool.filter(ex => ex.segment_id === segmentId);
   }
 
-  // Filtr stacji podwójnych: tylko dla nich pozwalamy na segment PARTNER lub tryb W_Parze
   if (!isThisStationPair) {
     pool = pool.filter(ex => ex.segment_id !== 8 && ex.tryb_pracy !== 'W_Parze');
   }
 
-  // Limit Ludzkiej Flagi: tylko jedna w zestawie
   if (hasFlagAlready) {
     pool = pool.filter(ex => !ex.nazwa.toLowerCase().includes('flaga'));
   }
 
   const zoneEquip = zone.przypisany_sprzet || [];
 
-  // Specyficzne filtry dla stref
   if (zone.id === 'Strefa_Wolna_Przestrzen') {
     pool = pool.filter(ex => {
       const equip = getEquipmentString(ex);
-      // Wykluczamy sprzęt montowany na stałe ze środka podłogi
       const forbidden = ['drążki', 'drabinki', 'kółka gimnastyczne', 'ściany'];
       return !forbidden.some(f => equip.includes(f));
     });
@@ -103,14 +100,12 @@ export const getValidExercisesForZone = (
     pool = pool.filter(ex => {
       const equip = getEquipmentString(ex);
       const name = ex.nazwa.toLowerCase();
-      // Moduł 0: brak dużego sprzętu i drążków
       const forbiddenTerms = [
         'drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 
         'bosu', 'piłka gimnastyczna', 'piłki gimnastyczne', 'nunczako'
       ];
       const hasForbidden = forbiddenTerms.some(term => equip.includes(term) || name.includes(term));
       if (hasForbidden) return false;
-      // Wykluczamy PULL i DYNAMIKĘ ze startu dla płynności grupy
       if (ex.segment_id === 1 || ex.segment_id === 6) return false;
       return true;
     });
@@ -137,6 +132,7 @@ export const useAppStore = create<AppState>()(
       participants: 8,
       stationCount: 7,
       difficultyId: 'baza_silowa_standard',
+      isStrictDifficulty: false,
       circuit: [],
       isGenerated: false,
 
@@ -151,24 +147,23 @@ export const useAppStore = create<AppState>()(
 
       setStationCount: (val) => set({ stationCount: val }),
       setDifficulty: (id) => set({ difficultyId: id }),
+      setStrictDifficulty: (val) => set({ isStrictDifficulty: val }),
 
       generateCircuit: () => {
-        const { participants, difficultyId, stationCount } = get();
-        const diff = getDifficultyById(difficultyId);
+        const { participants, difficultyId, stationCount, isStrictDifficulty } = get();
+        const mainDiff = getDifficultyById(difficultyId);
         const numDoubleStations = participants - stationCount;
         const isPairMode = participants > stationCount;
 
         const allZones = ROOM_CONFIG.strefy;
         const selectedZones: Zone[] = [];
 
-        // Moduły stałe dla startu
         const mod0 = allZones.find(z => z.id === 'Strefa_Modul_0');
         if (mod0) selectedZones.push(mod0);
 
         const mod1 = allZones.find(z => z.id === 'Strefa_Modul_1');
         if (mod1 && stationCount > 1) selectedZones.push(mod1);
 
-        // Losowanie pozostałych stacji
         while (selectedZones.length < stationCount) {
           const currentCounts = selectedZones.reduce((acc, z) => {
             acc[z.id] = (acc[z.id] || 0) + 1;
@@ -190,9 +185,8 @@ export const useAppStore = create<AppState>()(
             if (z.id === 'Strefa_Wolna_Przestrzen') {
               cap = floorLimit;
             } else if (z.id === 'Strefa_Sciana') {
-              cap = 2; // Ściana ma 2 fizyczne sloty
+              cap = 2;
             } else if (isPairMode && (z.id.startsWith('Strefa_Modul') || z.id === 'Strefa_Drabinki' || z.id === 'Strefa_Kolka')) {
-              // W trybie par stałe moduły sprzętowe tylko 1x (zajmują cały pion)
               cap = 1;
             }
             
@@ -212,10 +206,26 @@ export const useAppStore = create<AppState>()(
 
         selectedZones.forEach((zone, idx) => {
           const isThisStationPair = idx < numDoubleStations;
-          const pool = getValidExercisesForZone(zone, diff, usedIds, isThisStationPair, undefined, false, hasFlagAlready);
+          
+          // Logika regresji poziomu
+          let currentRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
+          
+          // Co 3. stacja (nr 3 i 6) jest lżejsza, jeśli nie jest włączony tryb ścisły
+          const isBreatherStation = !isStrictDifficulty && (idx + 1) % 3 === 0;
+          
+          if (isBreatherStation) {
+            // Regresja o 2 punkty w dół od minimum obecnego poziomu
+            currentRange = {
+              min: Math.max(1, mainDiff.min_poziom - 2),
+              max: Math.max(1, mainDiff.min_poziom - 1)
+            };
+          }
+
+          const pool = getValidExercisesForZone(zone, currentRange, usedIds, isThisStationPair, undefined, false, hasFlagAlready);
           
           if (pool.length === 0) {
-            const backupPool = getValidExercisesForZone(zone, diff, new Set(), isThisStationPair, undefined, true, hasFlagAlready);
+            // Backup do głównego poziomu jeśli w regresji nic nie ma
+            const backupPool = getValidExercisesForZone(zone, { min: mainDiff.min_poziom, max: mainDiff.max_poziom }, new Set(), isThisStationPair, undefined, true, hasFlagAlready);
             if (backupPool.length > 0) {
               const exA = backupPool[Math.floor(Math.random() * backupPool.length)];
               if (exA.nazwa.toLowerCase().includes('flaga')) hasFlagAlready = true;
@@ -236,7 +246,7 @@ export const useAppStore = create<AppState>()(
               const potentialB = ALL_EXERCISES.filter(ex => 
                 ex.id_cwiczenia !== exA.id_cwiczenia &&
                 !usedIds.has(ex.id_cwiczenia) &&
-                ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
+                ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
                 ex.glowne_partie.some(p => exA.glowne_partie.includes(p)) &&
                 (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
                 ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
@@ -262,19 +272,29 @@ export const useAppStore = create<AppState>()(
       },
 
       rerollExercise: (stationId, type, segmentId) => {
-        const { circuit, difficultyId } = get();
+        const { circuit, difficultyId, isStrictDifficulty } = get();
         const stationIndex = circuit.findIndex(s => s.id === stationId);
         if (stationIndex === -1) return;
         const station = circuit[stationIndex];
 
-        const diff = getDifficultyById(difficultyId);
+        const mainDiff = getDifficultyById(difficultyId);
         const usedIds = new Set(circuit.flatMap(s => [s.exerciseA.id_cwiczenia, s.exerciseB?.id_cwiczenia].filter(Boolean)));
         const hasFlagAlready = circuit.some(s => 
           s.id !== stationId && (s.exerciseA.nazwa.toLowerCase().includes('flaga') || s.exerciseB?.nazwa.toLowerCase().includes('flaga'))
         );
 
+        // Zachowujemy intencję poziomu stacji (czy była regresyjna czy nie)
+        const isCurrentlyBreather = !isStrictDifficulty && (stationIndex + 1) % 3 === 0;
+        let currentRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
+        if (isCurrentlyBreather) {
+          currentRange = {
+            min: Math.max(1, mainDiff.min_poziom - 2),
+            max: Math.max(1, mainDiff.min_poziom - 1)
+          };
+        }
+
         if (type === 'A') {
-          const pool = getValidExercisesForZone(station.zone, diff, usedIds, station.isPair, segmentId, false, hasFlagAlready);
+          const pool = getValidExercisesForZone(station.zone, currentRange, usedIds, station.isPair, segmentId, false, hasFlagAlready);
           if (pool.length === 0) return;
           const newExA = pool[Math.floor(Math.random() * pool.length)];
           
@@ -286,7 +306,7 @@ export const useAppStore = create<AppState>()(
               const potentialB = ALL_EXERCISES.filter(ex => 
                 ex.id_cwiczenia !== newExA.id_cwiczenia &&
                 !usedIds.has(ex.id_cwiczenia) &&
-                ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
+                ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
                 ex.glowne_partie.some(p => newExA.glowne_partie.includes(p)) &&
                 (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
                 ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
@@ -302,7 +322,7 @@ export const useAppStore = create<AppState>()(
           const pool = ALL_EXERCISES.filter(ex => 
             ex.id_cwiczenia !== station.exerciseA.id_cwiczenia &&
             !usedIds.has(ex.id_cwiczenia) &&
-            ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
+            ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
             ex.glowne_partie.some(p => station.exerciseA.glowne_partie.includes(p)) &&
             (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
             ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
@@ -325,20 +345,29 @@ export const useAppStore = create<AppState>()(
       },
 
       changeStationZone: (stationId, newZoneId) => {
-        const { circuit, difficultyId } = get();
+        const { circuit, difficultyId, isStrictDifficulty } = get();
         const stationIndex = circuit.findIndex(s => s.id === stationId);
         if (stationIndex === -1) return;
 
         const newZone = ROOM_CONFIG.strefy.find(z => z.id === newZoneId);
         if (!newZone) return;
 
-        const diff = getDifficultyById(difficultyId);
+        const mainDiff = getDifficultyById(difficultyId);
         const usedExerciseIds = new Set(circuit.flatMap(s => s.id !== stationId ? [s.exerciseA.id_cwiczenia, s.exerciseB?.id_cwiczenia].filter(Boolean) : []));
         const hasFlagAlready = circuit.some(s => 
           s.id !== stationId && (s.exerciseA.nazwa.toLowerCase().includes('flaga') || s.exerciseB?.nazwa.toLowerCase().includes('flaga'))
         );
 
-        const pool = getValidExercisesForZone(newZone, diff, usedExerciseIds, circuit[stationIndex].isPair, undefined, false, hasFlagAlready);
+        const isCurrentlyBreather = !isStrictDifficulty && (stationIndex + 1) % 3 === 0;
+        let currentRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
+        if (isCurrentlyBreather) {
+          currentRange = {
+            min: Math.max(1, mainDiff.min_poziom - 2),
+            max: Math.max(1, mainDiff.min_poziom - 1)
+          };
+        }
+
+        const pool = getValidExercisesForZone(newZone, currentRange, usedExerciseIds, circuit[stationIndex].isPair, undefined, false, hasFlagAlready);
         if (pool.length === 0) return;
 
         const exA = pool[Math.floor(Math.random() * pool.length)];
@@ -351,7 +380,7 @@ export const useAppStore = create<AppState>()(
             const potentialB = ALL_EXERCISES.filter(ex => 
               ex.id_cwiczenia !== exA.id_cwiczenia &&
               !usedExerciseIds.has(ex.id_cwiczenia) &&
-              ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
+              ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
               ex.glowne_partie.some(p => exA.glowne_partie.includes(p)) &&
               (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
               ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8

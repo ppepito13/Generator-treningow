@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -5,9 +6,10 @@ import { useAppStore } from '@/app/lib/store';
 import { DIFFICULTY_LEVELS } from '@/app/lib/data';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Plus, Minus, Zap, Trophy, LayoutGrid } from 'lucide-react';
+import { Plus, Minus, Zap, Trophy, LayoutGrid, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 
 export const ConfigurationForm = () => {
   const { 
@@ -17,7 +19,9 @@ export const ConfigurationForm = () => {
     setDifficulty, 
     generateCircuit,
     stationCount,
-    setStationCount 
+    setStationCount,
+    isStrictDifficulty,
+    setStrictDifficulty
   } = useAppStore();
 
   const currentDiff = DIFFICULTY_LEVELS.find(d => d.id === difficultyId);
@@ -118,6 +122,24 @@ export const ConfigurationForm = () => {
               ))}
             </SelectContent>
           </Select>
+          
+          {/* Nowy przełącznik Trybu Ścisłego */}
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 transition-all">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                {isStrictDifficulty ? <ShieldAlert className="h-4 w-4 text-primary" /> : <ShieldCheck className="h-4 w-4 text-secondary" />}
+                <span className="text-sm font-bold uppercase tracking-tighter">Tryb Ścisły</span>
+              </div>
+              <span className="text-[10px] text-muted-foreground leading-none">
+                {isStrictDifficulty ? "Tylko wybrany poziom (max intensywność)" : "Zezwalaj na lżejsze stacje techniczne"}
+              </span>
+            </div>
+            <Switch 
+              checked={isStrictDifficulty} 
+              onCheckedChange={setStrictDifficulty}
+            />
+          </div>
+
           {currentDiff && (
             <div className="p-3 rounded-xl bg-white/5 border border-white/5 text-[10px] text-muted-foreground leading-relaxed">
               <Trophy className="h-3 w-3 text-secondary inline mb-1 mr-1" />
