@@ -36,7 +36,6 @@ const canExerciseBeShared = (ex: Exercise): boolean => {
   const req = getEquipmentString(ex);
   if (req.includes('brak') || req.includes('masa ciała') || req.includes('maty')) return true;
   
-  // Szukamy w inwentarzu sali
   const itemKey = Object.keys(ROOM_CONFIG.inwentarz).find(k => req.includes(k.toLowerCase()));
   if (itemKey) {
     const count = (ROOM_CONFIG.inwentarz as any)[itemKey] || 0;
@@ -57,56 +56,43 @@ const getValidExercisesForZone = (
     !usedIds.has(ex.id_cwiczenia)
   );
 
-  // Filtr trybu Solo/Para
   if (!isPairMode) {
     pool = pool.filter(ex => ex.segment_nazwa !== 'PARTNER' && ex.tryb_pracy !== 'W_Parze');
   }
 
-  const reqStr = (ex: Exercise) => getEquipmentString(ex);
-
-  // Specyficzne ograniczenia dla Ściany Startowej (Moduł 0)
   if (zone.id === 'Strefa_Modul_0') {
     pool = pool.filter(ex => {
-      // Wykluczamy sprzęt niebezpieczny w ciasnej strefie wejścia
+      const equipment = getEquipmentString(ex);
+      const nameAndInst = (ex.nazwa + " " + ex.instrukcja).toLowerCase();
+      
       const forbiddenTerms = [
-        'drążek', 
-        'drążki', 
-        'drabink', 
-        'kółka gimnastyczne', 
-        'bosu', 
-        'piłka gimnastyczna', 
-        'piłki gimnastyczne', 
-        'pull', 
-        'nunczako'
+        'drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 
+        'bosu', 'piłka gimnastyczna', 'piłki gimnastyczne', 
+        'pull', 'nunczako'
       ];
+      
       const hasForbidden = forbiddenTerms.some(term => 
-        reqStr(ex).includes(term) || 
+        equipment.includes(term) || 
         ex.segment_nazwa.toLowerCase().includes(term)
       );
       if (hasForbidden) return false;
 
-      // Wyjątek dla ćwiczeń ściennych/tarczowych (np. Wall Ball) mimo blokady dynamiki
-      const isWallOrTarget = ex.nazwa.toLowerCase().includes('ścian') || 
-                             ex.instrukcja.toLowerCase().includes('ścian') ||
-                             ex.nazwa.toLowerCase().includes('tarcze') ||
-                             ex.instrukcja.toLowerCase().includes('tarcze');
-
+      const isWallExercise = nameAndInst.includes('ścian') || nameAndInst.includes('tarcz');
       const isHighIntensity = ex.segment_nazwa === 'DYNAMIKA' || ex.kategorie_treningu.includes('Moc');
-      if (isHighIntensity && !isWallOrTarget) return false;
+      
+      if (isHighIntensity && !isWallExercise) return false;
 
       return true;
     });
   }
 
-  // Zakaz pełnego obrotu na środkowym drążku
   if (zone.id === 'Strefa_Modul_2') {
     pool = pool.filter(ex => !ex.tagi_specjalne.includes('Pełen Obrót'));
   }
 
-  // Sztywne filtry sprzętowe dla stref technicznych
   if (zone.przypisany_sprzet && zone.przypisany_sprzet.length > 0) {
     pool = pool.filter(ex => {
-      const equipment = reqStr(ex);
+      const equipment = getEquipmentString(ex);
       return zone.przypisany_sprzet?.some(item => equipment.includes(item.toLowerCase()));
     });
   }
@@ -126,10 +112,9 @@ export const useAppStore = create<AppState>()(
       setParticipants: (val) => {
         const newParticipants = Math.min(Math.max(val, 1), 14);
         const maxStations = Math.min(newParticipants, 7);
-        
         set({ 
           participants: newParticipants,
-          stationCount: maxStations // Domyślnie sugerujemy max stacji dla komfortu
+          stationCount: Math.min(get().stationCount, maxStations) || maxStations
         });
       },
 
@@ -145,17 +130,13 @@ export const useAppStore = create<AppState>()(
         const availableZones = [...ROOM_CONFIG.strefy];
         const selectedZones: Zone[] = [];
 
-        // Routing: Stacja 1 i 2 bazowo stałe
         const mod0 = availableZones.find(z => z.id === 'Strefa_Modul_0');
-        const mod1 = availableZones.find(z => z.id === 'Strefa_Modul_1');
         if (mod0) selectedZones.push(mod0);
-        if (mod1 && stationCount > 1) selectedZones.push(mod1);
 
-        const restZones = availableZones.filter(z => z.id !== 'Strefa_Modul_0' && z.id !== 'Strefa_Modul_1');
+        const restZones = availableZones.filter(z => z.id !== 'Strefa_Modul_0' && z.id !== 'Strefa_Wolna_Przestrzen');
         let freeSpaceCapacity = ROOM_CONFIG.strefy.find(z => z.id === 'Strefa_Wolna_Przestrzen')?.bazowa_pojemnosc_stacji || 3;
         
         const poolToPickFrom = [...restZones];
-        
         while (selectedZones.length < stationCount) {
           if (poolToPickFrom.length > 0) {
             const randomIndex = Math.floor(Math.random() * poolToPickFrom.length);
@@ -170,7 +151,7 @@ export const useAppStore = create<AppState>()(
           } else break;
         }
 
-        // LOGIKA FLOW: Sortowanie stref wg fizycznej kolejności na sali (Anti-clockwise)
+        // FLOW SALI: Ściana -> Klatka L -> Klatka Ś -> Klatka P -> Kółka -> Drabinki -> Ściana Czysta -> Środek
         const zoneOrder = [
           'Strefa_Modul_0',
           'Strefa_Modul_1',
@@ -193,7 +174,6 @@ export const useAppStore = create<AppState>()(
           if (pool.length === 0) return;
 
           const exA = pool[Math.floor(Math.random() * pool.length)];
-          if (!exA) return;
           usedIds.add(exA.id_cwiczenia);
 
           let exB: Exercise | undefined = undefined;
@@ -209,7 +189,7 @@ export const useAppStore = create<AppState>()(
                 (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty'))
               );
               exB = potentialB[Math.floor(Math.random() * potentialB.length)] || exA;
-              if (exB) usedIds.add(exB.id_cwiczenia);
+              if (exB && exB.id_cwiczenia !== exA.id_cwiczenia) usedIds.add(exB.id_cwiczenia);
             }
           }
 
