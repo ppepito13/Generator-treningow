@@ -151,15 +151,16 @@ export const useAppStore = create<AppState>()(
           } else break;
         }
 
-        // FLOW SALI: Ściana -> Klatka L -> Klatka Ś -> Klatka P -> Kółka -> Drabinki -> Ściana Czysta -> Środek
+        // FLOW SALI: Ściana -> Klatka L -> Klatka Ś -> Klatka P -> Kółka -> Ściana Czysta -> Drabinki -> Środek
+        // Uzasadnienie: Ściana Czysta musi być przed Drabinkami, aby po drabinkach nie było ściany (zachowanie płynności ruchu)
         const zoneOrder = [
           'Strefa_Modul_0',
           'Strefa_Modul_1',
           'Strefa_Modul_2',
           'Strefa_Modul_3',
           'Strefa_Kolka',
-          'Strefa_Drabinki',
           'Strefa_Sciana',
+          'Strefa_Drabinki',
           'Strefa_Wolna_Przestrzen'
         ];
         selectedZones.sort((a, b) => zoneOrder.indexOf(a.id) - zoneOrder.indexOf(b.id));
