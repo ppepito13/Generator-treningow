@@ -1,9 +1,9 @@
 "use client";
 
 import React from 'react';
-import { Station, Exercise } from '@/app/lib/data';
+import { Station, Exercise, SEGMENTS } from '@/app/lib/data';
 import { useAppStore } from '@/app/lib/store';
-import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity } from 'lucide-react';
+import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,6 +12,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Props {
   station: Station;
@@ -20,8 +28,8 @@ interface Props {
 export const StationCard = ({ station }: Props) => {
   const { rerollExercise } = useAppStore();
 
-  const handleReroll = (type: 'A' | 'B') => {
-    rerollExercise(station.id, type);
+  const handleReroll = (type: 'A' | 'B', segmentId?: number) => {
+    rerollExercise(station.id, type, segmentId);
   };
 
   const isShared = station.exerciseB && station.exerciseB.id_cwiczenia === station.exerciseA.id_cwiczenia;
@@ -30,7 +38,7 @@ export const StationCard = ({ station }: Props) => {
     if (Array.isArray(ex.wymagany_sprzet)) {
       return ex.wymagany_sprzet.join(", ");
     }
-    return ex.wymagany_sprzet;
+    return String(ex.wymagany_sprzet || "");
   };
 
   const getMusclesDisplay = (ex: Exercise) => {
@@ -64,7 +72,7 @@ export const StationCard = ({ station }: Props) => {
                 <Info className="h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="glass-card border-white/10 text-white sm:max-w-md outline-none">
+            <DialogContent className="glass-card border-white/10 text-white sm:max-w-md outline-none max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-primary flex flex-col items-start gap-1">
                   <div className="flex items-center gap-2 text-xl font-bold">
@@ -129,14 +137,39 @@ export const StationCard = ({ station }: Props) => {
             </DialogContent>
           </Dialog>
           
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => handleReroll(type)}
-            className={`h-8 w-8 rounded-lg glass-button ${shared ? 'text-primary' : type === 'B' ? 'text-secondary' : 'text-primary'}`}
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={`h-8 w-8 rounded-lg glass-button group ${shared ? 'text-primary' : type === 'B' ? 'text-secondary' : 'text-primary'}`}
+              >
+                <RefreshCw className="h-4 w-4 transition-transform group-hover:rotate-180" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="glass-card border-white/10 text-white min-w-[180px] z-[100]">
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Zmień Ćwiczenie</DropdownMenuLabel>
+              <DropdownMenuItem 
+                onClick={() => handleReroll(type)}
+                className="text-xs font-bold focus:bg-primary focus:text-primary-foreground cursor-pointer py-2.5"
+              >
+                Losuj dowolne
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-white/5" />
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Wybierz segment...</DropdownMenuLabel>
+              <div className="grid grid-cols-1 gap-0.5">
+                {SEGMENTS.map(seg => (
+                  <DropdownMenuItem 
+                    key={seg.id} 
+                    onClick={() => handleReroll(type, seg.id)}
+                    className="text-xs focus:bg-primary focus:text-primary-foreground cursor-pointer py-2"
+                  >
+                    {seg.nazwa}
+                  </DropdownMenuItem>
+                ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       

@@ -21,7 +21,7 @@ interface AppState {
   setStationCount: (val: number) => void;
   setDifficulty: (id: string) => void;
   generateCircuit: () => void;
-  rerollExercise: (stationId: string, type: 'A' | 'B') => void;
+  rerollExercise: (stationId: string, type: 'A' | 'B', segmentId?: number) => void;
   reset: () => void;
 }
 
@@ -49,38 +49,37 @@ const getValidExercisesForZone = (
   zone: Zone, 
   diff: DifficultyLevel, 
   usedIds: Set<string>,
-  isPairMode: boolean
+  isPairMode: boolean,
+  segmentId?: number
 ): Exercise[] => {
   let pool = ALL_EXERCISES.filter(ex => 
     ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
     !usedIds.has(ex.id_cwiczenia)
   );
 
+  if (segmentId !== undefined) {
+    pool = pool.filter(ex => ex.segment_id === segmentId);
+  }
+
   if (!isPairMode) {
-    pool = pool.filter(ex => ex.segment_nazwa !== 'PARTNER' && ex.tryb_pracy !== 'W_Parze');
+    pool = pool.filter(ex => ex.segment_id !== 8 && ex.tryb_pracy !== 'W_Parze');
   }
 
   if (zone.id === 'Strefa_Modul_0') {
     pool = pool.filter(ex => {
       const equipment = getEquipmentString(ex);
-      const nameAndInst = (ex.nazwa + " " + ex.instrukcja).toLowerCase();
-      
-      const forbiddenTerms = [
-        'drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 
-        'bosu', 'piłka gimnastyczna', 'piłki gimnastyczne', 
-        'pull', 'nunczako'
-      ];
-      
+      const forbiddenTerms = ['drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 'bosu', 'piłka gimnastyczna', 'piłki gimnastyczne', 'pull', 'nunczako'];
       const hasForbidden = forbiddenTerms.some(term => 
         equipment.includes(term) || 
         ex.segment_nazwa.toLowerCase().includes(term)
       );
       if (hasForbidden) return false;
 
-      const isWallExercise = nameAndInst.includes('ścian') || nameAndInst.includes('tarcz');
-      const isHighIntensity = ex.segment_nazwa === 'DYNAMIKA' || ex.kategorie_treningu.includes('Moc');
+      const isWallOrShield = (ex.nazwa + " " + ex.instrukcja).toLowerCase().includes('ścian') || 
+                             (ex.nazwa + " " + ex.instrukcja).toLowerCase().includes('tarcz');
       
-      if (isHighIntensity && !isWallExercise) return false;
+      const isHighIntensity = ex.segment_id === 6 || ex.kategorie_treningu.includes('Moc');
+      if (isHighIntensity && !isWallOrShield) return false;
 
       return true;
     });
@@ -151,8 +150,6 @@ export const useAppStore = create<AppState>()(
           } else break;
         }
 
-        // FLOW SALI: Ściana -> Klatka L -> Klatka Ś -> Klatka P -> Kółka -> Ściana Czysta -> Drabinki -> Środek
-        // Uzasadnienie: Ściana Czysta musi być przed Drabinkami, aby po drabinkach nie było ściany (zachowanie płynności ruchu)
         const zoneOrder = [
           'Strefa_Modul_0',
           'Strefa_Modul_1',
@@ -206,7 +203,7 @@ export const useAppStore = create<AppState>()(
         set({ circuit: generated, isGenerated: true });
       },
 
-      rerollExercise: (stationId, type) => {
+      rerollExercise: (stationId, type, segmentId) => {
         const { circuit, difficultyId, participants } = get();
         const stationIndex = circuit.findIndex(s => s.id === stationId);
         if (stationIndex === -1) return;
@@ -217,7 +214,7 @@ export const useAppStore = create<AppState>()(
         const isPairMode = participants > 7;
 
         if (type === 'A') {
-          const pool = getValidExercisesForZone(station.zone, diff, usedIds, isPairMode);
+          const pool = getValidExercisesForZone(station.zone, diff, usedIds, isPairMode, segmentId);
           if (pool.length === 0) return;
           const newExA = pool[Math.floor(Math.random() * pool.length)];
           
@@ -241,14 +238,18 @@ export const useAppStore = create<AppState>()(
           newCircuit[stationIndex] = { ...station, exerciseA: newExA, exerciseB: newExB };
           set({ circuit: newCircuit });
         } else if (type === 'B' && station.exerciseB) {
-          const potentialB = ALL_EXERCISES.filter(ex => 
+          const pool = ALL_EXERCISES.filter(ex => 
             ex.id_cwiczenia !== station.exerciseA.id_cwiczenia &&
             !usedIds.has(ex.id_cwiczenia) &&
             ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
             ex.glowne_partie.some(p => station.exerciseA.glowne_partie.includes(p)) &&
             (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty'))
           );
-          const newExB = potentialB[Math.floor(Math.random() * potentialB.length)];
+          
+          const filteredPool = segmentId !== undefined ? pool.filter(ex => ex.segment_id === segmentId) : pool;
+          if (filteredPool.length === 0) return;
+
+          const newExB = filteredPool[Math.floor(Math.random() * filteredPool.length)];
           if (newExB) {
             const newCircuit = [...circuit];
             newCircuit[stationIndex] = { ...station, exerciseB: newExB };
