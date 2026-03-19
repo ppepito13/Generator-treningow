@@ -3,7 +3,7 @@
 import React from 'react';
 import { Station, Exercise } from '@/app/lib/data';
 import { useAppStore } from '@/app/lib/store';
-import { RefreshCw, MapPin, Dumbbell, Info, Users } from 'lucide-react';
+import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -72,7 +72,24 @@ export const StationCard = ({ station }: Props) => {
                   </div>
                 </div>
 
-                <div className="flex gap-2 flex-wrap pt-2">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Poziom Trudności</h4>
+                    <div className="flex items-center gap-2">
+                      <Trophy className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-xs font-bold text-white/90 uppercase">Poziom {ex.poziom}/10</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Zaangażowane Mięśnie</h4>
+                    <div className="flex items-start gap-2">
+                      <Activity className="h-3.5 w-3.5 text-accent mt-0.5" />
+                      <p className="text-xs text-white/80 font-medium">{ex.zaangazowane_miesnie || "Praca ogólna"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 flex-wrap pt-2 border-t border-white/5 mt-2">
                   <span className="text-[9px] px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 uppercase font-bold">
                     {ex.segment_nazwa}
                   </span>
