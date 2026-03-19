@@ -3,7 +3,7 @@
 import React from 'react';
 import { Station, Exercise } from '@/app/lib/data';
 import { useAppStore } from '@/app/lib/store';
-import { RefreshCw, MapPin, Dumbbell, Info } from 'lucide-react';
+import { RefreshCw, MapPin, Dumbbell, Info, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -18,13 +18,18 @@ export const StationCard = ({ station }: Props) => {
     rerollExercise(station.id, type);
   };
 
-  const ExerciseSubCard = ({ ex, type }: { ex: Exercise, type: 'A' | 'B' }) => (
-    <div className={`relative p-5 rounded-2xl border transition-all ${type === 'B' ? 'bg-secondary/5 border-secondary/10' : 'bg-white/5 border-white/5'}`}>
+  const isShared = station.exerciseB && station.exerciseB.id_cwiczenia === station.exerciseA.id_cwiczenia;
+
+  const ExerciseSubCard = ({ ex, type, shared = false }: { ex: Exercise, type: 'A' | 'B', shared?: boolean }) => (
+    <div className={`relative p-5 rounded-2xl border transition-all ${shared ? 'bg-primary/5 border-primary/20' : type === 'B' ? 'bg-secondary/5 border-secondary/10' : 'bg-white/5 border-white/5'}`}>
       <div className="flex justify-between items-start gap-2">
         <div className="space-y-1">
-          <span className={`text-[10px] uppercase tracking-widest font-bold ${type === 'B' ? 'text-secondary' : 'text-primary/70'}`}>
-            {station.isPair ? `Uczestnik ${type}` : `Ćwiczenie`}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] uppercase tracking-widest font-bold ${shared ? 'text-primary' : type === 'B' ? 'text-secondary' : 'text-primary/70'}`}>
+              {shared ? "Obaj Uczestnicy" : station.isPair ? `Uczestnik ${type}` : `Ćwiczenie`}
+            </span>
+            {shared && <Users className="h-3 w-3 text-primary" />}
+          </div>
           <h3 className="text-lg font-bold leading-tight">{ex.nazwa}</h3>
         </div>
         <div className="flex gap-1">
@@ -44,7 +49,7 @@ export const StationCard = ({ station }: Props) => {
             variant="ghost" 
             size="icon" 
             onClick={() => handleReroll(type)}
-            className={`h-8 w-8 rounded-lg glass-button ${type === 'B' ? 'text-secondary' : 'text-primary'}`}
+            className={`h-8 w-8 rounded-lg glass-button ${shared ? 'text-primary' : type === 'B' ? 'text-secondary' : 'text-primary'}`}
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
@@ -52,7 +57,7 @@ export const StationCard = ({ station }: Props) => {
       </div>
       
       <div className="flex items-center gap-2 mt-3 text-xs font-bold uppercase tracking-tight text-white/80">
-        <Dumbbell className={`h-3.5 w-3.5 ${type === 'B' ? 'text-secondary' : 'text-primary'}`} />
+        <Dumbbell className={`h-3.5 w-3.5 ${shared ? 'text-primary' : type === 'B' ? 'text-secondary' : 'text-primary'}`} />
         <span>{ex.wymagany_sprzet}</span>
       </div>
 
@@ -82,14 +87,15 @@ export const StationCard = ({ station }: Props) => {
       </div>
       
       <div className="p-4 space-y-4">
-        <ExerciseSubCard ex={station.exerciseA} type="A" />
-        {station.exerciseB && station.exerciseB.id_cwiczenia !== station.exerciseA.id_cwiczenia && (
-          <ExerciseSubCard ex={station.exerciseB} type="B" />
-        )}
-        {station.exerciseB && station.exerciseB.id_cwiczenia === station.exerciseA.id_cwiczenia && (
-          <div className="p-3 rounded-xl bg-secondary/10 border border-secondary/20 text-center">
-            <p className="text-[10px] text-secondary font-bold uppercase">Praca wspólna / Synchroniczna</p>
-          </div>
+        {isShared ? (
+          <ExerciseSubCard ex={station.exerciseA} type="A" shared={true} />
+        ) : (
+          <>
+            <ExerciseSubCard ex={station.exerciseA} type="A" />
+            {station.exerciseB && (
+              <ExerciseSubCard ex={station.exerciseB} type="B" />
+            )}
+          </>
         )}
       </div>
     </div>

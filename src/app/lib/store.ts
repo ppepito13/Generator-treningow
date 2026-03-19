@@ -23,7 +23,25 @@ interface AppState {
   reset: () => void;
 }
 
-// Helper do filtrowania ćwiczeń dla konkretnej strefy i poziomu trudności
+// Helper sprawdzający, czy sprzęt pozwala na wykonanie tego samego ćwiczenia przez 2 osoby
+const canExerciseBeShared = (ex: Exercise): boolean => {
+  const req = ex.wymagany_sprzet.toLowerCase();
+  if (req.includes('brak') || req.includes('masa ciała') || req.includes('maty')) return true;
+  
+  // Lista sprzętów, których mamy tylko 1 sztukę (z sala.json)
+  const singleItems = ['kółka gimnastyczne', 'poręcze dip (v-shape)', 'kamizelka obciążeniowa', 'drabinka pozioma'];
+  const isLimited = singleItems.some(item => req.includes(item));
+  
+  // Jeśli sprzęt jest na liście limitowanej, sprawdzamy inwentarz
+  if (isLimited) {
+    const itemKey = Object.keys(ROOM_CONFIG.inwentarz).find(k => k.toLowerCase().includes(req)) || "";
+    const count = (ROOM_CONFIG.inwentarz as any)[itemKey] || 0;
+    return count >= 2;
+  }
+
+  return true;
+};
+
 const getValidExercisesForZone = (
   zone: Zone, 
   diff: DifficultyLevel, 
@@ -35,25 +53,27 @@ const getValidExercisesForZone = (
     !usedIds.has(ex.id_cwiczenia)
   );
 
-  // Reguła Solo
+  // Reguła Solo: Jeśli N <= 7, usuwamy wszystko co partnerskie
   if (!isPairMode) {
     pool = pool.filter(ex => ex.segment_nazwa !== 'PARTNER' && ex.tryb_pracy !== 'W_Parze');
   }
 
-  // Ograniczenia Modul_0 (Ściana Startowa)
+  // Ograniczenia Modul_0 (Ściana Startowa) - BRAK DRĄŻKÓW I DRABINEK
   if (zone.id === 'Strefa_Modul_0') {
     pool = pool.filter(ex => {
-      const forbiddenEquipment = ['drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 'bosu'];
-      const hasForbidden = forbiddenEquipment.some(s => ex.wymagany_sprzet.toLowerCase().includes(s));
-      const isPull = ex.segment_nazwa === 'PULL';
+      const forbiddenTerms = ['drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 'bosu', 'pull', 'nunczako'];
+      const hasForbidden = forbiddenTerms.some(term => 
+        ex.wymagany_sprzet.toLowerCase().includes(term) || 
+        ex.segment_nazwa.toLowerCase().includes(term)
+      );
       
-      const isWallThrow = (ex.nazwa.toLowerCase().includes('rzut') || ex.instrukcja.toLowerCase().includes('rzut')) && 
-                          (ex.nazwa.toLowerCase().includes('ścian') || ex.instrukcja.toLowerCase().includes('ścian') || ex.nazwa.toLowerCase().includes('tarcze'));
-      
-      const isDynamicOrPower = ex.segment_nazwa === 'DYNAMIKA' || ex.kategorie_treningu.includes('Moc');
-      
-      if (hasForbidden || isPull) return false;
-      if (isDynamicOrPower && !isWallThrow) return false;
+      // Wyjątek: Akceptujemy rzuty o ścianę nawet jeśli są dynamiczne
+      const isWallExercise = ex.nazwa.toLowerCase().includes('ścian') || 
+                             ex.instrukcja.toLowerCase().includes('ścian') ||
+                             ex.nazwa.toLowerCase().includes('tarcze');
+
+      if (hasForbidden) return false;
+      if ((ex.segment_nazwa === 'DYNAMIKA' || ex.kategorie_treningu.includes('Moc')) && !isWallExercise) return false;
       
       return true;
     });
@@ -64,7 +84,7 @@ const getValidExercisesForZone = (
     pool = pool.filter(ex => !ex.tagi_specjalne.includes('Pełen Obrót'));
   }
 
-  // Filtr sprzętowy dla stref stałych
+  // Filtr sprzętowy dla stref stałych (Klatka, Kółka, Drabinki)
   const strictZones = ['Strefa_Modul_1', 'Strefa_Modul_2', 'Strefa_Modul_3', 'Strefa_Kolka', 'Strefa_Drabinki', 'Strefa_Sciana'];
   if (strictZones.includes(zone.id) && zone.przypisany_sprzet && zone.przypisany_sprzet.length > 0) {
     pool = pool.filter(ex => 
@@ -97,13 +117,12 @@ export const useAppStore = create<AppState>()(
         const availableZones = [...ROOM_CONFIG.strefy];
         const selectedZones: Zone[] = [];
 
-        // Routing Stacja 1 i 2
+        // Routing Stacja 1 i 2 (Standard Balaton)
         const mod0 = availableZones.find(z => z.id === 'Strefa_Modul_0');
         const mod1 = availableZones.find(z => z.id === 'Strefa_Modul_1');
         if (mod0) selectedZones.push(mod0);
         if (mod1 && numStations > 1) selectedZones.push(mod1);
 
-        // Reszta stref
         const restZones = availableZones.filter(z => z.id !== 'Strefa_Modul_0' && z.id !== 'Strefa_Modul_1');
         let freeSpaceCapacity = ROOM_CONFIG.strefy.find(z => z.id === 'Strefa_Wolna_Przestrzen')?.bazowa_pojemnosc_stacji || 3;
         
@@ -128,7 +147,6 @@ export const useAppStore = create<AppState>()(
         selectedZones.forEach((zone, idx) => {
           const pool = getValidExercisesForZone(zone, diff, isPairMode, usedIds);
           
-          // Preferencje dla strefy
           let preferred = pool;
           if (zone.id === 'Strefa_Sciana' || zone.id === 'Strefa_Modul_0') {
             preferred = pool.filter(ex => ex.nazwa.toLowerCase().includes('ścian') || ex.instrukcja.toLowerCase().includes('ścian') || ex.nazwa.toLowerCase().includes('tarcze'));
@@ -144,9 +162,11 @@ export const useAppStore = create<AppState>()(
 
           let exB: Exercise | undefined = undefined;
           if (isPairMode) {
-            if (exA.tryb_pracy === 'W_Parze' || exA.wymagany_sprzet.includes('drabinka pozioma')) {
+            // Reguła: Jeśli można robić to samo (sprzęt pozwala) lub ćwiczenie jest partnerskie -> ExB = ExA
+            if (exA.tryb_pracy === 'W_Parze' || canExerciseBeShared(exA)) {
               exB = exA;
             } else {
+              // Brak sprzętu dla dwojga -> dobierz inne na tę samą partię bezsprzętowe
               const potentialB = ALL_EXERCISES.filter(ex => 
                 ex.id_cwiczenia !== exA.id_cwiczenia &&
                 ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
@@ -176,8 +196,23 @@ export const useAppStore = create<AppState>()(
           const pool = getValidExercisesForZone(station.zone, diff, isPairMode, usedIds);
           const newExA = pool[Math.floor(Math.random() * pool.length)];
           if (newExA) {
+            // Przy zmianie A, zaktualizuj też B zgodnie z nową logiką dostępności
+            let newExB = undefined;
+            if (isPairMode) {
+              if (newExA.tryb_pracy === 'W_Parze' || canExerciseBeShared(newExA)) {
+                newExB = newExA;
+              } else {
+                const potentialB = ALL_EXERCISES.filter(ex => 
+                  ex.id_cwiczenia !== newExA.id_cwiczenia &&
+                  ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
+                  ex.glowne_partie.some(p => newExA.glowne_partie.includes(p)) &&
+                  (ex.wymagany_sprzet.toLowerCase().includes('brak') || ex.wymagany_sprzet.toLowerCase().includes('maty'))
+                );
+                newExB = potentialB[Math.floor(Math.random() * potentialB.length)] || newExA;
+              }
+            }
             set({
-              circuit: circuit.map(s => s.id === stationId ? { ...s, exerciseA: newExA } : s)
+              circuit: circuit.map(s => s.id === stationId ? { ...s, exerciseA: newExA, exerciseB: newExB } : s)
             });
           }
         } else if (type === 'B' && station.exerciseB) {
