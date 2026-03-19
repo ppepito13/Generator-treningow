@@ -62,11 +62,12 @@ const getValidExercisesForZone = (
     pool = pool.filter(ex => ex.segment_nazwa !== 'PARTNER' && ex.tryb_pracy !== 'W_Parze');
   }
 
+  const reqStr = (ex: Exercise) => getEquipmentString(ex);
+
   // Specyficzne ograniczenia dla Ściany Startowej (Moduł 0)
   if (zone.id === 'Strefa_Modul_0') {
     pool = pool.filter(ex => {
-      const req = getEquipmentString(ex);
-      // Całkowity zakaz drążków, kółek, drabinek, BOSU i DUŻYCH piłek w tej strefie
+      // Wykluczamy sprzęt niebezpieczny w ciasnej strefie wejścia
       const forbiddenTerms = [
         'drążek', 
         'drążki', 
@@ -79,21 +80,18 @@ const getValidExercisesForZone = (
         'nunczako'
       ];
       const hasForbidden = forbiddenTerms.some(term => 
-        req.includes(term) || 
+        reqStr(ex).includes(term) || 
         ex.segment_nazwa.toLowerCase().includes(term)
       );
       if (hasForbidden) return false;
 
-      // Wyjątek dla ćwiczeń ściennych/tarczowych - one mogą być dynamiczne/mocowe (np. Wall Ball)
+      // Wyjątek dla ćwiczeń ściennych/tarczowych (np. Wall Ball) mimo blokady dynamiki
       const isWallOrTarget = ex.nazwa.toLowerCase().includes('ścian') || 
                              ex.instrukcja.toLowerCase().includes('ścian') ||
                              ex.nazwa.toLowerCase().includes('tarcze') ||
                              ex.instrukcja.toLowerCase().includes('tarcze');
 
       const isHighIntensity = ex.segment_nazwa === 'DYNAMIKA' || ex.kategorie_treningu.includes('Moc');
-      
-      // Jeśli jest mocowe/dynamiczne, to TYLKO jeśli używa ściany/tarcz. 
-      // Inaczej (np. Burpees na środku) odrzucamy, żeby nie robić zamieszania przy wejściu.
       if (isHighIntensity && !isWallOrTarget) return false;
 
       return true;
@@ -106,11 +104,10 @@ const getValidExercisesForZone = (
   }
 
   // Sztywne filtry sprzętowe dla stref technicznych
-  const strictZones = ['Strefa_Modul_1', 'Strefa_Modul_2', 'Strefa_Modul_3', 'Strefa_Kolka', 'Strefa_Drabinki', 'Strefa_Sciana'];
-  if (strictZones.includes(zone.id) && zone.przypisany_sprzet && zone.przypisany_sprzet.length > 0) {
+  if (zone.przypisany_sprzet && zone.przypisany_sprzet.length > 0) {
     pool = pool.filter(ex => {
-      const req = getEquipmentString(ex);
-      return zone.przypisany_sprzet?.some(item => req.includes(item.toLowerCase()));
+      const equipment = reqStr(ex);
+      return zone.przypisany_sprzet?.some(item => equipment.includes(item.toLowerCase()));
     });
   }
 
@@ -128,13 +125,11 @@ export const useAppStore = create<AppState>()(
 
       setParticipants: (val) => {
         const newParticipants = Math.min(Math.max(val, 1), 14);
-        const minStations = Math.ceil(newParticipants / 2);
         const maxStations = Math.min(newParticipants, 7);
-        const currentStations = get().stationCount;
         
         set({ 
           participants: newParticipants,
-          stationCount: Math.min(Math.max(currentStations, minStations), maxStations)
+          stationCount: maxStations // Domyślnie sugerujemy max stacji dla komfortu
         });
       },
 
@@ -145,27 +140,28 @@ export const useAppStore = create<AppState>()(
         const { participants, difficultyId, stationCount } = get();
         const diff = getDifficultyById(difficultyId);
         const isPairMode = participants > 7;
-        const numDoubleStations = participants - stationCount; // Ile stacji musi przyjąć 2 osoby
+        const numDoubleStations = participants - stationCount;
 
         const availableZones = [...ROOM_CONFIG.strefy];
         const selectedZones: Zone[] = [];
 
-        // Routing: Stacja 1 i 2 zawsze stałe
+        // Routing: Stacja 1 i 2 bazowo stałe
         const mod0 = availableZones.find(z => z.id === 'Strefa_Modul_0');
         const mod1 = availableZones.find(z => z.id === 'Strefa_Modul_1');
         if (mod0) selectedZones.push(mod0);
         if (mod1 && stationCount > 1) selectedZones.push(mod1);
 
-        // Reszta stref elastycznie
         const restZones = availableZones.filter(z => z.id !== 'Strefa_Modul_0' && z.id !== 'Strefa_Modul_1');
         let freeSpaceCapacity = ROOM_CONFIG.strefy.find(z => z.id === 'Strefa_Wolna_Przestrzen')?.bazowa_pojemnosc_stacji || 3;
         
+        const poolToPickFrom = [...restZones];
+        
         while (selectedZones.length < stationCount) {
-          if (restZones.length > 0) {
-            const randomIndex = Math.floor(Math.random() * restZones.length);
-            const zone = restZones[randomIndex];
+          if (poolToPickFrom.length > 0) {
+            const randomIndex = Math.floor(Math.random() * poolToPickFrom.length);
+            const zone = poolToPickFrom[randomIndex];
             selectedZones.push(zone);
-            restZones.splice(randomIndex, 1);
+            poolToPickFrom.splice(randomIndex, 1);
             if (zone.id === 'Strefa_Drabinki' || zone.id === 'Strefa_Sciana') freeSpaceCapacity -= 1;
           } else if (freeSpaceCapacity > 0) {
             const freeSpace = ROOM_CONFIG.strefy.find(z => z.id === 'Strefa_Wolna_Przestrzen');
@@ -173,6 +169,19 @@ export const useAppStore = create<AppState>()(
             freeSpaceCapacity -= 1;
           } else break;
         }
+
+        // LOGIKA FLOW: Sortowanie stref wg fizycznej kolejności na sali (Anti-clockwise)
+        const zoneOrder = [
+          'Strefa_Modul_0',
+          'Strefa_Modul_1',
+          'Strefa_Modul_2',
+          'Strefa_Modul_3',
+          'Strefa_Kolka',
+          'Strefa_Drabinki',
+          'Strefa_Sciana',
+          'Strefa_Wolna_Przestrzen'
+        ];
+        selectedZones.sort((a, b) => zoneOrder.indexOf(a.id) - zoneOrder.indexOf(b.id));
 
         const generated: Station[] = [];
         const usedIds = new Set<string>();
@@ -183,18 +192,15 @@ export const useAppStore = create<AppState>()(
           
           if (pool.length === 0) return;
 
-          // Wybór ćwiczenia A
           const exA = pool[Math.floor(Math.random() * pool.length)];
           if (!exA) return;
           usedIds.add(exA.id_cwiczenia);
 
           let exB: Exercise | undefined = undefined;
           if (isThisStationPair) {
-            // Próbujemy przypisać to samo ćwiczenie jeśli sprzęt pozwala
             if (exA.tryb_pracy === 'W_Parze' || canExerciseBeShared(exA)) {
               exB = exA;
             } else {
-              // Jeśli nie, dobieramy inne na tę samą partię bez sprzętu
               const potentialB = ALL_EXERCISES.filter(ex => 
                 ex.id_cwiczenia !== exA.id_cwiczenia &&
                 !usedIds.has(ex.id_cwiczenia) &&
@@ -220,7 +226,7 @@ export const useAppStore = create<AppState>()(
       },
 
       rerollExercise: (stationId, type) => {
-        const { circuit, difficultyId, participants, stationCount } = get();
+        const { circuit, difficultyId, participants } = get();
         const stationIndex = circuit.findIndex(s => s.id === stationId);
         if (stationIndex === -1) return;
         const station = circuit[stationIndex];

@@ -198,7 +198,7 @@
     "segment_id": 1,
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
-    "wymagany_sprzet": "drążki",
+    "wymagany_sprzet": "gryfy olimpijskie",
     "biomechanika": "Bilateralny",
     "poziom": 1,
     "glowne_partie": [
@@ -222,7 +222,7 @@
     "segment_id": 1,
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
-    "wymagany_sprzet": "drążki",
+    "wymagany_sprzet": "gryfy olimpijskie",
     "biomechanika": "Bilateralny",
     "poziom": 1,
     "glowne_partie": [
@@ -525,7 +525,7 @@
   },
   {
     "id_cwiczenia": "ex_023",
-    "nazwa": "Podciąganie negatywne",
+    "nazwa": "Podciąganie australijskie negatywne",
     "wariant": "Niski gryf (sztanga)",
     "segment_id": 1,
     "segment_nazwa": "PULL",
