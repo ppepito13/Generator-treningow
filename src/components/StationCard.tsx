@@ -5,7 +5,13 @@ import { Station, Exercise } from '@/app/lib/data';
 import { useAppStore } from '@/app/lib/store';
 import { RefreshCw, MapPin, Dumbbell, Info, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Props {
   station: Station;
@@ -33,18 +39,53 @@ export const StationCard = ({ station }: Props) => {
           <h3 className="text-lg font-bold leading-tight">{ex.nazwa}</h3>
         </div>
         <div className="flex gap-1">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg glass-button opacity-50 hover:opacity-100">
-                  <Info className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs glass-card p-4">
-                <p className="text-xs leading-relaxed">{ex.instrukcja}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg glass-button opacity-50 hover:opacity-100">
+                <Info className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="glass-card border-white/10 text-white sm:max-w-md outline-none">
+              <DialogHeader>
+                <DialogTitle className="text-primary flex items-center gap-2 text-xl font-bold">
+                  <Info className="h-5 w-5" />
+                  {ex.nazwa}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6 py-4">
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary/60 border-b border-white/5 pb-1">Instrukcja Wykonania</h4>
+                  <p className="text-sm leading-relaxed text-white/90">{ex.instrukcja}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Wymagany Sprzęt</h4>
+                    <div className="flex items-center gap-2">
+                      <Dumbbell className="h-3.5 w-3.5 text-secondary" />
+                      <span className="text-xs font-bold text-secondary uppercase">{ex.wymagany_sprzet}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Partie Mięśniowe</h4>
+                    <p className="text-xs text-white/80 font-medium">{ex.glowne_partie.join(", ")}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 flex-wrap pt-2">
+                  <span className="text-[9px] px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 uppercase font-bold">
+                    {ex.segment_nazwa}
+                  </span>
+                  {ex.tagi_specjalne?.map(tag => (
+                    <span key={tag} className="text-[9px] px-2 py-1 rounded-full bg-white/5 text-white/50 border border-white/10">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          
           <Button 
             variant="ghost" 
             size="icon" 
