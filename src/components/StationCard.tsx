@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -76,8 +75,6 @@ export const StationCard = ({ station }: Props) => {
       const current = currentCounts[z.id] || 0;
       const cap = z.id === 'Strefa_Wolna_Przestrzen' ? floorLimit : (z.pojemnosc_stacji || 1);
 
-      // Możesz zmienić na tę samą strefę (np. żeby wylosować inne ćwiczenie dla tej samej strefy)
-      // lub na każdą inną, która ma jeszcze miejsce.
       return current < cap || z.id === station.zone.id;
     });
   };
@@ -267,11 +264,6 @@ export const StationCard = ({ station }: Props) => {
             </div>
           </div>
         </div>
-        {station.zone.uwagi && (
-          <span className="text-[9px] text-destructive font-bold uppercase px-2 py-1 bg-destructive/10 rounded-md">
-            {station.zone.uwagi}
-          </span>
-        )}
       </div>
       
       <div className="p-4 space-y-4">
