@@ -61,7 +61,7 @@
         },
         {
           "id": "Strefa_Modul_1",
-          "nazwa": "Klatka - Lewa (Drążki)",
+          "nazwa": "RIG - Drążki wysokie",
           "typ": "klatka_rig",
           "pojemnosc_stacji": 1,
           "akceptuje_pelen_obrot": true,
@@ -69,7 +69,7 @@
         },
         {
           "id": "Strefa_Modul_2",
-          "nazwa": "Klatka - Środek (Poprzeczka)",
+          "nazwa": "RIG - Środek",
           "typ": "klatka_rig",
           "pojemnosc_stacji": 1,
           "akceptuje_pelen_obrot": false,
@@ -78,7 +78,7 @@
         },
         {
           "id": "Strefa_Modul_3",
-          "nazwa": "Klatka - Prawa (Drążki)",
+          "nazwa": "RIG - drabinki",
           "typ": "klatka_rig",
           "pojemnosc_stacji": 1,
           "akceptuje_pelen_obrot": true,
@@ -93,14 +93,14 @@
         },
         {
           "id": "Strefa_Drabinki",
-          "nazwa": "Drabinki Boczne",
+          "nazwa": "Drabinki ścienne",
           "typ": "staly",
           "pojemnosc_stacji": 1,
           "przypisany_sprzet": ["drabinki"]
         },
         {
           "id": "Strefa_Sciana",
-          "nazwa": "Czysta Ściana",
+          "nazwa": "Ściana",
           "typ": "staly",
           "pojemnosc_stacji": 1,
           "przypisany_sprzet": ["ściany"]

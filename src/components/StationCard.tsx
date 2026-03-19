@@ -1,9 +1,9 @@
 "use client";
 
 import React from 'react';
-import { Station, Exercise, SEGMENTS } from '@/app/lib/data';
-import { useAppStore } from '@/app/lib/store';
-import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, ChevronDown } from 'lucide-react';
+import { Station, Exercise, SEGMENTS, getDifficultyById } from '@/app/lib/data';
+import { useAppStore, getValidExercisesForZone } from '@/app/lib/store';
+import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,7 +26,9 @@ interface Props {
 }
 
 export const StationCard = ({ station }: Props) => {
-  const { rerollExercise } = useAppStore();
+  const { rerollExercise, difficultyId, participants } = useAppStore();
+  const currentDiff = getDifficultyById(difficultyId);
+  const isPairMode = participants > 7;
 
   const handleReroll = (type: 'A' | 'B', segmentId?: number) => {
     rerollExercise(station.id, type, segmentId);
@@ -47,6 +49,12 @@ export const StationCard = ({ station }: Props) => {
     }
     return ex.zaangazowane_miesnie || "Praca ogólna";
   };
+
+  // Filtrujemy segmenty dostępne dla tej konkretnej stacji
+  const availableSegments = SEGMENTS.filter(seg => {
+    const pool = getValidExercisesForZone(station.zone, currentDiff, new Set(), isPairMode, seg.id, true);
+    return pool.length > 0;
+  });
 
   const ExerciseSubCard = ({ ex, type, shared = false }: { ex: Exercise, type: 'A' | 'B', shared?: boolean }) => (
     <div className={`relative p-5 rounded-2xl border transition-all ${shared ? 'bg-primary/5 border-primary/20' : type === 'B' ? 'bg-secondary/5 border-secondary/10' : 'bg-white/5 border-white/5'}`}>
@@ -156,9 +164,9 @@ export const StationCard = ({ station }: Props) => {
                 Losuj dowolne
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-white/5" />
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Wybierz segment...</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Dostępne segmenty</DropdownMenuLabel>
               <div className="grid grid-cols-1 gap-0.5">
-                {SEGMENTS.map(seg => (
+                {availableSegments.map(seg => (
                   <DropdownMenuItem 
                     key={seg.id} 
                     onClick={() => handleReroll(type, seg.id)}

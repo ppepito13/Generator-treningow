@@ -45,16 +45,17 @@ const canExerciseBeShared = (ex: Exercise): boolean => {
   return true;
 };
 
-const getValidExercisesForZone = (
+export const getValidExercisesForZone = (
   zone: Zone, 
   diff: DifficultyLevel, 
   usedIds: Set<string>,
   isPairMode: boolean,
-  segmentId?: number
+  segmentId?: number,
+  ignoreUsed: boolean = false
 ): Exercise[] => {
   let pool = ALL_EXERCISES.filter(ex => 
     ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
-    !usedIds.has(ex.id_cwiczenia)
+    (ignoreUsed ? true : !usedIds.has(ex.id_cwiczenia))
   );
 
   if (segmentId !== undefined) {
@@ -69,13 +70,14 @@ const getValidExercisesForZone = (
   if (zone.id === 'Strefa_Modul_0') {
     pool = pool.filter(ex => {
       const equip = getEquipmentString(ex);
-      const forbiddenTerms = ['drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 'bosu', 'piłka gimnastyczna', 'piłki gimnastyczne', 'pull', 'nunczako'];
+      const forbiddenTerms = ['drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 'bosu', 'piłka gimnastyczna', 'piłki gimnastyczne', 'nunczako'];
       const hasForbidden = forbiddenTerms.some(term => 
         equip.includes(term) || 
-        ex.segment_nazwa.toLowerCase().includes(term)
+        ex.nazwa.toLowerCase().includes(term)
       );
       if (hasForbidden) return false;
-      if (ex.segment_nazwa === 'PULL') return false;
+      // Blokujemy PULL (1) i DYNAMIKA (6) dla Modułu 0
+      if (ex.segment_id === 1 || ex.segment_id === 6) return false;
       return true;
     });
   }
@@ -145,13 +147,11 @@ export const useAppStore = create<AppState>()(
           const candidates: Zone[] = [];
           
           allZones.forEach(z => {
-            // Urządzenia stałe, których jeszcze nie ma
             if (!['Strefa_Modul_0', 'Strefa_Modul_1', 'Strefa_Wolna_Przestrzen'].includes(z.id) && !pickedIds.includes(z.id)) {
               candidates.push(z);
             }
           });
 
-          // Podłoga jako równorzędny kandydat
           if (currentFloorCount < floorCapacity) {
             const floorZone = allZones.find(z => z.id === 'Strefa_Wolna_Przestrzen');
             if (floorZone) candidates.push(floorZone);

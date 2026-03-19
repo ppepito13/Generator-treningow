@@ -4217,8 +4217,7 @@
     "segment_id": 5,
     "segment_nazwa": "SKILLS",
     "tryb_pracy": "Solo",
-    "wymagany_sprzet": [
-      "ściany (do handstand)", 
+    "wymagany_sprzet": [ 
       "skrzynie/boxy plyometryczne miękkie, ciężkie"
     ],
     "biomechanika": "Bilateralny",
@@ -6037,13 +6036,13 @@
   {
     "id_cwiczenia": "ex_252",
     "nazwa": "Dislocates (krążenia barków)",
-    "wariant": "Drążek / kij / guma",
+    "wariant": "Kij / guma",
     "segment_id": 9,
     "segment_nazwa": "MOBILITY",
     "tryb_pracy": "Solo",
-    "wymagany_sprzet": "drążki, gumy oporowe długie",
+    "wymagany_sprzet": ["kije drewniane", "gumy oporowe długie"],
     "biomechanika": "Bilateralny",
-    "poziom": 2,
+    "poziom": 1,
     "glowne_partie": [
       "Barki",
       "Klatka piersiowa",
@@ -6058,7 +6057,7 @@
       "Mobility",
       "Regeneracja"
     ],
-    "instrukcja": "Użycie kija/drążka na proste ramiona. Wywodzi się z tej samej mechaniki co Ex_263. Ujednolicenie i powtórzenie ruchu otwierającego obszar klatki/stawu piersiowo-obojczykowego w maksymalnej szerokiej trajektorii nad głową."
+    "instrukcja": "Użycie kija/gumy na proste ramiona. Ujednolicenie i powtórzenie ruchu otwierającego obszar klatki/stawu piersiowo-obojczykowego w maksymalnej szerokiej trajektorii nad głową."
   },
   {
     "id_cwiczenia": "ex_253",
