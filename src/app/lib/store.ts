@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { 
@@ -78,18 +79,17 @@ export const getValidExercisesForZone = (
     pool = pool.filter(ex => ex.segment_id !== 8 && ex.tryb_pracy !== 'W_Parze');
   }
 
-  // Specyficzne filtry dla stref
+  const zoneEquip = zone.przypisany_sprzet || [];
+
   if (zone.id === 'Strefa_Modul_0') {
     pool = pool.filter(ex => {
       const equip = getEquipmentString(ex);
+      const name = ex.nazwa.toLowerCase();
+      
       const forbiddenTerms = ['drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 'bosu', 'piłka gimnastyczna', 'piłki gimnastyczne', 'nunczako'];
-      const hasForbidden = forbiddenTerms.some(term => 
-        equip.includes(term) || 
-        ex.nazwa.toLowerCase().includes(term)
-      );
+      const hasForbidden = forbiddenTerms.some(term => equip.includes(term) || name.includes(term));
       if (hasForbidden) return false;
       
-      // Moduł 0: wykluczamy PULL i DYNAMIKA dla płynności wejścia
       if (ex.segment_id === 1 || ex.segment_id === 6) return false;
       
       return true;
@@ -100,12 +100,11 @@ export const getValidExercisesForZone = (
     pool = pool.filter(ex => !ex.tagi_specjalne.includes('Pełen Obrót'));
   }
 
-  if (zone.przypisany_sprzet && zone.przypisany_sprzet.length > 0) {
+  if (zoneEquip.length > 0) {
     pool = pool.filter(ex => {
       const equip = getEquipmentString(ex);
       const name = ex.nazwa.toLowerCase();
-      // Musi używać przynajmniej jednego ze sprzętów strefy
-      return zone.przypisany_sprzet?.some(item => equip.includes(item.toLowerCase()) || name.includes(item.toLowerCase()));
+      return zoneEquip.some(item => equip.includes(item.toLowerCase()) || name.includes(item.toLowerCase()));
     });
   }
 
@@ -149,37 +148,38 @@ export const useAppStore = create<AppState>()(
         const mod1 = allZones.find(z => z.id === 'Strefa_Modul_1');
         if (mod1 && stationCount > 1) selectedZones.push(mod1);
 
-        // 2. Dolosuj resztę stref do wymaganej liczby stacji
+        // 2. Dolosuj resztę stref uwzględniając ich pojemność
         while (selectedZones.length < stationCount) {
-          const pickedIds = selectedZones.map(z => z.id);
-          const hasDrabinki = pickedIds.includes('Strefa_Drabinki');
-          const hasSciana = pickedIds.includes('Strefa_Sciana');
-          
-          let floorCapacity = allZones.find(z => z.id === 'Strefa_Wolna_Przestrzen')?.bazowa_pojemnosc_stacji || 3;
-          if (hasDrabinki) floorCapacity -= 1;
-          if (hasSciana) floorCapacity -= 1;
+          const currentCounts = selectedZones.reduce((acc, z) => {
+            acc[z.id] = (acc[z.id] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
 
-          const currentFloorCount = selectedZones.filter(z => z.id === 'Strefa_Wolna_Przestrzen').length;
-          const candidates: Zone[] = [];
+          const hasDrabinki = Object.keys(currentCounts).includes('Strefa_Drabinki');
+          const hasSciana = Object.keys(currentCounts).includes('Strefa_Sciana');
           
+          const floorBase = allZones.find(z => z.id === 'Strefa_Wolna_Przestrzen')?.bazowa_pojemnosc_stacji || 5;
+          const floorLimit = floorBase - (hasDrabinki ? 1 : 0) - (hasSciana ? 1 : 0);
+
+          const candidates: Zone[] = [];
           allZones.forEach(z => {
-            // Moduł 0 i 1 już mamy. Wolną przestrzeń sprawdzamy osobno wg limitu.
-            if (!['Strefa_Modul_0', 'Strefa_Modul_1', 'Strefa_Wolna_Przestrzen'].includes(z.id) && !pickedIds.includes(z.id)) {
+            // Moduł 0 i 1 już mamy po jednej sztuce
+            if (z.id === 'Strefa_Modul_0' || z.id === 'Strefa_Modul_1') return;
+
+            const current = currentCounts[z.id] || 0;
+            const cap = z.id === 'Strefa_Wolna_Przestrzen' ? floorLimit : (z.pojemnosc_stacji || 1);
+
+            if (current < cap) {
               candidates.push(z);
             }
           });
-
-          if (currentFloorCount < floorCapacity) {
-            const floorZone = allZones.find(z => z.id === 'Strefa_Wolna_Przestrzen');
-            if (floorZone) candidates.push(floorZone);
-          }
 
           if (candidates.length === 0) break;
           const chosen = candidates[Math.floor(Math.random() * candidates.length)];
           selectedZones.push(chosen);
         }
 
-        // 3. Sortowanie zgodnie z ruchem wskazówek zegara (Flow sali Balaton)
+        // 3. Sortowanie zgodnie z flow sali Balaton
         selectedZones.sort((a, b) => zoneOrder.indexOf(a.id) - zoneOrder.indexOf(b.id));
 
         // 4. Przypisywanie ćwiczeń
@@ -191,7 +191,6 @@ export const useAppStore = create<AppState>()(
           const pool = getValidExercisesForZone(zone, diff, usedIds, isPairMode);
           
           if (pool.length === 0) {
-            // Fail-safe: jeśli pusta pula, weź cokolwiek z ignorowaniem used
             const backupPool = getValidExercisesForZone(zone, diff, new Set(), isPairMode);
             if (backupPool.length > 0) {
               const exA = backupPool[Math.floor(Math.random() * backupPool.length)];
@@ -328,7 +327,6 @@ export const useAppStore = create<AppState>()(
           exerciseB: exB
         };
 
-        // Re-sortowanie całego obwodu zgodnie z porządkiem sali
         newCircuit.sort((a, b) => zoneOrder.indexOf(a.zone.id) - zoneOrder.indexOf(b.zone.id));
         set({ circuit: newCircuit });
       },

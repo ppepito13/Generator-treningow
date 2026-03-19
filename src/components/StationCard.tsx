@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -50,35 +51,34 @@ export const StationCard = ({ station }: Props) => {
     return ex.zaangazowane_miesnie || "Praca ogólna";
   };
 
-  // Filtrujemy segmenty dostępne dla tej konkretnej stacji (A)
   const availableSegmentsA = SEGMENTS.filter(seg => {
     const pool = getValidExercisesForZone(station.zone, currentDiff, new Set(), isPairMode, seg.id, true);
     return pool.length > 0;
   });
 
-  // Logika dostępnych stref dla zmiany (tylko dla stacji 2-7)
   const isFixedStation = station.zone.id === 'Strefa_Modul_0';
   
   const getAvailableZones = () => {
-    const currentZones = circuit.map(s => s.zone.id);
-    const hasDrabinki = currentZones.includes('Strefa_Drabinki');
-    const hasSciana = currentZones.includes('Strefa_Sciana');
+    const currentCounts = circuit.reduce((acc, s) => {
+      acc[s.zone.id] = (acc[s.zone.id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const hasDrabinki = Object.keys(currentCounts).includes('Strefa_Drabinki');
+    const hasSciana = Object.keys(currentCounts).includes('Strefa_Sciana');
     
-    const floorLimit = (ROOM_CONFIG.strefy.find(z => z.id === 'Strefa_Wolna_Przestrzen')?.bazowa_pojemnosc_stacji || 3)
-      - (hasDrabinki ? 1 : 0) - (hasSciana ? 1 : 0);
-    
-    const floorCount = circuit.filter(s => s.zone.id === 'Strefa_Wolna_Przestrzen').length;
+    const floorBase = ROOM_CONFIG.strefy.find(z => z.id === 'Strefa_Wolna_Przestrzen')?.bazowa_pojemnosc_stacji || 5;
+    const floorLimit = floorBase - (hasDrabinki ? 1 : 0) - (hasSciana ? 1 : 0);
 
     return ROOM_CONFIG.strefy.filter(z => {
-      if (z.id === station.zone.id) return false; // Nie ta sama
-      if (z.id === 'Strefa_Modul_0') return false; // Moduł 0 zawsze stały
+      if (z.id === 'Strefa_Modul_0') return false; 
       
-      if (z.id === 'Strefa_Wolna_Przestrzen') {
-        return floorCount < floorLimit || (station.zone.id === 'Strefa_Wolna_Przestrzen');
-      }
-      
-      // Dla sztywnych stref - tylko jeśli nie ma jej w obwodzie
-      return !currentZones.includes(z.id);
+      const current = currentCounts[z.id] || 0;
+      const cap = z.id === 'Strefa_Wolna_Przestrzen' ? floorLimit : (z.pojemnosc_stacji || 1);
+
+      // Możesz zmienić na tę samą strefę (np. żeby wylosować inne ćwiczenie dla tej samej strefy)
+      // lub na każdą inną, która ma jeszcze miejsce.
+      return current < cap || z.id === station.zone.id;
     });
   };
 
@@ -251,7 +251,10 @@ export const StationCard = ({ station }: Props) => {
                             onClick={() => changeStationZone(station.id, zone.id)}
                             className="text-xs font-medium focus:bg-primary focus:text-primary-foreground cursor-pointer py-2.5"
                           >
-                            {zone.nazwa}
+                            <div className="flex justify-between w-full">
+                              <span>{zone.nazwa}</span>
+                              {zone.id === station.zone.id && <span className="text-[8px] text-primary">(Bieżąca)</span>}
+                            </div>
                           </DropdownMenuItem>
                         ))
                       ) : (

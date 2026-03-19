@@ -71,7 +71,7 @@
           "id": "Strefa_Modul_2",
           "nazwa": "RIG - Środek",
           "typ": "klatka_rig",
-          "pojemnosc_stacji": 1,
+          "pojemnosc_stacji": 2,
           "akceptuje_pelen_obrot": false,
           "przypisany_sprzet": ["drążki"],
           "uwagi": "Brak wymyków i pełnych obrotów"
@@ -80,7 +80,7 @@
           "id": "Strefa_Modul_3",
           "nazwa": "RIG - drabinki",
           "typ": "klatka_rig",
-          "pojemnosc_stacji": 1,
+          "pojemnosc_stacji": 2,
           "akceptuje_pelen_obrot": true,
           "przypisany_sprzet": ["drążki"]
         },
@@ -92,24 +92,24 @@
           "przypisany_sprzet": ["kółka gimnastyczne"]
         },
         {
+          "id": "Strefa_Sciana",
+          "nazwa": "Ściana",
+          "typ": "staly",
+          "pojemnosc_stacji": 2,
+          "przypisany_sprzet": ["ściany"]
+        },
+        {
           "id": "Strefa_Drabinki",
           "nazwa": "Drabinki ścienne",
           "typ": "staly",
           "pojemnosc_stacji": 1,
-          "przypisany_sprzet": ["drabinki"]
-        },
-        {
-          "id": "Strefa_Sciana",
-          "nazwa": "Ściana",
-          "typ": "staly",
-          "pojemnosc_stacji": 1,
-          "przypisany_sprzet": ["ściany"]
+          "przypisany_sprzet": ["drabinki pionowe ścienne"]
         },
         {
           "id": "Strefa_Wolna_Przestrzen",
           "nazwa": "Wolna Podłoga (Środek)",
           "typ": "elastyczny",
-          "bazowa_pojemnosc_stacji": 3
+          "bazowa_pojemnosc_stacji": 5
         }
       ],
       "reguly_przeplywu_i_kolizji": {
