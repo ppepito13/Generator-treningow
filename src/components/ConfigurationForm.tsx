@@ -31,7 +31,7 @@ export const ConfigurationForm = () => {
     <div className="flex flex-col gap-8 w-full max-w-md mx-auto py-12 px-6">
       <div className="text-center space-y-2">
         <h1 className="text-4xl font-bold tracking-tighter text-primary font-headline cyan-glow inline-block px-4 py-2 rounded-xl">
-          Kinetic Circuits
+          SW Calisthenics
         </h1>
         <p className="text-muted-foreground text-sm uppercase tracking-widest">Generator Treningu Grupowego</p>
       </div>

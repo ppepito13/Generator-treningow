@@ -2,7 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Kinetic Circuits | Generator Treningu',
+  title: 'SW Calisthenics | Generator Treningu',
   description: 'Nowoczesny generator treningu obwodowego dla grup.',
 };
 
