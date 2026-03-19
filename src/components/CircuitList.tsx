@@ -5,7 +5,7 @@ import React from 'react';
 import { useAppStore } from '@/app/lib/store';
 import { StationCard } from './StationCard';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Share2, ClipboardList, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Share2, ClipboardList, Copy, Check, Send } from 'lucide-react';
 import { DIFFICULTY_LEVELS } from '@/app/lib/data';
 import {
   Dialog,
@@ -22,7 +22,8 @@ export const CircuitList = () => {
   const [copied, setCopied] = React.useState(false);
 
   const getSummary = () => {
-    return circuit.map((station, idx) => {
+    const header = `💪 TRENING SW CALISTHENICS\n${currentDiff?.nazwa_grupy || 'Trening'} • ${participants} osób\n\n`;
+    const list = circuit.map((station, idx) => {
       let line = `${idx + 1}. ${station.exerciseA.nazwa}`;
       if (station.exerciseA.wariant) line += ` - ${station.exerciseA.wariant}`;
       
@@ -33,6 +34,7 @@ export const CircuitList = () => {
       }
       return line;
     }).join('\n');
+    return header + list;
   };
 
   const handleCopy = () => {
@@ -46,6 +48,28 @@ export const CircuitList = () => {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  const handleShare = async () => {
+    const text = getSummary();
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Mój Trening SW Calisthenics',
+          text: text,
+        });
+      } catch (err) {
+        // Jeśli użytkownik anulował, nie robimy nic. W innym przypadku kopiujemy do schowka jako fallback.
+        if ((err as Error).name !== 'AbortError') {
+          handleCopy();
+        }
+      }
+    } else {
+      handleCopy();
+    }
+  };
+
+  // Sprawdzamy wsparcie dla API udostępniania
+  const isShareSupported = typeof navigator !== 'undefined' && !!navigator.share;
 
   return (
     <div className="flex flex-col h-full max-w-2xl mx-auto pb-12">
@@ -74,20 +98,34 @@ export const CircuitList = () => {
             <DialogHeader>
               <DialogTitle className="text-secondary flex items-center gap-2">
                 <Share2 className="h-5 w-5" />
-                Podsumowanie Treningu
+                Udostępnij Trening
               </DialogTitle>
             </DialogHeader>
             <div className="mt-4 space-y-4">
               <div className="bg-white/5 p-5 rounded-2xl font-mono text-[13px] whitespace-pre-wrap border border-white/5 leading-relaxed max-h-[50vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
                 {getSummary()}
               </div>
-              <Button 
-                onClick={handleCopy} 
-                className="w-full h-12 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold rounded-xl flex gap-2 transition-all active:scale-95"
-              >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied ? "Skopiowano do schowka" : "Kopiuj listę ćwiczeń"}
-              </Button>
+              
+              <div className="grid grid-cols-1 gap-2">
+                {isShareSupported && (
+                  <Button 
+                    onClick={handleShare} 
+                    className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 font-bold rounded-xl flex gap-2 transition-all active:scale-95"
+                  >
+                    <Send className="h-4 w-4" />
+                    Wyślij wiadomość (Messenger/WA)
+                  </Button>
+                )}
+                
+                <Button 
+                  onClick={handleCopy} 
+                  variant={isShareSupported ? "outline" : "default"}
+                  className={`w-full h-12 ${!isShareSupported ? 'bg-secondary text-secondary-foreground hover:bg-secondary/90' : 'glass-button border-white/10'} font-bold rounded-xl flex gap-2 transition-all active:scale-95`}
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? "Skopiowano do schowka" : "Kopiuj listę ćwiczeń"}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
