@@ -62,9 +62,10 @@ export const getValidExercisesForZone = (
   zone: Zone, 
   diff: DifficultyLevel, 
   usedIds: Set<string>,
-  isPairMode: boolean,
+  isThisStationPair: boolean,
   segmentId?: number,
-  ignoreUsed: boolean = false
+  ignoreUsed: boolean = false,
+  hasFlagAlready: boolean = false
 ): Exercise[] => {
   let pool = ALL_EXERCISES.filter(ex => 
     ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
@@ -75,11 +76,26 @@ export const getValidExercisesForZone = (
     pool = pool.filter(ex => ex.segment_id === segmentId);
   }
 
-  if (!isPairMode) {
+  // BŁĄD 1 FIX: Jeśli stacja NIE jest dwuosobowa, wyklucz ćwiczenia w parze
+  if (!isThisStationPair) {
     pool = pool.filter(ex => ex.segment_id !== 8 && ex.tryb_pracy !== 'W_Parze');
   }
 
+  // LIMIT FLAGI: Jeśli Flaga już jest, wyklucz inne Flagi
+  if (hasFlagAlready) {
+    pool = pool.filter(ex => !ex.nazwa.toLowerCase().includes('flaga'));
+  }
+
   const zoneEquip = zone.przypisany_sprzet || [];
+
+  // BŁĄD 2 FIX: Wolna podłoga nie może mieć sprzętu stacjonarnego
+  if (zone.id === 'Strefa_Wolna_Przestrzen') {
+    pool = pool.filter(ex => {
+      const equip = getEquipmentString(ex);
+      const forbidden = ['drążki', 'drabinki', 'kółka gimnastyczne', 'ściany'];
+      return !forbidden.some(f => equip.includes(f));
+    });
+  }
 
   if (zone.id === 'Strefa_Modul_0') {
     pool = pool.filter(ex => {
@@ -135,20 +151,17 @@ export const useAppStore = create<AppState>()(
       generateCircuit: () => {
         const { participants, difficultyId, stationCount } = get();
         const diff = getDifficultyById(difficultyId);
-        const isPairMode = participants > 7;
         const numDoubleStations = participants - stationCount;
 
         const allZones = ROOM_CONFIG.strefy;
         const selectedZones: Zone[] = [];
 
-        // 1. MODUŁ 0 I MODUŁ 1 SĄ ZAWSZE
         const mod0 = allZones.find(z => z.id === 'Strefa_Modul_0');
         if (mod0) selectedZones.push(mod0);
 
         const mod1 = allZones.find(z => z.id === 'Strefa_Modul_1');
         if (mod1 && stationCount > 1) selectedZones.push(mod1);
 
-        // 2. Dolosuj resztę stref uwzględniając ich pojemność
         while (selectedZones.length < stationCount) {
           const currentCounts = selectedZones.reduce((acc, z) => {
             acc[z.id] = (acc[z.id] || 0) + 1;
@@ -163,15 +176,10 @@ export const useAppStore = create<AppState>()(
 
           const candidates: Zone[] = [];
           allZones.forEach(z => {
-            // Moduł 0 i 1 już mamy po jednej sztuce
             if (z.id === 'Strefa_Modul_0' || z.id === 'Strefa_Modul_1') return;
-
             const current = currentCounts[z.id] || 0;
             const cap = z.id === 'Strefa_Wolna_Przestrzen' ? floorLimit : (z.pojemnosc_stacji || 1);
-
-            if (current < cap) {
-              candidates.push(z);
-            }
+            if (current < cap) candidates.push(z);
           });
 
           if (candidates.length === 0) break;
@@ -179,21 +187,21 @@ export const useAppStore = create<AppState>()(
           selectedZones.push(chosen);
         }
 
-        // 3. Sortowanie zgodnie z flow sali Balaton
         selectedZones.sort((a, b) => zoneOrder.indexOf(a.id) - zoneOrder.indexOf(b.id));
 
-        // 4. Przypisywanie ćwiczeń
         const generated: Station[] = [];
         const usedIds = new Set<string>();
+        let hasFlagAlready = false;
 
         selectedZones.forEach((zone, idx) => {
           const isThisStationPair = idx < numDoubleStations;
-          const pool = getValidExercisesForZone(zone, diff, usedIds, isPairMode);
+          const pool = getValidExercisesForZone(zone, diff, usedIds, isThisStationPair, undefined, false, hasFlagAlready);
           
           if (pool.length === 0) {
-            const backupPool = getValidExercisesForZone(zone, diff, new Set(), isPairMode);
+            const backupPool = getValidExercisesForZone(zone, diff, new Set(), isThisStationPair, undefined, true, hasFlagAlready);
             if (backupPool.length > 0) {
               const exA = backupPool[Math.floor(Math.random() * backupPool.length)];
+              if (exA.nazwa.toLowerCase().includes('flaga')) hasFlagAlready = true;
               generated.push({ id: `st-${idx}-${Date.now()}-${Math.random()}`, zone, exerciseA: exA, isPair: isThisStationPair });
             }
             return;
@@ -201,6 +209,7 @@ export const useAppStore = create<AppState>()(
 
           const exA = pool[Math.floor(Math.random() * pool.length)];
           usedIds.add(exA.id_cwiczenia);
+          if (exA.nazwa.toLowerCase().includes('flaga')) hasFlagAlready = true;
 
           let exB: Exercise | undefined = undefined;
           if (isThisStationPair) {
@@ -212,10 +221,14 @@ export const useAppStore = create<AppState>()(
                 !usedIds.has(ex.id_cwiczenia) &&
                 ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
                 ex.glowne_partie.some(p => exA.glowne_partie.includes(p)) &&
-                (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty'))
+                (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
+                ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8 // exB na parze solo musi być solo
               );
               exB = potentialB[Math.floor(Math.random() * potentialB.length)] || exA;
-              if (exB && exB.id_cwiczenia !== exA.id_cwiczenia) usedIds.add(exB.id_cwiczenia);
+              if (exB && exB.id_cwiczenia !== exA.id_cwiczenia) {
+                usedIds.add(exB.id_cwiczenia);
+                if (exB.nazwa.toLowerCase().includes('flaga')) hasFlagAlready = true;
+              }
             }
           }
 
@@ -232,17 +245,19 @@ export const useAppStore = create<AppState>()(
       },
 
       rerollExercise: (stationId, type, segmentId) => {
-        const { circuit, difficultyId, participants } = get();
+        const { circuit, difficultyId } = get();
         const stationIndex = circuit.findIndex(s => s.id === stationId);
         if (stationIndex === -1) return;
         const station = circuit[stationIndex];
 
         const diff = getDifficultyById(difficultyId);
         const usedIds = new Set(circuit.flatMap(s => [s.exerciseA.id_cwiczenia, s.exerciseB?.id_cwiczenia].filter(Boolean)));
-        const isPairMode = participants > 7;
+        const hasFlagAlready = circuit.some(s => 
+          s.id !== stationId && (s.exerciseA.nazwa.toLowerCase().includes('flaga') || s.exerciseB?.nazwa.toLowerCase().includes('flaga'))
+        );
 
         if (type === 'A') {
-          const pool = getValidExercisesForZone(station.zone, diff, usedIds, isPairMode, segmentId);
+          const pool = getValidExercisesForZone(station.zone, diff, usedIds, station.isPair, segmentId, false, hasFlagAlready);
           if (pool.length === 0) return;
           const newExA = pool[Math.floor(Math.random() * pool.length)];
           
@@ -256,7 +271,8 @@ export const useAppStore = create<AppState>()(
                 !usedIds.has(ex.id_cwiczenia) &&
                 ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
                 ex.glowne_partie.some(p => newExA.glowne_partie.includes(p)) &&
-                (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty'))
+                (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
+                ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
               );
               newExB = potentialB[Math.floor(Math.random() * potentialB.length)] || newExA;
             }
@@ -271,8 +287,13 @@ export const useAppStore = create<AppState>()(
             !usedIds.has(ex.id_cwiczenia) &&
             ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
             ex.glowne_partie.some(p => station.exerciseA.glowne_partie.includes(p)) &&
-            (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty'))
+            (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
+            ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
           );
+          
+          if (hasFlagAlready) {
+            pool.filter(ex => !ex.nazwa.toLowerCase().includes('flaga'));
+          }
           
           const filteredPool = segmentId !== undefined ? pool.filter(ex => ex.segment_id === segmentId) : pool;
           if (filteredPool.length === 0) return;
@@ -287,7 +308,7 @@ export const useAppStore = create<AppState>()(
       },
 
       changeStationZone: (stationId, newZoneId) => {
-        const { circuit, difficultyId, participants } = get();
+        const { circuit, difficultyId } = get();
         const stationIndex = circuit.findIndex(s => s.id === stationId);
         if (stationIndex === -1) return;
 
@@ -295,10 +316,12 @@ export const useAppStore = create<AppState>()(
         if (!newZone) return;
 
         const diff = getDifficultyById(difficultyId);
-        const isPairMode = participants > 7;
         const usedExerciseIds = new Set(circuit.flatMap(s => s.id !== stationId ? [s.exerciseA.id_cwiczenia, s.exerciseB?.id_cwiczenia].filter(Boolean) : []));
+        const hasFlagAlready = circuit.some(s => 
+          s.id !== stationId && (s.exerciseA.nazwa.toLowerCase().includes('flaga') || s.exerciseB?.nazwa.toLowerCase().includes('flaga'))
+        );
 
-        const pool = getValidExercisesForZone(newZone, diff, usedExerciseIds, isPairMode);
+        const pool = getValidExercisesForZone(newZone, diff, usedExerciseIds, circuit[stationIndex].isPair, undefined, false, hasFlagAlready);
         if (pool.length === 0) return;
 
         const exA = pool[Math.floor(Math.random() * pool.length)];
@@ -313,7 +336,8 @@ export const useAppStore = create<AppState>()(
               !usedExerciseIds.has(ex.id_cwiczenia) &&
               ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
               ex.glowne_partie.some(p => exA.glowne_partie.includes(p)) &&
-              (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty'))
+              (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
+              ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
             );
             exB = potentialB[Math.floor(Math.random() * potentialB.length)] || exA;
           }
