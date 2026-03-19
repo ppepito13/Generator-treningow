@@ -76,19 +76,16 @@ export const getValidExercisesForZone = (
     pool = pool.filter(ex => ex.segment_id === segmentId);
   }
 
-  // BŁĄD 1 FIX: Jeśli stacja NIE jest dwuosobowa, wyklucz ćwiczenia w parze
   if (!isThisStationPair) {
     pool = pool.filter(ex => ex.segment_id !== 8 && ex.tryb_pracy !== 'W_Parze');
   }
 
-  // LIMIT FLAGI: Jeśli Flaga już jest, wyklucz inne Flagi
   if (hasFlagAlready) {
     pool = pool.filter(ex => !ex.nazwa.toLowerCase().includes('flaga'));
   }
 
   const zoneEquip = zone.przypisany_sprzet || [];
 
-  // BŁĄD 2 FIX: Wolna podłoga nie może mieć sprzętu stacjonarnego
   if (zone.id === 'Strefa_Wolna_Przestrzen') {
     pool = pool.filter(ex => {
       const equip = getEquipmentString(ex);
@@ -101,13 +98,10 @@ export const getValidExercisesForZone = (
     pool = pool.filter(ex => {
       const equip = getEquipmentString(ex);
       const name = ex.nazwa.toLowerCase();
-      
       const forbiddenTerms = ['drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 'bosu', 'piłka gimnastyczna', 'piłki gimnastyczne', 'nunczako'];
       const hasForbidden = forbiddenTerms.some(term => equip.includes(term) || name.includes(term));
       if (hasForbidden) return false;
-      
       if (ex.segment_id === 1 || ex.segment_id === 6) return false;
-      
       return true;
     });
   }
@@ -152,6 +146,7 @@ export const useAppStore = create<AppState>()(
         const { participants, difficultyId, stationCount } = get();
         const diff = getDifficultyById(difficultyId);
         const numDoubleStations = participants - stationCount;
+        const isPairMode = participants > stationCount;
 
         const allZones = ROOM_CONFIG.strefy;
         const selectedZones: Zone[] = [];
@@ -178,7 +173,11 @@ export const useAppStore = create<AppState>()(
           allZones.forEach(z => {
             if (z.id === 'Strefa_Modul_0' || z.id === 'Strefa_Modul_1') return;
             const current = currentCounts[z.id] || 0;
-            const cap = z.id === 'Strefa_Wolna_Przestrzen' ? floorLimit : (z.pojemnosc_stacji || 1);
+            
+            // Jeśli mamy pary, ograniczamy każdy moduł do max 1 stacji (z wyjątkiem ewentualnie podłogi, ale user chce limitu ogólnego)
+            const baseCap = isPairMode ? 1 : (z.pojemnosc_stacji || 1);
+            const cap = z.id === 'Strefa_Wolna_Przestrzen' ? (isPairMode ? Math.min(floorLimit, 2) : floorLimit) : baseCap;
+            
             if (current < cap) candidates.push(z);
           });
 
@@ -222,7 +221,7 @@ export const useAppStore = create<AppState>()(
                 ex.poziom >= diff.min_poziom && ex.poziom <= diff.max_poziom &&
                 ex.glowne_partie.some(p => exA.glowne_partie.includes(p)) &&
                 (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
-                ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8 // exB na parze solo musi być solo
+                ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
               );
               exB = potentialB[Math.floor(Math.random() * potentialB.length)] || exA;
               if (exB && exB.id_cwiczenia !== exA.id_cwiczenia) {

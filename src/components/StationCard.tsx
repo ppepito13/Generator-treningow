@@ -1,9 +1,10 @@
+
 "use client";
 
 import React from 'react';
 import { Station, Exercise, SEGMENTS, getDifficultyById, ROOM_CONFIG } from '@/app/lib/data';
 import { useAppStore, getValidExercisesForZone } from '@/app/lib/store';
-import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2 } from 'lucide-react';
+import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -28,7 +29,7 @@ interface Props {
 export const StationCard = ({ station }: Props) => {
   const { rerollExercise, changeStationZone, difficultyId, participants, circuit } = useAppStore();
   const currentDiff = getDifficultyById(difficultyId);
-  const isPairMode = participants > 7;
+  const isPairMode = participants > circuit.length;
 
   const handleReroll = (type: 'A' | 'B', segmentId?: number) => {
     rerollExercise(station.id, type, segmentId);
@@ -51,32 +52,19 @@ export const StationCard = ({ station }: Props) => {
   };
 
   const availableSegmentsA = SEGMENTS.filter(seg => {
-    const pool = getValidExercisesForZone(station.zone, currentDiff, new Set(), isPairMode, seg.id, true);
+    const pool = getValidExercisesForZone(station.zone, currentDiff, new Set(), station.isPair, seg.id, true);
     return pool.length > 0;
   });
 
   const isFixedStation = station.zone.id === 'Strefa_Modul_0';
   
+  // Sprawdzamy czy ten moduł jest powtórzony w trybie par
+  const stationsInSameZone = circuit.filter(s => s.zone.id === station.zone.id);
+  const isOvercrowded = isPairMode && stationsInSameZone.length > 1;
+
   const getAvailableZones = () => {
-    const currentCounts = circuit.reduce((acc, s) => {
-      acc[s.zone.id] = (acc[s.zone.id] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const hasDrabinki = Object.keys(currentCounts).includes('Strefa_Drabinki');
-    const hasSciana = Object.keys(currentCounts).includes('Strefa_Sciana');
-    
-    const floorBase = ROOM_CONFIG.strefy.find(z => z.id === 'Strefa_Wolna_Przestrzen')?.bazowa_pojemnosc_stacji || 5;
-    const floorLimit = floorBase - (hasDrabinki ? 1 : 0) - (hasSciana ? 1 : 0);
-
-    return ROOM_CONFIG.strefy.filter(z => {
-      if (z.id === 'Strefa_Modul_0') return false; 
-      
-      const current = currentCounts[z.id] || 0;
-      const cap = z.id === 'Strefa_Wolna_Przestrzen' ? floorLimit : (z.pojemnosc_stacji || 1);
-
-      return current < cap || z.id === station.zone.id;
-    });
+    // W trybie ręcznym pozwalamy na wszystko oprócz Modułu 0, żeby trener mógł "wymusić"
+    return ROOM_CONFIG.strefy.filter(z => z.id !== 'Strefa_Modul_0');
   };
 
   const availableZones = getAvailableZones();
@@ -222,27 +210,27 @@ export const StationCard = ({ station }: Props) => {
 
   return (
     <div className="glass-card rounded-[2rem] overflow-hidden transition-all hover:scale-[1.01]">
-      <div className="bg-primary/10 p-4 border-b border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-primary/20 p-2 rounded-lg">
-            <MapPin className="h-5 w-5 text-primary" />
-          </div>
-          <div className="flex flex-col">
-            <h2 className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Lokalizacja</h2>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-white uppercase">{station.zone.nazwa}</span>
-              {!isFixedStation && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded-md glass-button text-primary/50 hover:text-primary">
-                      <Settings2 className="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="glass-card border-white/10 text-white min-w-[200px] z-[100]">
-                    <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Przenieś Stację</DropdownMenuLabel>
-                    <div className="max-h-[300px] overflow-y-auto">
-                      {availableZones.length > 0 ? (
-                        availableZones.map(zone => (
+      <div className={`p-4 border-b border-white/5 flex flex-col gap-2 ${isOvercrowded ? 'bg-destructive/20' : 'bg-primary/10'}`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${isOvercrowded ? 'bg-destructive/30' : 'bg-primary/20'}`}>
+              <MapPin className={`h-5 w-5 ${isOvercrowded ? 'text-destructive' : 'text-primary'}`} />
+            </div>
+            <div className="flex flex-col">
+              <h2 className={`text-[10px] font-bold uppercase tracking-widest ${isOvercrowded ? 'text-destructive' : 'text-primary/60'}`}>Lokalizacja</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-white uppercase">{station.zone.nazwa}</span>
+                {!isFixedStation && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 rounded-md glass-button text-primary/50 hover:text-primary">
+                        <Settings2 className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="glass-card border-white/10 text-white min-w-[200px] z-[100]">
+                      <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Przenieś Stację</DropdownMenuLabel>
+                      <div className="max-h-[300px] overflow-y-auto">
+                        {availableZones.map(zone => (
                           <DropdownMenuItem 
                             key={zone.id} 
                             onClick={() => changeStationZone(station.id, zone.id)}
@@ -253,17 +241,24 @@ export const StationCard = ({ station }: Props) => {
                               {zone.id === station.zone.id && <span className="text-[8px] text-primary">(Bieżąca)</span>}
                             </div>
                           </DropdownMenuItem>
-                        ))
-                      ) : (
-                        <p className="text-[10px] text-center py-4 text-muted-foreground italic">Brak dostępnych stref</p>
-                      )}
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                        ))}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
           </div>
         </div>
+        
+        {isOvercrowded && (
+          <div className="flex items-center gap-2 bg-destructive/10 px-3 py-2 rounded-xl border border-destructive/20 animate-pulse">
+            <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+            <p className="text-[10px] font-bold text-destructive uppercase leading-none">
+              Uwaga - większa liczba ćwiczących niż dostępnych modułów
+            </p>
+          </div>
+        )}
       </div>
       
       <div className="p-4 space-y-4">
