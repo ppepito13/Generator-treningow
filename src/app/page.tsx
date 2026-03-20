@@ -10,7 +10,9 @@ export default function Home() {
   const { isGenerated } = useAppStore();
   const [hydrated, setHydrated] = useState(false);
 
-  // Ensure hydration for Zustand persist
+  // Oczekujemy na tzw. "Hydratację" (Hydration) komponentu na kliencie.
+  // Jest to kluczowe dla działania biblioteki Zustand (persist), aby uniknąć błędu 
+  // niezgodności (mismatch) wygenerowanego kodu między serwerem a przeglądarką.
   useEffect(() => {
     setHydrated(true);
   }, []);
@@ -25,6 +27,11 @@ export default function Home() {
 
   return (
     <main className="min-h-screen overflow-x-hidden">
+      {/* 
+        Główna mechanika przełączania ekranów aplikacji:
+        Jeśli użytkownik jeszcze nie wygenerował treningu, pokazujemy formularz.
+        W przeciwnym wypadku wyświetlamy wygenerowaną, docelową listę (obwód).
+      */}
       {!isGenerated ? (
         <ConfigurationForm />
       ) : (

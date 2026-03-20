@@ -1,20 +1,20 @@
-# **App Name**: Kinetic Circuits
+# **Nazwa Aplikacji**: Generator Treningów (Kinetic Circuits)
 
-## Core Features:
+## Główne Funkcje:
 
-- Training Configuration Page: Provides a user interface to define training parameters such as the number of participants (1-14) and the desired difficulty level using interactive controls and a dropdown selector.
-- Circuit Generation Trigger: Activates the display of the generated workout circuit, populating the UI with structured mock training data based on the user's configurations.
-- Dynamic Circuit Display: Presents a scrollable section of dynamically generated workout station cards on a dedicated page.
-- Interactive Station Cards: Each card displays comprehensive details including the workout zone name, specific exercise, prominently highlighted equipment, and support for pairing two exercises (A/B) for partner-based training.
-- Adaptive Exercise Re-roll Tool: Integrates a 'Change' (re-roll) button on each sub-exercise within a station card, acting as a placeholder to eventually utilize an AI tool for intelligently suggesting alternative, compatible exercises.
-- Client-Side State Persistence: Employs zustand for efficient global state management and leverages browser localStorage or IndexedDB to ensure user configurations and generated workout data persist across browsing sessions.
+- **Panel Konfiguracji Treningu**: Interfejs użytkownika pozwalający na definiowanie parametrów takich jak liczba uczestników (1-14) czy pożądany poziom trudności za pomocą suwaków i rozwijanych list.
+- **Generowanie Treningu (Przycisk)**: Moduł aktywujący wyświetlanie wylosowanego obwodu treningowego, wypełniający ekran odpowiednimi danymi dla ćwiczących.
+- **Dynamiczna Tablica**: Prezentuje zbiór przewijanych kart stacji treningowych wygenerowanych na osobnej podstronie.
+- **Interaktywne Karty Stacji**: Każda karta zawiera kompleksowe dane o ćwiczeniu, wyodrębnioną strefę ciała, wymagany sprzęt oraz wsparcie dla łączenia dwóch uczestników (A/B) pracujących na jednej stacji w tym samym czasie.
+- **Odświeżenie/Losowanie Opcjonalne (Re-roll)**: Zintegrowana ikona 'Zmień' na pod-ćwiczeniach, służąca jako docelowy obszar pod ewentualne wpięcie wtyczki sztucznej inteligencji dopasowującej ćwiczenia.
+- **Trwała Pamięć Lokalna (State Persistence)**: Wykorzystanie biblioteki `zustand` do efektywnego zarządzania danymi na poziomie całego systemu, połączone z zapisywaniem w `localStorage` (lub IndexedDB), dzięki czemu trening nie znika zaraz po zamknięciu okna aplikacji!
 
-## Style Guidelines:
+## Wskazówki Stylistyczne (Design System):
 
-- Primary vibrant cyan: #33CCFF. This bold, energetic hue (HSL 195, 80%, 50%) is chosen to reflect dynamism and technological sophistication, serving as the main accent for interactive elements and highlights in a dark-themed environment.
-- Deep background: #141D1F. A dark navy-graphite shade (HSL 195, 20%, 10%) forms the base of the modern 'dark mode,' providing a stark, focused backdrop that enhances content legibility and depth.
-- Secondary accent aqua: #5FE6C9. An analogous aqua tone (HSL 165, 70%, 60%) provides an additional, contrasting highlight color for secondary actions, information accents, or to add visual variation to the interface.
-- Body and headline font: 'Inter' (sans-serif), selected for its modern, clean lines, and exceptional legibility across various screen sizes, supporting both strong headlines and clear body text descriptions of exercises.
-- Glassmorphism styling: Primary content containers and interactive cards will feature semi-transparent backgrounds with subtle blur effects, creating depth and separation from the deep background while maintaining a sleek, futuristic aesthetic. Layouts will be responsive, ensuring optimal display on diverse web platforms.
-- Minimalist vector icons: Utilise a set of high-contrast, streamlined vector icons for interactive elements, including a distinctive 're-roll' icon for exercise modifications, ensuring consistency with the overall modern and functional visual language.
-- Subtle and smooth transitions: Incorporate gentle animation for page navigation, element interactions, and visual feedback upon button presses, enhancing user engagement and fluidity without distracting from the primary content.
+- **Główny błękit Cyan**: `#33CCFF`. Kolor przycisków, głównych wezwań do akcji, symbolizujący nowoczesność i energię.
+- **Głębokie tło**: `#141D1F`. Ołowiany odcień bazowy w nowoczesnym stylu 'dark mode', poprawiający czytelność jasnych czcionek (kontrast).
+- **Dodatkowy turkus (Aqua)**: `#5FE6C9`. Drugi akcent kolorystyczny, nadający charakteru subtelnym wyodrębnieniom czy etykietom.
+- **Typografia Font**: `Inter` (bezszeryfowy), świetna widoczność zarówno na małych urządzeniach mobilnych jak i przy wielkich nagłówkach w planach treningowych.
+- **Glassmorfizm i Przezroczystości**: Kontenery używają półprzezroczystych teł z delikatnymi efektami rozmycia (blur), dzięki czemu nie mamy poczucia płaskiego ekranu, lecz nowoczesnej hybrydy nakładających się warstw 3D.
+- **Minimalistyczne Ikony Wektorowe**: Czysty styl, np. zapętlone strzałki dla przycisku Re-roll.
+- **Lekkie Animacje**: System stara się wprowadzać m.in. animacje przejść, najechań czy przesuwania kart, zamiast gwałtownego renderowania wszystkiego naraz.

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Nextn</string>
+    <string name="title_activity_main">Nextn</string>
+    <string name="package_name">com.pepitolabs.generator</string>
+    <string name="custom_url_scheme">com.pepitolabs.generator</string>
+</resources>
