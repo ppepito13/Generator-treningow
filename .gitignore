@@ -46,3 +46,6 @@ firestore-debug.log
 
 # grafiki robocze
 /temp_assets/
+
+# wlasne notatki
+instrukcja-firebase.md

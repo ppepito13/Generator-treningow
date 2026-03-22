@@ -7,6 +7,7 @@ import { StationCard } from './StationCard';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Share2, ClipboardList, Copy, Check, Send } from 'lucide-react';
 import { DIFFICULTY_LEVELS } from '@/app/lib/data';
+import { Share } from '@capacitor/share';
 import {
   Dialog,
   DialogContent,
@@ -51,25 +52,33 @@ export const CircuitList = () => {
 
   const handleShare = async () => {
     const text = getSummary();
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Mój Trening SW Calisthenics',
-          text: text,
-        });
-      } catch (err) {
-        // Jeśli użytkownik anulował, nie robimy nic. W innym przypadku kopiujemy do schowka jako fallback.
-        if ((err as Error).name !== 'AbortError') {
-          handleCopy();
+    try {
+      // Próba natywnego udostępnienia przez powłokę Capacitor (Dla Android/iOS)
+      await Share.share({
+        title: 'Mój Trening SW Calisthenics',
+        text: text,
+        dialogTitle: 'Prześlij trening ekipie',
+      });
+    } catch (err) {
+      // Fallback awaryjny dla przeglądarki (np. uruchomienie w Chrome / Firebase Studio)
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Mój Trening SW Calisthenics',
+            text: text,
+          });
+        } catch (webErr) {
+          // Ignoruj, jeśli użytkownik kliknął "Anuluj"
+          if ((webErr as Error).name !== 'AbortError') handleCopy();
         }
+      } else {
+        handleCopy();
       }
-    } else {
-      handleCopy();
     }
   };
 
-  // Sprawdzamy wsparcie dla API udostępniania
-  const isShareSupported = typeof navigator !== 'undefined' && !!navigator.share;
+  // Zawsze pokazujemy przycisk nawigacyjny udostępniania
+  const isShareSupported = true;
 
   return (
     <div className="flex flex-col h-full max-w-2xl mx-auto pb-12">
