@@ -35,12 +35,29 @@ export interface Zone {
   id: string;
   nazwa: string;
   typ: string;
+  kolejnosc_sortowania?: number;
+  blokada_zmiany_recznej?: boolean;
+  zakazane_kategorie_sprzetu?: string[];
   pojemnosc_stacji?: number;
   bazowa_pojemnosc_stacji?: number;
+  zaleznosci_pojemnosci_od?: string[];
   ograniczenia?: string[];
   akceptuje_pelen_obrot?: boolean;
   przypisany_sprzet?: string[];
   uwagi?: string;
+}
+
+export interface RoomConfig {
+  id_sali: string;
+  nazwa_sali: string;
+  tryb_treningu: "obwodowy" | "fbw_synchroniczny";
+  maksymalna_pojemnosc: {
+    osoby: number;
+    stacje: number;
+  };
+  inwentarz: Record<string, number>;
+  strefy: Zone[];
+  reguly_przeplywu_i_kolizji: Record<string, string>;
 }
 
 export interface Station {
@@ -55,7 +72,7 @@ export const ALL_EXERCISES = exercises as Exercise[];
 export const ALL_EQUIPMENT = equipment as string[];
 export const DIFFICULTY_LEVELS = levels as DifficultyLevel[];
 export const SEGMENTS = segments as { id: number; nazwa: string }[];
-export const ROOM_CONFIG = sala.sale[0];
+export const ALL_ROOMS = sala.sale as RoomConfig[];
 
 export const getDifficultyById = (id: string) => 
   DIFFICULTY_LEVELS.find(l => l.id === id) || DIFFICULTY_LEVELS[1];

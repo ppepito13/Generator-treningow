@@ -910,6 +910,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "wymagany_sprzet": "steppery, hantle",
+    "mnoznik_sprzetu": 2,
     "biomechanika": "Bilateralny",
     "poziom": 4,
     "glowne_partie": [

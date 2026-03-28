@@ -3,6 +3,7 @@
     {
       "id_sali": "balaton",
       "nazwa_sali": "Sala Balaton",
+      "tryb_treningu": "obwodowy",
       "maksymalna_pojemnosc": {
         "osoby": 14,
         "stacje": 7
@@ -53,61 +54,102 @@
         {
           "id": "Strefa_Modul_0",
           "nazwa": "Ściana Startowa i Tarcze",
+          "kolejnosc_sortowania": 1,
+          "blokada_zmiany_recznej": true,
+          "zakazane_kategorie_sprzetu": [
+            "drążek",
+            "drążki",
+            "drabink",
+            "kółka",
+            "kółkach",
+            "piłki gimnastyczne",
+            "gum"
+          ],
           "typ": "staly",
           "pojemnosc_stacji": 1,
-          "ograniczenia": ["odrzuc_segment_dynamika", "odrzuc_kategorie_moc", "zakaz_drazkow_i_drabinek"],
-          "przypisany_sprzet": ["ściany", "maty"]
+          "ograniczenia": [
+            "odrzuc_segment_dynamika",
+            "odrzuc_kategorie_moc",
+            "zakaz_drazkow_i_drabinek"
+          ],
+          "przypisany_sprzet": [
+            "ściany",
+            "maty"
+          ]
         },
         {
           "id": "Strefa_Modul_1",
           "nazwa": "RIG - Drążki wysokie",
+          "kolejnosc_sortowania": 2,
           "typ": "klatka_rig",
           "pojemnosc_stacji": 1,
           "akceptuje_pelen_obrot": true,
-          "przypisany_sprzet": ["drążki"]
+          "przypisany_sprzet": [
+            "drążki"
+          ]
         },
         {
           "id": "Strefa_Modul_2",
           "nazwa": "RIG - Środek",
+          "kolejnosc_sortowania": 3,
           "typ": "klatka_rig",
           "pojemnosc_stacji": 2,
           "akceptuje_pelen_obrot": false,
-          "przypisany_sprzet": ["drążki"]
+          "przypisany_sprzet": [
+            "drążki"
+          ]
         },
         {
           "id": "Strefa_Modul_3",
           "nazwa": "RIG - drabinki",
+          "kolejnosc_sortowania": 4,
           "typ": "klatka_rig",
           "pojemnosc_stacji": 2,
           "akceptuje_pelen_obrot": true,
-          "przypisany_sprzet": ["drążki"]
+          "przypisany_sprzet": [
+            "drążki"
+          ]
         },
         {
           "id": "Strefa_Kolka",
           "nazwa": "Kółka Gimnastyczne",
+          "kolejnosc_sortowania": 5,
           "typ": "staly",
           "pojemnosc_stacji": 1,
-          "przypisany_sprzet": ["kółka gimnastyczne"]
+          "przypisany_sprzet": [
+            "kółka gimnastyczne"
+          ]
         },
         {
           "id": "Strefa_Sciana",
           "nazwa": "Ściana",
+          "kolejnosc_sortowania": 6,
           "typ": "staly",
           "pojemnosc_stacji": 2,
-          "przypisany_sprzet": ["ściany"]
+          "przypisany_sprzet": [
+            "ściany"
+          ]
         },
         {
           "id": "Strefa_Drabinki",
           "nazwa": "Drabinki ścienne",
+          "kolejnosc_sortowania": 7,
           "typ": "staly",
           "pojemnosc_stacji": 1,
-          "przypisany_sprzet": ["drabinki pionowe ścienne"]
+          "przypisany_sprzet": [
+            "drabinki pionowe ścienne"
+          ]
         },
         {
           "id": "Strefa_Wolna_Przestrzen",
           "nazwa": "Wolna Podłoga (Środek)",
+          "kolejnosc_sortowania": 8,
           "typ": "elastyczny",
-          "bazowa_pojemnosc_stacji": 5
+          "bazowa_pojemnosc_stacji": 5,
+          "zaleznosci_pojemnosci_od": [
+            "Strefa_Drabinki",
+            "Strefa_Sciana"
+          ]
         }
       ],
       "reguly_przeplywu_i_kolizji": {
@@ -115,6 +157,31 @@
         "regula_kolizji_przestrzeni": "Zajęcie Drabinek/Ściany dekrementuje Podłogę o 1",
         "regula_kolizji_glebokosci": "Tylko jedna stacja 'Wymaga Głębi' między Kółkami a Modułem 3"
       }
+    },
+    {
+      "id_sali": "astoria",
+      "nazwa_sali": "Sala Astoria",
+      "tryb_treningu": "fbw_synchroniczny",
+      "maksymalna_pojemnosc": {
+        "osoby": 30,
+        "stacje": 15
+      },
+      "inwentarz": {
+        "steppery": 30,
+        "hantle": 60,
+        "sztangi 5kg": 30,
+        "maty": 30
+      },
+      "strefy": [
+        {
+          "id": "Glowna_Przestrzen",
+          "nazwa": "Główna Przestrzeń (Cała Sala)",
+          "kolejnosc_sortowania": 1,
+          "typ": "elastyczny",
+          "bazowa_pojemnosc_stacji": 30
+        }
+      ],
+      "reguly_przeplywu_i_kolizji": {}
     }
   ]
 }
