@@ -3,6 +3,10 @@
 Wszystkie istotne zmiany i wydania aplikacji będą dokumentowane w tym pliku.
 Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased - 1.1.0]
+### Zmieniono
+- Zaktualizowano identyfikację wizualną w archiwum: wdrożono nową ikonę systemową aplikacji oraz banner promocyjny do wizytówki Sklepu Play, dostosowując je idealnie do głównej palety kolorystycznej marki personalnej Trenera.
+
 ## [1.0.1] - 2026-03-24
 ### Dodano
 - Ustawienie spójnej i oficjalnej nazwy aplikacji "Generator Treningów SW" w warstwie Capacitor (konfiguracja ogólna) oraz warstwie natywnej Androida (`strings.xml`).
