@@ -82,31 +82,30 @@ export const getValidExercisesForZone = (
 
   const zoneEquip = zone.przypisany_sprzet || [];
 
-  if (zone.id === 'Strefa_Wolna_Przestrzen') {
+  if (zone.zakazane_kategorie_sprzetu && zone.zakazane_kategorie_sprzetu.length > 0) {
     pool = pool.filter(ex => {
-      const equip = getEquipmentString(ex);
-      const forbidden = ['drążki', 'drabinki', 'kółka gimnastyczne', 'ściany'];
-      return !forbidden.some(f => equip.includes(f));
+      const eq = getEquipmentString(ex).toLowerCase();
+      return !zone.zakazane_kategorie_sprzetu!.some(term => eq.includes(term.toLowerCase()));
     });
   }
 
-  if (zone.id === 'Strefa_Modul_0') {
-    pool = pool.filter(ex => {
-      const equip = getEquipmentString(ex);
-      const name = ex.nazwa.toLowerCase();
-      const forbiddenTerms = [
-        'drążek', 'drążki', 'drabink', 'kółka gimnastyczne', 
-        'bosu', 'piłka gimnastyczna', 'piłki gimnastyczne', 'nunczako'
-      ];
-      const hasForbidden = forbiddenTerms.some(term => equip.includes(term) || name.includes(term));
-      if (hasForbidden) return false;
-      if (ex.segment_id === 1 || ex.segment_id === 6) return false;
-      return true;
-    });
+  if (zone.ograniczenia && zone.ograniczenia.length > 0) {
+    if (zone.ograniczenia.includes("odrzuc_segment_dynamika")) pool = pool.filter(ex => ex.segment_id !== 6);
+    if (zone.ograniczenia.includes("odrzuc_kategorie_moc")) pool = pool.filter(ex => !ex.kategorie_treningu.includes('Moc'));
+    if (zone.ograniczenia.includes("zakaz_drazkow_i_drabinek")) pool = pool.filter(ex => ex.segment_id !== 1);
   }
 
-  if (zone.id === 'Strefa_Modul_2') {
+  if (zone.akceptuje_pelen_obrot === false) {
     pool = pool.filter(ex => !ex.tagi_specjalne.includes('Pełen Obrót'));
+  }
+
+  if (zone.typ === 'elastyczny') {
+    pool = pool.filter(ex => ex.segment_id !== 1 && ex.segment_id !== 2);
+    pool = pool.filter(ex => !ex.kategorie_treningu.includes('Wyciąg'));
+  }
+
+  if (zone.typ !== 'klatka_rig') {
+    pool = pool.filter(ex => !(ex.segment_id === 1 && getEquipmentString(ex).includes('drążki')));
   }
 
   if (zoneEquip.length > 0) {
@@ -118,6 +117,152 @@ export const getValidExercisesForZone = (
   }
 
   return pool;
+};
+
+const generateBalatonCircuitStrategy = (
+  currentRoom: RoomConfig, 
+  mainDiff: DifficultyLevel, 
+  participants: number, 
+  stationCount: number, 
+  isStrictDifficulty: boolean
+): Station[] => {
+  const numDoubleStations = participants - stationCount;
+  const isPairMode = participants > stationCount;
+  const allZones = currentRoom.strefy;
+  const selectedZones: Zone[] = [];
+
+  const forcedZones = allZones.filter(z => z.blokada_zmiany_recznej);
+  forcedZones.forEach(z => selectedZones.push(z));
+
+  const rigZone = allZones.find(z => z.kolejnosc_sortowania === 2);
+  if (rigZone && stationCount > 1) selectedZones.push(rigZone);
+
+  while (selectedZones.length < stationCount) {
+    const currentCounts = selectedZones.reduce((acc, z) => {
+      acc[z.id] = (acc[z.id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    let floorLimit = allZones.find(z => z.typ === 'elastyczny')?.bazowa_pojemnosc_stacji || 5;
+    
+    const elastycznaStrefa = allZones.find(z => z.typ === 'elastyczny');
+    if (elastycznaStrefa && elastycznaStrefa.zaleznosci_pojemnosci_od) {
+      elastycznaStrefa.zaleznosci_pojemnosci_od.forEach(zalezna => {
+        if (Object.keys(currentCounts).includes(zalezna)) floorLimit -= 1;
+      });
+    }
+
+    const candidates: Zone[] = [];
+    allZones.forEach(z => {
+      if (forcedZones.some(fz => fz.id === z.id) || (rigZone && z.id === rigZone.id)) return;
+      const current = currentCounts[z.id] || 0;
+      
+      let cap = z.pojemnosc_stacji || 1;
+      if (z.typ === 'elastyczny') cap = floorLimit;
+      else if (z.nazwa.toLowerCase().includes('ściana')) cap = 2; 
+      else if (isPairMode && z.typ === 'klatka_rig') cap = 1;
+      
+      if (current < cap) candidates.push(z);
+    });
+
+    if (candidates.length === 0) break;
+    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+    selectedZones.push(chosen);
+  }
+
+  selectedZones.sort((a, b) => (a.kolejnosc_sortowania || 99) - (b.kolejnosc_sortowania || 99));
+
+  const generated: Station[] = [];
+  const usedIds = new Set<string>();
+  let hasFlagAlready = false;
+
+  selectedZones.forEach((zone, idx) => {
+    const isThisStationPair = idx < numDoubleStations;
+    let currentRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
+    
+    if (!isStrictDifficulty && (idx + 1) % 3 === 0) {
+      currentRange = { min: Math.max(1, mainDiff.min_poziom - 2), max: Math.max(1, mainDiff.min_poziom - 1) };
+    }
+
+    let pool = getValidExercisesForZone(zone, currentRange, usedIds, isThisStationPair, undefined, false, hasFlagAlready);
+    if (pool.length === 0) {
+      pool = getValidExercisesForZone(zone, { min: mainDiff.min_poziom, max: mainDiff.max_poziom }, usedIds, isThisStationPair, undefined, false, hasFlagAlready);
+    }
+    if (pool.length === 0) return;
+
+    const exA = pool[Math.floor(Math.random() * pool.length)];
+    usedIds.add(exA.id_cwiczenia);
+    if (exA.nazwa.toLowerCase().includes('flaga')) hasFlagAlready = true;
+
+    let exB: Exercise | undefined = undefined;
+    if (isThisStationPair) {
+      if (exA.tryb_pracy === 'W_Parze' || canExerciseBeShared(exA, currentRoom)) {
+        exB = exA;
+      } else {
+        const potentialB = ALL_EXERCISES.filter(ex => 
+          ex.id_cwiczenia !== exA.id_cwiczenia &&
+          !usedIds.has(ex.id_cwiczenia) &&
+          ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
+          ex.glowne_partie.some(p => exA.glowne_partie.includes(p)) &&
+          (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
+          ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
+        );
+        exB = potentialB[Math.floor(Math.random() * potentialB.length)] || exA;
+        if (exB && exB.id_cwiczenia !== exA.id_cwiczenia) {
+          usedIds.add(exB.id_cwiczenia);
+          if (exB.nazwa.toLowerCase().includes('flaga')) hasFlagAlready = true;
+        }
+      }
+    }
+
+    generated.push({ id: `st-${idx}-${Date.now()}-${Math.random()}`, zone, exerciseA: exA, exerciseB: exB, isPair: isThisStationPair });
+  });
+  return generated;
+};
+
+const generateFBWStrategy = (
+  currentRoom: RoomConfig, 
+  mainDiff: DifficultyLevel, 
+  participants: number, 
+  stationCount: number, 
+  isStrictDifficulty: boolean
+): Station[] => {
+  const generated: Station[] = [];
+  const usedIds = new Set<string>();
+  const mainZone = currentRoom.strefy[0] || {
+    id: 'FBW_Virtual', nazwa: 'Przestrzeń FBW', typ: 'elastyczny', pojemnosc_stacji: participants, bazowa_pojemnosc_stacji: participants
+  };
+  const currentRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
+  
+  for (let idx = 0; idx < stationCount; idx++) {
+    let pool = ALL_EXERCISES.filter(ex => !usedIds.has(ex.id_cwiczenia));
+    pool = pool.filter(ex => ex.poziom >= currentRange.min && ex.poziom <= currentRange.max);
+    pool = pool.filter(ex => {
+      const equipReqString = getEquipmentString(ex);
+      if (equipReqString.includes('brak') || equipReqString.includes('masa ciała') || equipReqString.includes('maty')) return true;
+
+      const itemsToFind = Object.keys(currentRoom.inwentarz).filter(k => equipReqString.includes(k.toLowerCase()));
+      for (const item of itemsToFind) {
+        const gymHas = currentRoom.inwentarz[item] || 0;
+        const multiplier = (ex as any).mnoznik_sprzetu || 1;
+        const needed = participants * multiplier;
+        if (gymHas < needed) return false;
+      }
+      return true;
+    });
+
+    if (pool.length === 0) continue;
+    
+    const exA = pool[Math.floor(Math.random() * pool.length)];
+    usedIds.add(exA.id_cwiczenia);
+    generated.push({
+      id: `fbw-${idx}-${Date.now()}-${Math.random()}`,
+      zone: mainZone,
+      exerciseA: exA,
+      isPair: false // FBW zawsze synchronicznie pojedynczo
+    });
+  }
+  return generated;
 };
 
 export const useAppStore = create<AppState>()(
@@ -168,115 +313,16 @@ export const useAppStore = create<AppState>()(
         const { participants, difficultyId, stationCount, isStrictDifficulty, selectedRoomId } = get();
         const mainDiff = getDifficultyById(difficultyId);
         const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
-        const numDoubleStations = participants - stationCount;
-        const isPairMode = participants > stationCount;
-
-        const allZones = currentRoom.strefy;
-        const selectedZones: Zone[] = [];
-
-        const mod0 = allZones.find(z => z.id === 'Strefa_Modul_0');
-        if (mod0) selectedZones.push(mod0);
-
-        const mod1 = allZones.find(z => z.id === 'Strefa_Modul_1');
-        if (mod1 && stationCount > 1) selectedZones.push(mod1);
-
-        while (selectedZones.length < stationCount) {
-          const currentCounts = selectedZones.reduce((acc, z) => {
-            acc[z.id] = (acc[z.id] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>);
-
-          const hasDrabinki = Object.keys(currentCounts).includes('Strefa_Drabinki');
-          const hasSciana = Object.keys(currentCounts).includes('Strefa_Sciana');
-          
-          const floorBase = allZones.find(z => z.id === 'Strefa_Wolna_Przestrzen')?.bazowa_pojemnosc_stacji || 5;
-          const floorLimit = floorBase - (hasDrabinki ? 1 : 0) - (hasSciana ? 1 : 0);
-
-          const candidates: Zone[] = [];
-          allZones.forEach(z => {
-            if (z.id === 'Strefa_Modul_0' || z.id === 'Strefa_Modul_1') return;
-            const current = currentCounts[z.id] || 0;
-            
-            let cap = z.pojemnosc_stacji || 1;
-            if (z.id === 'Strefa_Wolna_Przestrzen') {
-              cap = floorLimit;
-            } else if (z.id === 'Strefa_Sciana') {
-              cap = 2;
-            } else if (isPairMode && (z.id.startsWith('Strefa_Modul') || z.id === 'Strefa_Drabinki' || z.id === 'Strefa_Kolka')) {
-              cap = 1;
-            }
-            
-            if (current < cap) candidates.push(z);
-          });
-
-          if (candidates.length === 0) break;
-          const chosen = candidates[Math.floor(Math.random() * candidates.length)];
-          selectedZones.push(chosen);
+        
+        let newCircuit: Station[] = [];
+        
+        if (currentRoom.tryb_treningu === 'obwodowy') {
+          newCircuit = generateBalatonCircuitStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty);
+        } else if (currentRoom.tryb_treningu === 'fbw_synchroniczny') {
+          newCircuit = generateFBWStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty);
         }
 
-        selectedZones.sort((a, b) => (a.kolejnosc_sortowania || 99) - (b.kolejnosc_sortowania || 99));
-
-        const generated: Station[] = [];
-        const usedIds = new Set<string>();
-        let hasFlagAlready = false;
-
-        selectedZones.forEach((zone, idx) => {
-          const isThisStationPair = idx < numDoubleStations;
-          
-          let currentRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
-          const isBreatherStation = !isStrictDifficulty && (idx + 1) % 3 === 0;
-          
-          if (isBreatherStation) {
-            currentRange = {
-              min: Math.max(1, mainDiff.min_poziom - 2),
-              max: Math.max(1, mainDiff.min_poziom - 1)
-            };
-          }
-
-          let pool = getValidExercisesForZone(zone, currentRange, usedIds, isThisStationPair, undefined, false, hasFlagAlready);
-          
-          if (pool.length === 0) {
-            // Backup do głównego poziomu jeśli w regresji nic nie ma, ale NADAL sprawdzamy usedIds
-            pool = getValidExercisesForZone(zone, { min: mainDiff.min_poziom, max: mainDiff.max_poziom }, usedIds, isThisStationPair, undefined, false, hasFlagAlready);
-          }
-
-          if (pool.length === 0) return;
-
-          const exA = pool[Math.floor(Math.random() * pool.length)];
-          usedIds.add(exA.id_cwiczenia);
-          if (exA.nazwa.toLowerCase().includes('flaga')) hasFlagAlready = true;
-
-          let exB: Exercise | undefined = undefined;
-          if (isThisStationPair) {
-            if (exA.tryb_pracy === 'W_Parze' || canExerciseBeShared(exA, currentRoom)) {
-              exB = exA;
-            } else {
-              const potentialB = ALL_EXERCISES.filter(ex => 
-                ex.id_cwiczenia !== exA.id_cwiczenia &&
-                !usedIds.has(ex.id_cwiczenia) &&
-                ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
-                ex.glowne_partie.some(p => exA.glowne_partie.includes(p)) &&
-                (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
-                ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
-              );
-              exB = potentialB[Math.floor(Math.random() * potentialB.length)] || exA;
-              if (exB && exB.id_cwiczenia !== exA.id_cwiczenia) {
-                usedIds.add(exB.id_cwiczenia);
-                if (exB.nazwa.toLowerCase().includes('flaga')) hasFlagAlready = true;
-              }
-            }
-          }
-
-          generated.push({ 
-            id: `st-${idx}-${Date.now()}-${Math.random()}`, 
-            zone, 
-            exerciseA: exA, 
-            exerciseB: exB, 
-            isPair: isThisStationPair 
-          });
-        });
-
-        set({ circuit: generated, isGenerated: true });
+        set({ circuit: newCircuit, isGenerated: true });
       },
 
       rerollExercise: (stationId, type, segmentId) => {
