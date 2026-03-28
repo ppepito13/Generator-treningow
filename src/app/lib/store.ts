@@ -119,7 +119,7 @@ export const getValidExercisesForZone = (
   return pool;
 };
 
-const generateBalatonCircuitStrategy = (
+const generateCircuitStrategy = (
   currentRoom: RoomConfig, 
   mainDiff: DifficultyLevel, 
   participants: number, 
@@ -159,7 +159,6 @@ const generateBalatonCircuitStrategy = (
       
       let cap = z.pojemnosc_stacji || 1;
       if (z.typ === 'elastyczny') cap = floorLimit;
-      else if (z.nazwa.toLowerCase().includes('ściana')) cap = 2; 
       else if (isPairMode && z.typ === 'klatka_rig') cap = 1;
       
       if (current < cap) candidates.push(z);
@@ -317,7 +316,7 @@ export const useAppStore = create<AppState>()(
         let newCircuit: Station[] = [];
         
         if (currentRoom.tryb_treningu === 'obwodowy') {
-          newCircuit = generateBalatonCircuitStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty);
+          newCircuit = generateCircuitStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty);
         } else if (currentRoom.tryb_treningu === 'fbw_synchroniczny') {
           newCircuit = generateFBWStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty);
         }

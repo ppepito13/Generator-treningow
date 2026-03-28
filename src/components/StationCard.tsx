@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { Station, Exercise, SEGMENTS, getDifficultyById, ROOM_CONFIG } from '@/app/lib/data';
+import { Station, Exercise, SEGMENTS, getDifficultyById, ALL_ROOMS } from '@/app/lib/data';
 import { useAppStore, getValidExercisesForZone } from '@/app/lib/store';
 import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,9 @@ interface Props {
 }
 
 export const StationCard = ({ station }: Props) => {
-  const { rerollExercise, changeStationZone, difficultyId, participants, circuit } = useAppStore();
+  const { rerollExercise, changeStationZone, difficultyId, participants, circuit, selectedRoomId } = useAppStore();
+  const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
+  const isFBW = currentRoom.tryb_treningu === 'fbw_synchroniczny';
   const currentDiff = getDifficultyById(difficultyId);
   const isPairMode = participants > circuit.length;
 
@@ -52,27 +54,29 @@ export const StationCard = ({ station }: Props) => {
   };
 
   const availableSegmentsA = SEGMENTS.filter(seg => {
-    const pool = getValidExercisesForZone(station.zone, currentDiff, new Set(), station.isPair, seg.id, true);
+    const levelRange = { min: currentDiff.min_poziom, max: currentDiff.max_poziom };
+    const pool = getValidExercisesForZone(station.zone, levelRange, new Set(), station.isPair, seg.id, true);
     return pool.length > 0;
   });
 
-  const isFixedStation = station.zone.id === 'Strefa_Modul_0';
+  const isFixedStation = station.zone.blokada_zmiany_recznej || isFBW;
   
   // Dynamiczna kalkulacja pojemności strefy
   const getZoneCapacity = (zoneId: string) => {
-    const zone = ROOM_CONFIG.strefy.find(z => z.id === zoneId);
+    const zone = currentRoom.strefy.find(z => z.id === zoneId);
     if (!zone) return 1;
 
-    if (zoneId === 'Strefa_Wolna_Przestrzen') {
-      const hasDrabinki = circuit.some(s => s.zone.id === 'Strefa_Drabinki');
-      const hasSciana = circuit.some(s => s.zone.id === 'Strefa_Sciana');
-      const floorBase = zone.bazowa_pojemnosc_stacji || 5;
-      return floorBase - (hasDrabinki ? 1 : 0) - (hasSciana ? 1 : 0);
+    if (zone.typ === 'elastyczny') {
+      let limit = zone.bazowa_pojemnosc_stacji || 5;
+      if (zone.zaleznosci_pojemnosci_od) {
+        zone.zaleznosci_pojemnosci_od.forEach(zal => {
+           if (circuit.some(s => s.zone.id === zal)) limit -= 1;
+        });
+      }
+      return limit;
     }
 
-    // Dla modułów RIG i Drabinek w trybie par limit to 1 (zajmują cały pion)
-    const isRigOrDrabinki = zoneId.startsWith('Strefa_Modul') || zoneId === 'Strefa_Drabinki' || zoneId === 'Strefa_Kolka';
-    if (isPairMode && isRigOrDrabinki) return 1;
+    if (isPairMode && zone.typ === 'klatka_rig') return 1;
 
     return zone.pojemnosc_stacji || 1;
   };
@@ -82,7 +86,7 @@ export const StationCard = ({ station }: Props) => {
   const isOvercrowded = stationsInSameZone.length > currentZoneCapacity;
 
   const getAvailableZones = () => {
-    return ROOM_CONFIG.strefy.filter(z => z.id !== 'Strefa_Modul_0');
+    return currentRoom.strefy.filter(z => !z.blokada_zmiany_recznej);
   };
 
   const availableZones = getAvailableZones();
@@ -235,9 +239,11 @@ export const StationCard = ({ station }: Props) => {
               <MapPin className={`h-5 w-5 ${isOvercrowded ? 'text-destructive' : 'text-primary'}`} />
             </div>
             <div className="flex flex-col">
-              <h2 className={`text-[10px] font-bold uppercase tracking-widest ${isOvercrowded ? 'text-destructive' : 'text-primary/60'}`}>Lokalizacja</h2>
+              <h2 className={`text-[10px] font-bold uppercase tracking-widest ${isOvercrowded ? 'text-destructive' : 'text-primary/60'}`}>
+                {isFBW ? 'Stanowisko' : 'Lokalizacja'}
+              </h2>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-white uppercase">{station.zone.nazwa}</span>
+                <span className="text-sm font-bold text-white uppercase">{isFBW ? 'Trening FBW' : station.zone.nazwa}</span>
                 {!isFixedStation && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

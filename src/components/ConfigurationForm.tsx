@@ -3,16 +3,18 @@
 
 import React from 'react';
 import { useAppStore } from '@/app/lib/store';
-import { DIFFICULTY_LEVELS } from '@/app/lib/data';
+import { DIFFICULTY_LEVELS, ALL_ROOMS } from '@/app/lib/data';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Plus, Minus, Zap, Trophy, LayoutGrid, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Plus, Minus, Zap, Trophy, LayoutGrid, ShieldAlert, ShieldCheck, MapPin } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 
 export const ConfigurationForm = () => {
   const { 
+    selectedRoomId,
+    setSelectedRoom,
     participants, 
     setParticipants, 
     difficultyId, 
@@ -24,11 +26,14 @@ export const ConfigurationForm = () => {
     setStrictDifficulty
   } = useAppStore();
 
+  const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
   const currentDiff = DIFFICULTY_LEVELS.find(d => d.id === difficultyId);
 
+  const isFBW = currentRoom.tryb_treningu === 'fbw_synchroniczny';
+
   // Obliczenia dla ograniczeń stacji
-  const minStations = Math.ceil(participants / 2);
-  const maxStations = Math.min(participants, 7);
+  const minStations = isFBW ? 1 : Math.ceil(participants / 2);
+  const maxStations = Math.min(participants, currentRoom.maksymalna_pojemnosc.stacje);
   const numPairs = participants - stationCount;
 
   return (
@@ -41,6 +46,29 @@ export const ConfigurationForm = () => {
       </div>
 
       <div className="glass-card p-8 rounded-3xl space-y-8">
+        
+        {/* Sekcja Wyboru Sali */}
+        <div className="space-y-4">
+          <Label className="text-lg font-medium flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-primary" /> Wybierz Salę
+          </Label>
+          <Select value={selectedRoomId} onValueChange={setSelectedRoom}>
+            <SelectTrigger className="h-14 rounded-xl glass-button text-left border-white/10 text-lg font-bold">
+              <SelectValue placeholder="Wybierz Salę" />
+            </SelectTrigger>
+            <SelectContent className="glass-card border-white/10">
+              {ALL_ROOMS.map(room => (
+                <SelectItem key={room.id_sali} value={room.id_sali} className="py-3 focus:bg-primary focus:text-primary-foreground">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-bold">{room.nazwa_sali}</span>
+                    <span className="text-[10px] opacity-70 uppercase tracking-widest">{room.tryb_treningu === 'obwodowy' ? 'Trening Obwodowy' : 'FBW Synchroniczny'} • Max {room.maksymalna_pojemnosc.osoby} os.</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Sekcja Uczestników */}
         <div className="space-y-4">
           <div className="flex justify-between items-end">
@@ -66,7 +94,7 @@ export const ConfigurationForm = () => {
               variant="outline" 
               size="icon" 
               onClick={() => setParticipants(participants + 1)}
-              disabled={participants >= 14}
+              disabled={participants >= currentRoom.maksymalna_pojemnosc.osoby}
               className="h-12 w-12 rounded-xl glass-button"
             >
               <Plus className="h-6 w-6" />
@@ -97,7 +125,7 @@ export const ConfigurationForm = () => {
             <span>Minimum: {minStations}</span>
             <span>Maksimum: {maxStations}</span>
           </div>
-          {numPairs > 0 && (
+          {numPairs > 0 && !isFBW && (
             <p className="text-[10px] text-primary/80 text-center font-medium bg-primary/5 py-2 rounded-lg border border-primary/10">
               W tym układzie wygenerujemy {numPairs} {numPairs === 1 ? 'stację podwójną' : 'stacje podwójne'}.
             </p>
@@ -153,7 +181,7 @@ export const ConfigurationForm = () => {
           className="w-full h-16 rounded-2xl text-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 flex gap-2 group"
         >
           <Zap className="h-6 w-6 fill-current group-hover:scale-125 transition-transform" />
-          Generuj Obwód
+          {isFBW ? 'Generuj FBW (Synchr)' : 'Generuj Obwód'}
         </Button>
       </div>
     </div>

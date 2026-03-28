@@ -31,7 +31,7 @@ export type Exercise = z.infer<typeof ExerciseSchema>;
 
 const StationContextSchema = z.object({
   stationName: z.string().describe('The name of the training station (e.g., "Stacja 1: Ściana Startowa").'),
-  numParticipants: z.number().int().min(1).max(14).describe('The number of participants in the training session.'),
+  numParticipants: z.number().int().min(1).max(40).describe('The number of participants in the training session.'),
   difficultyLevelName: z.string().describe('The name of the selected difficulty level for the training.'),
   availableEquipmentAtStation: z.array(z.string()).describe('A list of equipment names available at this specific station.'),
   segmentType: z.string().describe('The segment type of the current exercise (e.g., PUSH, PULL, DYNAMIKA).'),
@@ -71,7 +71,7 @@ const rerollExercisePrompt = ai.definePrompt({
   prompt: `You are an AI personal trainer assistant specializing in group training programs. Your goal is to suggest a single, compatible alternative exercise for a given station context.
 
 CRITICAL RULE:
-If 'numParticipants' in 'stationContext' is 7 or less, the workout is in SOLO mode. In SOLO mode, you MUST NOT suggest any exercise where 'tryb_pracy' is 'W_Parze' or the segment is 'PARTNER'.
+If 'numParticipants' in 'stationContext' is less than or equal to the number of stations, the workout is in SOLO mode. In SOLO mode, you MUST NOT suggest any exercise where 'tryb_pracy' is 'W_Parze' or the segment is 'PARTNER'.
 
 Here is the current exercise to replace:
 \`\`\`json
@@ -94,7 +94,7 @@ The suggested exercise MUST:
 2. Match the difficulty level range.
 3. Match the segment type.
 4. NOT be the same as 'currentExercise' or 'otherExercisesInStation'.
-5. If numParticipants <= 7, it MUST be a 'Solo' exercise.
+5. If numParticipants is less than or equal to total stations, it MUST be a 'Solo' exercise.
 
 Provide the suggestion in the following JSON format, preserving all original fields from the database schema:
 `,
