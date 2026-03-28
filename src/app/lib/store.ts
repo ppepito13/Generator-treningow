@@ -5,13 +5,15 @@ import {
   Exercise, 
   Station, 
   ALL_EXERCISES, 
-  ROOM_CONFIG, 
+  ALL_ROOMS, 
+  RoomConfig,
   getDifficultyById, 
   Zone,
   DifficultyLevel
 } from './data';
 
 interface AppState {
+  selectedRoomId: string;
   participants: number;
   stationCount: number;
   difficultyId: string;
@@ -19,6 +21,7 @@ interface AppState {
   circuit: Station[];
   isGenerated: boolean;
   
+  setSelectedRoom: (id: string) => void;
   setParticipants: (val: number) => void;
   setStationCount: (val: number) => void;
   setDifficulty: (id: string) => void;
@@ -36,29 +39,20 @@ const getEquipmentString = (ex: Exercise): string => {
   return String(ex.wymagany_sprzet || "").toLowerCase();
 };
 
-const canExerciseBeShared = (ex: Exercise): boolean => {
+const canExerciseBeShared = (ex: Exercise, currentRoom: RoomConfig): boolean => {
   const req = getEquipmentString(ex);
   if (req.includes('brak') || req.includes('masa ciała') || req.includes('maty')) return true;
   
-  const itemKey = Object.keys(ROOM_CONFIG.inwentarz).find(k => req.includes(k.toLowerCase()));
+  const itemKey = Object.keys(currentRoom.inwentarz).find(k => req.includes(k.toLowerCase()));
   if (itemKey) {
-    const count = (ROOM_CONFIG.inwentarz as any)[itemKey] || 0;
+    const count = (currentRoom.inwentarz as any)[itemKey] || 0;
     return count >= 2;
   }
 
   return true;
 };
 
-const zoneOrder = [
-  'Strefa_Modul_0',
-  'Strefa_Modul_1',
-  'Strefa_Modul_2',
-  'Strefa_Modul_3',
-  'Strefa_Kolka',
-  'Strefa_Sciana',
-  'Strefa_Drabinki',
-  'Strefa_Wolna_Przestrzen'
-];
+
 
 export const getValidExercisesForZone = (
   zone: Zone, 
@@ -129,6 +123,7 @@ export const getValidExercisesForZone = (
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
+      selectedRoomId: ALL_ROOMS[0].id_sali,
       participants: 8,
       stationCount: 7,
       difficultyId: 'baza_silowa_standard',
@@ -136,26 +131,47 @@ export const useAppStore = create<AppState>()(
       circuit: [],
       isGenerated: false,
 
-      setParticipants: (val) => {
-        const newParticipants = Math.min(Math.max(val, 1), 14);
-        const maxStations = Math.min(newParticipants, 7);
+      setSelectedRoom: (roomId) => {
+        const newRoom = ALL_ROOMS.find(r => r.id_sali === roomId);
+        if (!newRoom) return;
+        
+        const currentParticipants = get().participants;
+        const currentStations = get().stationCount;
+        
         set({ 
-          participants: newParticipants,
-          stationCount: maxStations
+          selectedRoomId: roomId,
+          participants: Math.min(Math.max(currentParticipants, 1), newRoom.maksymalna_pojemnosc.osoby),
+          stationCount: Math.min(Math.max(currentStations, 1), newRoom.maksymalna_pojemnosc.stacje),
+          circuit: [],
+          isGenerated: false
         });
       },
 
-      setStationCount: (val) => set({ stationCount: val }),
+      setParticipants: (val) => {
+        const room = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
+        const newParticipants = Math.min(Math.max(val, 1), room.maksymalna_pojemnosc.osoby);
+        const maxStations = Math.min(newParticipants, room.maksymalna_pojemnosc.stacje);
+        const newStationCount = Math.min(get().stationCount, maxStations);
+        
+        set({ participants: newParticipants, stationCount: newStationCount });
+      },
+
+      setStationCount: (val) => {
+        const room = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
+        const maxStations = Math.min(get().participants, room.maksymalna_pojemnosc.stacje);
+        set({ stationCount: Math.min(Math.max(val, 1), maxStations) });
+      },
       setDifficulty: (id) => set({ difficultyId: id }),
       setStrictDifficulty: (val) => set({ isStrictDifficulty: val }),
 
       generateCircuit: () => {
-        const { participants, difficultyId, stationCount, isStrictDifficulty } = get();
+        const { participants, difficultyId, stationCount, isStrictDifficulty, selectedRoomId } = get();
         const mainDiff = getDifficultyById(difficultyId);
+        const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
         const numDoubleStations = participants - stationCount;
         const isPairMode = participants > stationCount;
 
-        const allZones = ROOM_CONFIG.strefy;
+        const allZones = currentRoom.strefy;
         const selectedZones: Zone[] = [];
 
         const mod0 = allZones.find(z => z.id === 'Strefa_Modul_0');
@@ -198,7 +214,7 @@ export const useAppStore = create<AppState>()(
           selectedZones.push(chosen);
         }
 
-        selectedZones.sort((a, b) => zoneOrder.indexOf(a.id) - zoneOrder.indexOf(b.id));
+        selectedZones.sort((a, b) => (a.kolejnosc_sortowania || 99) - (b.kolejnosc_sortowania || 99));
 
         const generated: Station[] = [];
         const usedIds = new Set<string>();
@@ -232,7 +248,7 @@ export const useAppStore = create<AppState>()(
 
           let exB: Exercise | undefined = undefined;
           if (isThisStationPair) {
-            if (exA.tryb_pracy === 'W_Parze' || canExerciseBeShared(exA)) {
+            if (exA.tryb_pracy === 'W_Parze' || canExerciseBeShared(exA, currentRoom)) {
               exB = exA;
             } else {
               const potentialB = ALL_EXERCISES.filter(ex => 
@@ -311,7 +327,8 @@ export const useAppStore = create<AppState>()(
           
           let newExB = undefined;
           if (station.isPair) {
-            if (newExA.tryb_pracy === 'W_Parze' || canExerciseBeShared(newExA)) {
+            const currentRoom = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
+            if (newExA.tryb_pracy === 'W_Parze' || canExerciseBeShared(newExA, currentRoom)) {
               newExB = newExA;
             } else {
               const potentialB = ALL_EXERCISES.filter(ex => 
@@ -360,7 +377,8 @@ export const useAppStore = create<AppState>()(
         const stationIndex = circuit.findIndex(s => s.id === stationId);
         if (stationIndex === -1) return;
 
-        const newZone = ROOM_CONFIG.strefy.find(z => z.id === newZoneId);
+        const currentRoom = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
+        const newZone = currentRoom.strefy.find(z => z.id === newZoneId);
         if (!newZone) return;
 
         const mainDiff = getDifficultyById(difficultyId);
@@ -396,7 +414,7 @@ export const useAppStore = create<AppState>()(
         let exB = undefined;
         
         if (circuit[stationIndex].isPair) {
-          if (exA.tryb_pracy === 'W_Parze' || canExerciseBeShared(exA)) {
+          if (exA.tryb_pracy === 'W_Parze' || canExerciseBeShared(exA, currentRoom)) {
             exB = exA;
           } else {
             const potentialB = ALL_EXERCISES.filter(ex => 
@@ -419,7 +437,7 @@ export const useAppStore = create<AppState>()(
           exerciseB: exB
         };
 
-        newCircuit.sort((a, b) => zoneOrder.indexOf(a.zone.id) - zoneOrder.indexOf(b.zone.id));
+        newCircuit.sort((a, b) => (a.zone.kolejnosc_sortowania || 99) - (b.zone.kolejnosc_sortowania || 99));
         set({ circuit: newCircuit });
       },
 
