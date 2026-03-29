@@ -33,8 +33,8 @@ export const ConfigurationForm = () => {
 
   // Obliczenia dla ograniczeń stacji
   const minStations = isFBW ? 1 : Math.ceil(participants / 2);
-  const maxStations = Math.min(participants, currentRoom.maksymalna_pojemnosc.stacje);
-  const numPairs = participants - stationCount;
+  const maxStations = isFBW ? currentRoom.maksymalna_pojemnosc.stacje : Math.min(participants, currentRoom.maksymalna_pojemnosc.stacje);
+  const numPairs = Math.max(0, participants - stationCount);
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-md mx-auto py-12 px-6">

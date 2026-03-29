@@ -416,7 +416,9 @@ export const useAppStore = create<AppState>()(
       setParticipants: (val) => {
         const room = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
         const newParticipants = Math.min(Math.max(val, 1), room.maksymalna_pojemnosc.osoby);
-        const maxStations = Math.min(newParticipants, room.maksymalna_pojemnosc.stacje);
+        const maxStations = room.tryb_treningu === 'fbw_synchroniczny' 
+          ? room.maksymalna_pojemnosc.stacje 
+          : Math.min(newParticipants, room.maksymalna_pojemnosc.stacje);
         const newStationCount = Math.min(get().stationCount, maxStations);
 
         set({ participants: newParticipants, stationCount: newStationCount });
@@ -424,7 +426,9 @@ export const useAppStore = create<AppState>()(
 
       setStationCount: (val) => {
         const room = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
-        const maxStations = Math.min(get().participants, room.maksymalna_pojemnosc.stacje);
+        const maxStations = room.tryb_treningu === 'fbw_synchroniczny' 
+          ? room.maksymalna_pojemnosc.stacje 
+          : Math.min(get().participants, room.maksymalna_pojemnosc.stacje);
         set({ stationCount: Math.min(Math.max(val, 1), maxStations) });
       },
       setDifficulty: (id) => set({ difficultyId: id }),
