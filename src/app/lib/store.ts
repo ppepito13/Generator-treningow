@@ -46,21 +46,37 @@ interface AppState {
   reset: () => void;
 }
 
-const getEquipmentString = (ex: Exercise): string => {
-  if (Array.isArray(ex.wymagany_sprzet)) {
-    return ex.wymagany_sprzet.join(', ').toLowerCase();
-  }
-  return String(ex.wymagany_sprzet || "").toLowerCase();
+const getEquipmentString = (ex: Pick<Exercise, "wymagania_sprzetowe">): string => {
+  if (!ex.wymagania_sprzetowe || ex.wymagania_sprzetowe.length === 0) return '';
+  const items = new Set<string>();
+  ex.wymagania_sprzetowe.forEach(rule => {
+    if (Array.isArray(rule)) {
+      rule.forEach(alt => Object.keys(alt).forEach(k => items.add(k)));
+    } else {
+      Object.keys(rule).forEach(k => items.add(k));
+    }
+  });
+  return Array.from(items).join(', ').toLowerCase();
 };
 
 const canExerciseBeShared = (ex: Exercise, currentRoom: RoomConfig): boolean => {
-  const req = getEquipmentString(ex);
-  if (req.includes('brak') || req.includes('masa ciała') || req.includes('maty')) return true;
+  if (!ex.wymagania_sprzetowe || ex.wymagania_sprzetowe.length === 0) return true;
 
-  const itemKey = Object.keys(currentRoom.inwentarz).find(k => req.includes(k.toLowerCase()));
-  if (itemKey) {
-    const count = (currentRoom.inwentarz as any)[itemKey] || 0;
-    return count >= 2;
+  const req = getEquipmentString(ex);
+  if (req === '') return true;
+
+  const allReqKeys = new Set<string>();
+  ex.wymagania_sprzetowe.forEach(rule => {
+    if (Array.isArray(rule)) {
+      rule.forEach(alt => Object.keys(alt).forEach(k => allReqKeys.add(k)));
+    } else {
+      Object.keys(rule).forEach(k => allReqKeys.add(k));
+    }
+  });
+
+  for (const itemKey of allReqKeys) {
+    const gymHas = currentRoom.inwentarz[itemKey] || 0;
+    if (gymHas >= 2) return true;
   }
 
   return true;
@@ -68,25 +84,25 @@ const canExerciseBeShared = (ex: Exercise, currentRoom: RoomConfig): boolean => 
 
 const ensureEquipment = (ex: Exercise, currentRoom: RoomConfig, participants: number): boolean => {
   if (currentRoom.tryb_treningu !== 'fbw_synchroniczny') return true;
-  if (!ex.wymagany_sprzet || ex.wymagany_sprzet.length === 0) return true;
-  const rawReqs = Array.isArray(ex.wymagany_sprzet) ? ex.wymagany_sprzet : [ex.wymagany_sprzet];
-  const reqs = rawReqs.flatMap(r => String(r).split(',').map(s => s.trim()));
-  for (const req of reqs) {
-    const reqLower = req.toLowerCase();
-    if (reqLower === '' || reqLower.includes('brak') || reqLower.includes('masa ciała') || reqLower.includes('maty') || reqLower.includes('własne ciało')) continue;
-    
-    // Zabezpieczenie: Czy SPRZĘT w ogóle występuje w inwentarzu Sali?
-    const availableKey = Object.keys(currentRoom.inwentarz).find(k => reqLower.includes(k.toLowerCase()) || k.toLowerCase().includes(reqLower));
-    
-    if (!availableKey) return false;
-    
-    const gymHas = currentRoom.inwentarz[availableKey];
-    const multiplier = (ex as any).mnoznik_sprzetu || 1;
-    const needed = participants * multiplier;
-    
-    if (gymHas < needed) return false;
-  }
-  return true;
+  if (!ex.wymagania_sprzetowe || ex.wymagania_sprzetowe.length === 0) return true;
+
+  const checkSingle = (req: Record<string, number>) => {
+    return Object.entries(req).every(([itemKey, qtyPerPerson]) => {
+      // Dzięki zrównaniu słownictwa (m.in migrateDB.js) możemy szukać exact-match klucza.
+      const gymHas = currentRoom.inwentarz[itemKey] || 0;
+      const needed = participants * qtyPerPerson;
+      return gymHas >= needed;
+    });
+  };
+
+  // Silnik Hybrydowy: Główna tablica to zasady AND. Wewnątrz (Array) to zasady OR.
+  return ex.wymagania_sprzetowe.every(rule => {
+    if (Array.isArray(rule)) {
+      return rule.some(alt => checkSingle(alt));
+    } else {
+      return checkSingle(rule);
+    }
+  });
 };
 
 export const getValidExercisesForZone = (

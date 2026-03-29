@@ -40,10 +40,17 @@ export const StationCard = ({ station }: Props) => {
   const isShared = station.exerciseB && station.exerciseB.id_cwiczenia === station.exerciseA.id_cwiczenia;
 
   const getEquipmentDisplay = (ex: Exercise) => {
-    if (Array.isArray(ex.wymagany_sprzet)) {
-      return ex.wymagany_sprzet.join(", ");
-    }
-    return String(ex.wymagany_sprzet || "");
+    if (!ex.wymagania_sprzetowe || ex.wymagania_sprzetowe.length === 0) return "BRAK / MASA CIAŁA";
+    
+    return ex.wymagania_sprzetowe.map(rule => {
+      if (Array.isArray(rule)) {
+        const alts = new Set<string>();
+        rule.forEach(alt => Object.keys(alt).forEach(k => alts.add(k)));
+        return Array.from(alts).map(i => i.replace(/_/g, ' ')).join(' / ');
+      } else {
+        return Object.keys(rule).map(i => i.replace(/_/g, ' ')).join(', ');
+      }
+    }).join(' + ');
   };
 
   const getMusclesDisplay = (ex: Exercise) => {
@@ -55,7 +62,7 @@ export const StationCard = ({ station }: Props) => {
 
   const availableSegmentsA = SEGMENTS.filter(seg => {
     const levelRange = { min: currentDiff.min_poziom, max: currentDiff.max_poziom };
-    const pool = getValidExercisesForZone(station.zone, levelRange, new Set(), station.isPair, seg.id, true);
+    const pool = getValidExercisesForZone(station.zone, levelRange, new Set(), station.isPair, currentRoom, seg.id, true);
     return pool.length > 0;
   });
 

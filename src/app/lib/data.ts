@@ -4,6 +4,9 @@ import levels from './data/poziomy_trudnosci.json';
 import segments from './data/segmenty.json';
 import sala from './data/sala.json';
 
+export type SingleRequirement = Record<string, number>;
+export type EquipmentRequirement = SingleRequirement | SingleRequirement[];
+
 export interface Exercise {
   id_cwiczenia: string;
   nazwa: string;
@@ -11,7 +14,7 @@ export interface Exercise {
   segment_id: number;
   segment_nazwa: string;
   tryb_pracy: "Solo" | "W_Parze";
-  wymagany_sprzet: string | string[];
+  wymagania_sprzetowe?: EquipmentRequirement[];
   biomechanika: string;
   poziom: number;
   glowne_partie: string[];

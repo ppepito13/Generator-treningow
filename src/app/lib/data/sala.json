@@ -9,46 +9,46 @@
         "stacje": 7
       },
       "inwentarz": {
-        "box do treningu pośladków": 1,
-        "chwyty w kształcie kulek na drążek": 2,
-        "drabinka pozioma (w power rag)": 1,
-        "drabinki pionowe ścienne": 2,
-        "drążki": 8,
-        "gryfy olimpijskie": 4,
-        "gumy oporowe długie": 6,
-        "gumy oporowe mini": 4,
-        "hantle": 10,
-        "kamizelka obciążeniowa": 1,
-        "kettlebells": 20,
-        "kije drewniane": 10,
-        "klatka treningowa rack / brama rig": 1,
-        "kółka do ćwiczeń brzucha (ab wheel)": 2,
-        "kółka gimnastyczne": 1,
-        "mały cienki materac": 6,
-        "maty": 6,
-        "miękkie bloczki do jogi": 4,
-        "nunczako piankowe": 2,
-        "obciążenia na kostki": 2,
-        "obciążenia (talerze)": 20,
-        "paraletki": 2,
-        "piłeczki małe tenisowe": 2,
-        "piłki balansujące bosu": 2,
-        "piłki gimnastyczne duże": 2,
-        "piłki lekarskie obciążeniowe": 10,
-        "piłki materiałowe obciążeniowe": 2,
-        "poręcze DIP (v-shape)": 1,
-        "ramiona asekuracyjne do klatki RIG": 4,
-        "rollery": 3,
-        "ręcznik": 2,
-        "skakanki": 4,
-        "skrzynie/boxy plyometryczne drewniane": 2,
+        "box_posladki": 1,
+        "kulki_drazek": 2,
+        "drabinka_pozioma": 1,
+        "drabinka_pionowa": 2,
+        "drazek": 8,
+        "gryf_olimpijski": 4,
+        "guma_oporowa_dluga": 6,
+        "guma_oporowa_mini": 4,
+        "hantel": 10,
+        "kamizelka_obciazeniowa": 1,
+        "kettlebell": 20,
+        "kij_drewniany": 10,
+        "brama_rig": 1,
+        "ab_wheel": 2,
+        "kolko_gimnastyczne": 1,
+        "materac": 6,
+        "mata": 6,
+        "bloczek_joga": 4,
+        "nunczako": 2,
+        "obciazenia_kostki": 2,
+        "talerz": 20,
+        "paraletka": 2,
+        "pilka_tenisowa": 2,
+        "pilka_bosu": 2,
+        "pilka_gimnastyczna": 2,
+        "pilka_lekarska": 10,
+        "pilka_materialowa": 2,
+        "porecz_dip": 1,
+        "ramiona_asekuracyjne": 4,
+        "roller": 3,
+        "recznik": 2,
+        "skakanka": 4,
+        "skrzynia_drewniana": 2,
         "skrzynie/boxy plyometryczne miękkie, ciężkie": 2,
-        "steppery": 3,
-        "sztangi 5kg": 10,
-        "taśmy TRX": 2,
-        "uchwyty na sztangę do klatki RIG": 8,
-        "worki obciążeniowe do ćwiczeń": 4,
-        "ściany (do handstand)": 5
+        "stepper": 3,
+        "sztanga_5kg": 10,
+        "trx": 2,
+        "uchwyt_sztanga_rig": 8,
+        "worek_obciazeniowy": 4,
+        "sciana_handstand": 5
       },
       "strefy": [
         {
@@ -58,7 +58,7 @@
           "blokada_zmiany_recznej": true,
           "zakazane_kategorie_sprzetu": [
             "drążek",
-            "drążki",
+            "drazek",
             "drabink",
             "kółka",
             "kółkach",
@@ -73,8 +73,8 @@
             "zakaz_drazkow_i_drabinek"
           ],
           "przypisany_sprzet": [
-            "ściany",
-            "maty"
+            "sciana_handstand",
+            "mata"
           ]
         },
         {
@@ -85,7 +85,7 @@
           "pojemnosc_stacji": 1,
           "akceptuje_pelen_obrot": true,
           "przypisany_sprzet": [
-            "drążki"
+            "drazek"
           ]
         },
         {
@@ -96,7 +96,7 @@
           "pojemnosc_stacji": 2,
           "akceptuje_pelen_obrot": false,
           "przypisany_sprzet": [
-            "drążki"
+            "drazek"
           ]
         },
         {
@@ -107,7 +107,7 @@
           "pojemnosc_stacji": 2,
           "akceptuje_pelen_obrot": true,
           "przypisany_sprzet": [
-            "drążki"
+            "drazek"
           ]
         },
         {
@@ -117,7 +117,7 @@
           "typ": "staly",
           "pojemnosc_stacji": 1,
           "przypisany_sprzet": [
-            "kółka gimnastyczne"
+            "kolko_gimnastyczne"
           ]
         },
         {
@@ -127,7 +127,7 @@
           "typ": "staly",
           "pojemnosc_stacji": 2,
           "przypisany_sprzet": [
-            "ściany"
+            "sciana_handstand"
           ]
         },
         {
@@ -137,7 +137,7 @@
           "typ": "staly",
           "pojemnosc_stacji": 1,
           "przypisany_sprzet": [
-            "drabinki pionowe ścienne"
+            "drabinka_pionowa"
           ]
         },
         {
@@ -167,10 +167,10 @@
         "stacje": 15
       },
       "inwentarz": {
-        "steppery": 30,
-        "hantle": 60,
-        "sztangi 5kg": 30,
-        "maty": 30
+        "stepper": 30,
+        "hantel": 60,
+        "sztanga_5kg": 30,
+        "mata": 30
       },
       "strefy": [
         {
