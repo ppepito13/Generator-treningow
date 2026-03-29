@@ -243,7 +243,9 @@ export const StationCard = ({ station }: Props) => {
                 {isFBW ? 'Stanowisko' : 'Lokalizacja'}
               </h2>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-white uppercase">{isFBW ? 'Trening FBW' : station.zone.nazwa}</span>
+                <span className="text-sm font-bold text-white uppercase">
+                  {isFBW ? `Ćwiczenie ${circuit.findIndex(s => s.id === station.id) + 1}` : station.zone.nazwa}
+                </span>
                 {!isFixedStation && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppStore } from './lib/store';
 import { ConfigurationForm } from '@/components/ConfigurationForm';
 import { CircuitList } from '@/components/CircuitList';
+import { GenerationConflictDialog } from '@/components/GenerationConflictDialog';
 import { Toaster } from '@/components/ui/toaster';
 
 export default function Home() {
@@ -37,6 +38,7 @@ export default function Home() {
       ) : (
         <CircuitList />
       )}
+      <GenerationConflictDialog />
       <Toaster />
     </main>
   );

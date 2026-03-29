@@ -1,16 +1,26 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { 
-  Exercise, 
-  Station, 
-  ALL_EXERCISES, 
-  ALL_ROOMS, 
+import {
+  Exercise,
+  Station,
+  ALL_EXERCISES,
+  ALL_ROOMS,
   RoomConfig,
-  getDifficultyById, 
+  getDifficultyById,
   Zone,
   DifficultyLevel
 } from './data';
+
+export const MAX_DIFFICULTY_LOOSENING = 1;
+
+export interface GenerationConflictState {
+  type: 'generate' | 'reroll';
+  requestedStations: number;
+  availableStations: number;
+  canLoosenDifficulty: boolean;
+  contextData?: any;
+}
 
 interface AppState {
   selectedRoomId: string;
@@ -20,15 +30,19 @@ interface AppState {
   isStrictDifficulty: boolean;
   circuit: Station[];
   isGenerated: boolean;
-  
+  generationConflict: GenerationConflictState | null;
+
+  setGenerationConflict: (conflict: GenerationConflictState | null) => void;
+  resolveConflict: (resolutionData: { action: 'loosen' | 'duplicate' | 'reduce' | 'cancel' }) => void;
+
   setSelectedRoom: (id: string) => void;
   setParticipants: (val: number) => void;
   setStationCount: (val: number) => void;
   setDifficulty: (id: string) => void;
   setStrictDifficulty: (val: boolean) => void;
   generateCircuit: () => void;
-  rerollExercise: (stationId: string, type: 'A' | 'B', segmentId?: number) => void;
-  changeStationZone: (stationId: string, newZoneId: string) => void;
+  rerollExercise: (stationId: string, type: 'A' | 'B', segmentId?: number, loosen?: boolean, ignoreUsed?: boolean) => void;
+  changeStationZone: (stationId: string, newZoneId: string, loosen?: boolean, ignoreUsed?: boolean) => void;
   reset: () => void;
 }
 
@@ -42,7 +56,7 @@ const getEquipmentString = (ex: Exercise): string => {
 const canExerciseBeShared = (ex: Exercise, currentRoom: RoomConfig): boolean => {
   const req = getEquipmentString(ex);
   if (req.includes('brak') || req.includes('masa ciała') || req.includes('maty')) return true;
-  
+
   const itemKey = Object.keys(currentRoom.inwentarz).find(k => req.includes(k.toLowerCase()));
   if (itemKey) {
     const count = (currentRoom.inwentarz as any)[itemKey] || 0;
@@ -52,18 +66,40 @@ const canExerciseBeShared = (ex: Exercise, currentRoom: RoomConfig): boolean => 
   return true;
 };
 
-
+const ensureEquipment = (ex: Exercise, currentRoom: RoomConfig, participants: number): boolean => {
+  if (currentRoom.tryb_treningu !== 'fbw_synchroniczny') return true;
+  if (!ex.wymagany_sprzet || ex.wymagany_sprzet.length === 0) return true;
+  const rawReqs = Array.isArray(ex.wymagany_sprzet) ? ex.wymagany_sprzet : [ex.wymagany_sprzet];
+  const reqs = rawReqs.flatMap(r => String(r).split(',').map(s => s.trim()));
+  for (const req of reqs) {
+    const reqLower = req.toLowerCase();
+    if (reqLower === '' || reqLower.includes('brak') || reqLower.includes('masa ciała') || reqLower.includes('maty') || reqLower.includes('własne ciało')) continue;
+    
+    // Zabezpieczenie: Czy SPRZĘT w ogóle występuje w inwentarzu Sali?
+    const availableKey = Object.keys(currentRoom.inwentarz).find(k => reqLower.includes(k.toLowerCase()) || k.toLowerCase().includes(reqLower));
+    
+    if (!availableKey) return false;
+    
+    const gymHas = currentRoom.inwentarz[availableKey];
+    const multiplier = (ex as any).mnoznik_sprzetu || 1;
+    const needed = participants * multiplier;
+    
+    if (gymHas < needed) return false;
+  }
+  return true;
+};
 
 export const getValidExercisesForZone = (
-  zone: Zone, 
-  diffRange: { min: number, max: number }, 
+  zone: Zone,
+  diffRange: { min: number, max: number },
   usedIds: Set<string>,
   isThisStationPair: boolean,
+  currentRoom: RoomConfig,
   segmentId?: number,
   ignoreUsed: boolean = false,
   hasFlagAlready: boolean = false
 ): Exercise[] => {
-  let pool = ALL_EXERCISES.filter(ex => 
+  let pool = ALL_EXERCISES.filter(ex =>
     ex.poziom >= diffRange.min && ex.poziom <= diffRange.max &&
     (ignoreUsed ? true : !usedIds.has(ex.id_cwiczenia))
   );
@@ -110,21 +146,31 @@ export const getValidExercisesForZone = (
 
   if (zoneEquip.length > 0) {
     pool = pool.filter(ex => {
-      const equip = getEquipmentString(ex);
+      const equip = getEquipmentString(ex).toLowerCase();
       const name = ex.nazwa.toLowerCase();
       return zoneEquip.some(item => equip.includes(item.toLowerCase()) || name.includes(item.toLowerCase()));
     });
+  }
+
+  // OSTATECZNA tarcza ochronna – weryfikacja fizycznego sprzętu na Sali.
+  pool = pool.filter(ex => ensureEquipment(ex, currentRoom, 1));
+
+  // FALLBACK jeśli wyczyściliśmy ćwiczenia z użytych: zezwalamy na potworzenia!
+  if (pool.length === 0 && !ignoreUsed) {
+    return getValidExercisesForZone(zone, diffRange, new Set(), isThisStationPair, currentRoom, segmentId, true, hasFlagAlready);
   }
 
   return pool;
 };
 
 const generateCircuitStrategy = (
-  currentRoom: RoomConfig, 
-  mainDiff: DifficultyLevel, 
-  participants: number, 
-  stationCount: number, 
-  isStrictDifficulty: boolean
+  currentRoom: RoomConfig,
+  mainDiff: DifficultyLevel,
+  participants: number,
+  stationCount: number,
+  isStrictDifficulty: boolean,
+  loosenDifficultyFlag: boolean = false,
+  ignoreUsedFlag: boolean = false
 ): Station[] => {
   const numDoubleStations = participants - stationCount;
   const isPairMode = participants > stationCount;
@@ -144,7 +190,7 @@ const generateCircuitStrategy = (
     }, {} as Record<string, number>);
 
     let floorLimit = allZones.find(z => z.typ === 'elastyczny')?.bazowa_pojemnosc_stacji || 5;
-    
+
     const elastycznaStrefa = allZones.find(z => z.typ === 'elastyczny');
     if (elastycznaStrefa && elastycznaStrefa.zaleznosci_pojemnosci_od) {
       elastycznaStrefa.zaleznosci_pojemnosci_od.forEach(zalezna => {
@@ -156,11 +202,11 @@ const generateCircuitStrategy = (
     allZones.forEach(z => {
       if (forcedZones.some(fz => fz.id === z.id) || (rigZone && z.id === rigZone.id)) return;
       const current = currentCounts[z.id] || 0;
-      
+
       let cap = z.pojemnosc_stacji || 1;
       if (z.typ === 'elastyczny') cap = floorLimit;
       else if (isPairMode && z.typ === 'klatka_rig') cap = 1;
-      
+
       if (current < cap) candidates.push(z);
     });
 
@@ -178,14 +224,21 @@ const generateCircuitStrategy = (
   selectedZones.forEach((zone, idx) => {
     const isThisStationPair = idx < numDoubleStations;
     let currentRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
-    
+
     if (!isStrictDifficulty && (idx + 1) % 3 === 0) {
       currentRange = { min: Math.max(1, mainDiff.min_poziom - 2), max: Math.max(1, mainDiff.min_poziom - 1) };
     }
 
-    let pool = getValidExercisesForZone(zone, currentRange, usedIds, isThisStationPair, undefined, false, hasFlagAlready);
+    if (loosenDifficultyFlag) {
+      currentRange = { 
+        min: Math.max(1, currentRange.min - MAX_DIFFICULTY_LOOSENING), 
+        max: Math.min(10, currentRange.max + MAX_DIFFICULTY_LOOSENING) 
+      };
+    }
+
+    let pool = getValidExercisesForZone(zone, currentRange, usedIds, isThisStationPair, currentRoom, undefined, ignoreUsedFlag, hasFlagAlready);
     if (pool.length === 0) {
-      pool = getValidExercisesForZone(zone, { min: mainDiff.min_poziom, max: mainDiff.max_poziom }, usedIds, isThisStationPair, undefined, false, hasFlagAlready);
+      pool = getValidExercisesForZone(zone, { min: mainDiff.min_poziom, max: mainDiff.max_poziom }, usedIds, isThisStationPair, currentRoom, undefined, ignoreUsedFlag, hasFlagAlready);
     }
     if (pool.length === 0) return;
 
@@ -198,12 +251,12 @@ const generateCircuitStrategy = (
       if (exA.tryb_pracy === 'W_Parze' || canExerciseBeShared(exA, currentRoom)) {
         exB = exA;
       } else {
-        const potentialB = ALL_EXERCISES.filter(ex => 
+        const potentialB = ALL_EXERCISES.filter(ex =>
           ex.id_cwiczenia !== exA.id_cwiczenia &&
           !usedIds.has(ex.id_cwiczenia) &&
           ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
           ex.glowne_partie.some(p => exA.glowne_partie.includes(p)) &&
-          (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
+          ensureEquipment(ex, currentRoom, 1) &&
           ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
         );
         exB = potentialB[Math.floor(Math.random() * potentialB.length)] || exA;
@@ -220,11 +273,13 @@ const generateCircuitStrategy = (
 };
 
 const generateFBWStrategy = (
-  currentRoom: RoomConfig, 
-  mainDiff: DifficultyLevel, 
-  participants: number, 
-  stationCount: number, 
-  isStrictDifficulty: boolean
+  currentRoom: RoomConfig,
+  mainDiff: DifficultyLevel,
+  participants: number,
+  stationCount: number,
+  isStrictDifficulty: boolean,
+  loosenDifficultyFlag: boolean = false,
+  ignoreUsedFlag: boolean = false
 ): Station[] => {
   const generated: Station[] = [];
   const usedIds = new Set<string>();
@@ -232,26 +287,21 @@ const generateFBWStrategy = (
     id: 'FBW_Virtual', nazwa: 'Przestrzeń FBW', typ: 'elastyczny', pojemnosc_stacji: participants, bazowa_pojemnosc_stacji: participants
   };
   const currentRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
-  
-  for (let idx = 0; idx < stationCount; idx++) {
-    let pool = ALL_EXERCISES.filter(ex => !usedIds.has(ex.id_cwiczenia));
-    pool = pool.filter(ex => ex.poziom >= currentRange.min && ex.poziom <= currentRange.max);
-    pool = pool.filter(ex => {
-      const equipReqString = getEquipmentString(ex);
-      if (equipReqString.includes('brak') || equipReqString.includes('masa ciała') || equipReqString.includes('maty')) return true;
+  let searchRange = currentRange;
+  if (loosenDifficultyFlag) {
+    searchRange = { 
+       min: Math.max(1, currentRange.min - MAX_DIFFICULTY_LOOSENING), 
+       max: Math.min(10, currentRange.max + MAX_DIFFICULTY_LOOSENING) 
+    };
+  }
 
-      const itemsToFind = Object.keys(currentRoom.inwentarz).filter(k => equipReqString.includes(k.toLowerCase()));
-      for (const item of itemsToFind) {
-        const gymHas = currentRoom.inwentarz[item] || 0;
-        const multiplier = (ex as any).mnoznik_sprzetu || 1;
-        const needed = participants * multiplier;
-        if (gymHas < needed) return false;
-      }
-      return true;
-    });
+  for (let idx = 0; idx < stationCount; idx++) {
+    let pool = ALL_EXERCISES.filter(ex => ignoreUsedFlag ? true : !usedIds.has(ex.id_cwiczenia));
+    pool = pool.filter(ex => ex.poziom >= searchRange.min && ex.poziom <= searchRange.max);
+    pool = pool.filter(ex => ensureEquipment(ex, currentRoom, participants));
 
     if (pool.length === 0) continue;
-    
+
     const exA = pool[Math.floor(Math.random() * pool.length)];
     usedIds.add(exA.id_cwiczenia);
     generated.push({
@@ -274,15 +324,71 @@ export const useAppStore = create<AppState>()(
       isStrictDifficulty: false,
       circuit: [],
       isGenerated: false,
+      generationConflict: null,
+      
+      setGenerationConflict: (conflict) => set({ generationConflict: conflict }),
+      resolveConflict: (resolutionData) => {
+        const { action } = resolutionData;
+        const state = get();
+        const { participants, difficultyId, stationCount, isStrictDifficulty, selectedRoomId } = state;
+        const mainDiff = getDifficultyById(difficultyId);
+        const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
+
+        const executeGeneration = (loosen: boolean, ignore: boolean) => {
+           if (currentRoom.tryb_treningu === 'obwodowy') {
+             return generateCircuitStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty, loosen, ignore);
+           }
+           return generateFBWStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty, loosen, ignore);
+        };
+
+        if (action === 'cancel') {
+          set({ generationConflict: null });
+          return;
+        }
+
+        if (state.generationConflict?.type === 'reroll') {
+           const { action: rerollAction, stationId, paramType, segmentId, newZoneId } = state.generationConflict.contextData;
+           set({ generationConflict: null }); // clears state first
+
+           if (action === 'loosen') {
+             if (rerollAction === 'reroll') get().rerollExercise(stationId, paramType, segmentId, true, false);
+             if (rerollAction === 'changeZone') get().changeStationZone(stationId, newZoneId, true, false);
+           }
+           if (action === 'duplicate') {
+             if (rerollAction === 'reroll') get().rerollExercise(stationId, paramType, segmentId, false, true);
+             if (rerollAction === 'changeZone') get().changeStationZone(stationId, newZoneId, false, true);
+           }
+           return;
+        }
+
+        // Logic for generate
+        if (action === 'reduce') {
+          // Zatwierdzamy obcięty (krótki) scenariusz z oryginalnymi ostrymi parametrami wejściowymi 
+          const currentPartial = executeGeneration(false, false);
+          set({ circuit: currentPartial, isGenerated: true, generationConflict: null });
+        } 
+        else if (action === 'loosen') {
+          // Odpalamy tryb rozluźnienia parametrów trudności sprzętu
+          const loosenedCircuit = executeGeneration(true, false);
+          set({ circuit: loosenedCircuit, isGenerated: true, generationConflict: null });
+        } 
+        else if (action === 'duplicate') {
+          // Środowisko dopuszcza duplikaty (klony stacji z używanymi ćwiczeniami)
+          // Odpalamy z podwyższonym loose = false ORAZ ignoreUsed = true
+          // Jeżeli strict było odznaczone i loosen podpowiadało mniejsze powtórzenia, to ignorujemy użyte. 
+          const duplicateCircuit = executeGeneration(false, true);
+          set({ circuit: duplicateCircuit, isGenerated: true, generationConflict: null });
+        }
+      },
 
       setSelectedRoom: (roomId) => {
         const newRoom = ALL_ROOMS.find(r => r.id_sali === roomId);
         if (!newRoom) return;
-        
+
         const currentParticipants = get().participants;
         const currentStations = get().stationCount;
-        
-        set({ 
+
+        set({
           selectedRoomId: roomId,
           participants: Math.min(Math.max(currentParticipants, 1), newRoom.maksymalna_pojemnosc.osoby),
           stationCount: Math.min(Math.max(currentStations, 1), newRoom.maksymalna_pojemnosc.stacje),
@@ -296,7 +402,7 @@ export const useAppStore = create<AppState>()(
         const newParticipants = Math.min(Math.max(val, 1), room.maksymalna_pojemnosc.osoby);
         const maxStations = Math.min(newParticipants, room.maksymalna_pojemnosc.stacje);
         const newStationCount = Math.min(get().stationCount, maxStations);
-        
+
         set({ participants: newParticipants, stationCount: newStationCount });
       },
 
@@ -312,26 +418,44 @@ export const useAppStore = create<AppState>()(
         const { participants, difficultyId, stationCount, isStrictDifficulty, selectedRoomId } = get();
         const mainDiff = getDifficultyById(difficultyId);
         const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
-        
-        let newCircuit: Station[] = [];
-        
-        if (currentRoom.tryb_treningu === 'obwodowy') {
-          newCircuit = generateCircuitStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty);
-        } else if (currentRoom.tryb_treningu === 'fbw_synchroniczny') {
-          newCircuit = generateFBWStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty);
+
+        const tryGenerate = (loosen: boolean, ignore: boolean) => {
+           if (currentRoom.tryb_treningu === 'obwodowy') {
+             return generateCircuitStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty, loosen, ignore);
+           }
+           return generateFBWStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty, loosen, ignore);
+        };
+
+        const newCircuit = tryGenerate(false, false);
+
+        if (newCircuit.length < stationCount) {
+           // Algorytm się zatrzymał przed metą.
+           // Pre-kalkulacja (Dry Run): Czy poluzowanie trudności rozwiąże wakat?
+           const loosenedCircuit = tryGenerate(true, false);
+           const canLoosenHelp = loosenedCircuit.length >= stationCount;
+           
+           set({
+             generationConflict: {
+               type: 'generate',
+               requestedStations: stationCount,
+               availableStations: newCircuit.length,
+               canLoosenDifficulty: canLoosenHelp
+             }
+           });
+           return;
         }
 
-        set({ circuit: newCircuit, isGenerated: true });
+        set({ circuit: newCircuit, isGenerated: true, generationConflict: null });
       },
 
-      rerollExercise: (stationId, type, segmentId) => {
+      rerollExercise: (stationId, type, segmentId, loosen = false, ignoreUsed = false) => {
         const { circuit, difficultyId, isStrictDifficulty } = get();
         const stationIndex = circuit.findIndex(s => s.id === stationId);
         if (stationIndex === -1) return;
         const station = circuit[stationIndex];
 
         const mainDiff = getDifficultyById(difficultyId);
-        
+
         // Budujemy listę użytych ID wykluczając to, które właśnie zmieniamy
         const usedIds = new Set<string>();
         circuit.forEach(s => {
@@ -348,7 +472,7 @@ export const useAppStore = create<AppState>()(
           }
         });
 
-        const hasFlagAlready = circuit.some(s => 
+        const hasFlagAlready = circuit.some(s =>
           s.id !== stationId && (s.exerciseA.nazwa.toLowerCase().includes('flaga') || s.exerciseB?.nazwa.toLowerCase().includes('flaga'))
         );
 
@@ -360,53 +484,96 @@ export const useAppStore = create<AppState>()(
             max: Math.max(1, mainDiff.min_poziom - 1)
           };
         }
+        
+        let searchRange = { ...currentRange };
+        if (loosen) {
+          searchRange = { min: Math.max(1, currentRange.min - MAX_DIFFICULTY_LOOSENING), max: Math.min(10, currentRange.max + MAX_DIFFICULTY_LOOSENING) };
+        }
 
         if (type === 'A') {
-          let pool = getValidExercisesForZone(station.zone, currentRange, usedIds, station.isPair, segmentId, false, hasFlagAlready);
+          const currentRoom = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
+          let pool = getValidExercisesForZone(station.zone, searchRange, usedIds, station.isPair, currentRoom, segmentId, ignoreUsed, hasFlagAlready);
+          
           if (pool.length === 0) {
-            pool = getValidExercisesForZone(station.zone, { min: mainDiff.min_poziom, max: mainDiff.max_poziom }, usedIds, station.isPair, segmentId, false, hasFlagAlready);
+            searchRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
+            if (loosen) {
+              searchRange = { min: Math.max(1, mainDiff.min_poziom - MAX_DIFFICULTY_LOOSENING), max: Math.min(10, mainDiff.max_poziom + MAX_DIFFICULTY_LOOSENING) };
+            }
+            pool = getValidExercisesForZone(station.zone, searchRange, usedIds, station.isPair, currentRoom, segmentId, ignoreUsed, hasFlagAlready);
           }
-          
-          if (pool.length === 0) return;
+
+          if (pool.length === 0) {
+             const dryLoosenRange = { min: Math.max(1, currentRange.min - MAX_DIFFICULTY_LOOSENING), max: Math.min(10, currentRange.max + MAX_DIFFICULTY_LOOSENING) };
+             const dryPool = getValidExercisesForZone(station.zone, dryLoosenRange, usedIds, station.isPair, currentRoom, segmentId, ignoreUsed, hasFlagAlready);
+             set({
+               generationConflict: {
+                 type: 'reroll',
+                 requestedStations: 1, availableStations: 0,
+                 canLoosenDifficulty: dryPool.length > 0,
+                 contextData: { action: 'reroll', stationId, paramType: type, segmentId }
+               }
+             });
+             return;
+          }
           const newExA = pool[Math.floor(Math.random() * pool.length)];
-          
+
           let newExB = undefined;
           if (station.isPair) {
             const currentRoom = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
             if (newExA.tryb_pracy === 'W_Parze' || canExerciseBeShared(newExA, currentRoom)) {
               newExB = newExA;
             } else {
-              const potentialB = ALL_EXERCISES.filter(ex => 
+              const potentialB = ALL_EXERCISES.filter(ex =>
                 ex.id_cwiczenia !== newExA.id_cwiczenia &&
                 !usedIds.has(ex.id_cwiczenia) &&
                 ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
                 ex.glowne_partie.some(p => newExA.glowne_partie.includes(p)) &&
-                (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
+                ensureEquipment(ex, currentRoom, 1) &&
                 ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
               );
               newExB = potentialB[Math.floor(Math.random() * potentialB.length)] || newExA;
             }
           }
-          
+
           const newCircuit = [...circuit];
           newCircuit[stationIndex] = { ...station, exerciseA: newExA, exerciseB: newExB };
           set({ circuit: newCircuit });
         } else if (type === 'B' && station.exerciseB) {
-          const pool = ALL_EXERCISES.filter(ex => 
+          const currentRoom = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
+          const pool = ALL_EXERCISES.filter(ex =>
             ex.id_cwiczenia !== station.exerciseA.id_cwiczenia &&
             !usedIds.has(ex.id_cwiczenia) &&
             ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
             ex.glowne_partie.some(p => station.exerciseA.glowne_partie.includes(p)) &&
-            (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
+            ensureEquipment(ex, currentRoom, 1) &&
             ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
           );
-          
+
           if (hasFlagAlready) {
             pool.filter(ex => !ex.nazwa.toLowerCase().includes('flaga'));
           }
-          
+
           const filteredPool = segmentId !== undefined ? pool.filter(ex => ex.segment_id === segmentId) : pool;
-          if (filteredPool.length === 0) return;
+          if (filteredPool.length === 0) {
+             const dryLoosenRange = { min: Math.max(1, currentRange.min - MAX_DIFFICULTY_LOOSENING), max: Math.min(10, currentRange.max + MAX_DIFFICULTY_LOOSENING) };
+             const dryPool = ALL_EXERCISES.filter(ex =>
+                ex.id_cwiczenia !== station.exerciseA.id_cwiczenia &&
+                !usedIds.has(ex.id_cwiczenia) &&
+                ex.poziom >= dryLoosenRange.min && ex.poziom <= dryLoosenRange.max &&
+                ex.glowne_partie.some(p => station.exerciseA.glowne_partie.includes(p)) &&
+                ensureEquipment(ex, currentRoom, 1) &&
+                ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
+             );
+             set({
+               generationConflict: {
+                 type: 'reroll',
+                 requestedStations: 1, availableStations: 0,
+                 canLoosenDifficulty: dryPool.length > 0,
+                 contextData: { action: 'reroll', stationId, paramType: type, segmentId }
+               }
+             });
+             return;
+          }
 
           const newExB = filteredPool[Math.floor(Math.random() * filteredPool.length)];
           if (newExB) {
@@ -417,7 +584,7 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      changeStationZone: (stationId, newZoneId) => {
+      changeStationZone: (stationId, newZoneId, loosen = false, ignoreUsed = false) => {
         const { circuit, difficultyId, isStrictDifficulty } = get();
         const stationIndex = circuit.findIndex(s => s.id === stationId);
         if (stationIndex === -1) return;
@@ -435,7 +602,7 @@ export const useAppStore = create<AppState>()(
           }
         });
 
-        const hasFlagAlready = circuit.some(s => 
+        const hasFlagAlready = circuit.some(s =>
           s.id !== stationId && (s.exerciseA.nazwa.toLowerCase().includes('flaga') || s.exerciseB?.nazwa.toLowerCase().includes('flaga'))
         );
 
@@ -448,26 +615,48 @@ export const useAppStore = create<AppState>()(
           };
         }
 
-        let pool = getValidExercisesForZone(newZone, currentRange, usedExerciseIds, circuit[stationIndex].isPair, undefined, false, hasFlagAlready);
-        if (pool.length === 0) {
-          pool = getValidExercisesForZone(newZone, { min: mainDiff.min_poziom, max: mainDiff.max_poziom }, usedExerciseIds, circuit[stationIndex].isPair, undefined, false, hasFlagAlready);
+        let searchRange = { ...currentRange };
+        if (loosen) {
+          searchRange = { min: Math.max(1, currentRange.min - MAX_DIFFICULTY_LOOSENING), max: Math.min(10, currentRange.max + MAX_DIFFICULTY_LOOSENING) };
         }
-        
-        if (pool.length === 0) return;
+
+        let pool = getValidExercisesForZone(newZone, searchRange, usedExerciseIds, circuit[stationIndex].isPair, currentRoom, undefined, ignoreUsed, hasFlagAlready);
+
+        if (pool.length === 0) {
+          searchRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
+          if (loosen) {
+            searchRange = { min: Math.max(1, mainDiff.min_poziom - MAX_DIFFICULTY_LOOSENING), max: Math.min(10, mainDiff.max_poziom + MAX_DIFFICULTY_LOOSENING) };
+          }
+          pool = getValidExercisesForZone(newZone, searchRange, usedExerciseIds, circuit[stationIndex].isPair, currentRoom, undefined, ignoreUsed, hasFlagAlready);
+        }
+
+        if (pool.length === 0) {
+           const dryLoosenRange = { min: Math.max(1, currentRange.min - MAX_DIFFICULTY_LOOSENING), max: Math.min(10, currentRange.max + MAX_DIFFICULTY_LOOSENING) };
+           const dryPool = getValidExercisesForZone(newZone, dryLoosenRange, usedExerciseIds, circuit[stationIndex].isPair, currentRoom, undefined, ignoreUsed, hasFlagAlready);
+           set({
+             generationConflict: {
+               type: 'reroll',
+               requestedStations: 1, availableStations: 0,
+               canLoosenDifficulty: dryPool.length > 0,
+               contextData: { action: 'changeZone', stationId, newZoneId }
+             }
+           });
+           return;
+        }
 
         const exA = pool[Math.floor(Math.random() * pool.length)];
         let exB = undefined;
-        
+
         if (circuit[stationIndex].isPair) {
           if (exA.tryb_pracy === 'W_Parze' || canExerciseBeShared(exA, currentRoom)) {
             exB = exA;
           } else {
-            const potentialB = ALL_EXERCISES.filter(ex => 
+            const potentialB = ALL_EXERCISES.filter(ex =>
               ex.id_cwiczenia !== exA.id_cwiczenia &&
               !usedExerciseIds.has(ex.id_cwiczenia) &&
               ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
               ex.glowne_partie.some(p => exA.glowne_partie.includes(p)) &&
-              (getEquipmentString(ex).includes('brak') || getEquipmentString(ex).includes('maty')) &&
+              ensureEquipment(ex, currentRoom, 1) &&
               ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
             );
             exB = potentialB[Math.floor(Math.random() * potentialB.length)] || exA;

@@ -77,28 +77,22 @@ export const ConfigurationForm = () => {
               {participants} OSÓB
             </span>
           </div>
-          <div className="flex items-center justify-between gap-4">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={() => setParticipants(participants - 1)}
-              disabled={participants <= 1}
-              className="h-12 w-12 rounded-xl glass-button"
-            >
-              <Minus className="h-6 w-6" />
-            </Button>
-            <div className="text-4xl font-bold font-mono text-primary flex-1 text-center">
+          <div className="flex flex-col gap-4">
+            <div className="text-5xl font-bold font-mono text-primary text-center">
               {participants.toString().padStart(2, '0')}
             </div>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={() => setParticipants(participants + 1)}
-              disabled={participants >= currentRoom.maksymalna_pojemnosc.osoby}
-              className="h-12 w-12 rounded-xl glass-button"
-            >
-              <Plus className="h-6 w-6" />
-            </Button>
+            <Slider 
+              value={[participants]} 
+              onValueChange={(vals) => setParticipants(vals[0])}
+              min={1}
+              max={currentRoom.maksymalna_pojemnosc.osoby}
+              step={1}
+              className="py-2"
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground uppercase font-bold px-1">
+              <span>Minimum: 1 Osoba</span>
+              <span>Maksimum: {currentRoom.maksymalna_pojemnosc.osoby} Osób</span>
+            </div>
           </div>
         </div>
 
