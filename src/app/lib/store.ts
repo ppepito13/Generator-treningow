@@ -128,6 +128,11 @@ export const getValidExercisesForZone = (
     pool = pool.filter(ex => ex.segment_id !== 8 && ex.tryb_pracy !== 'W_Parze');
   }
 
+  // Filtr reguł sali: zakazane tryby pracy (np. Astoria nie dopuszcza ćwiczeń W_Parze)
+  if (currentRoom.zakazane_tryby_pracy && currentRoom.zakazane_tryby_pracy.length > 0) {
+    pool = pool.filter(ex => !currentRoom.zakazane_tryby_pracy!.includes(ex.tryb_pracy));
+  }
+
   if (hasFlagAlready) {
     pool = pool.filter(ex => !ex.nazwa.toLowerCase().includes('flaga'));
   }
@@ -315,6 +320,11 @@ const generateFBWStrategy = (
     let pool = ALL_EXERCISES.filter(ex => ignoreUsedFlag ? true : !usedIds.has(ex.id_cwiczenia));
     pool = pool.filter(ex => ex.poziom >= searchRange.min && ex.poziom <= searchRange.max);
     pool = pool.filter(ex => ensureEquipment(ex, currentRoom, participants));
+
+    // Filtr reguł sali: zakazane tryby pracy
+    if (currentRoom.zakazane_tryby_pracy && currentRoom.zakazane_tryby_pracy.length > 0) {
+      pool = pool.filter(ex => !currentRoom.zakazane_tryby_pracy!.includes(ex.tryb_pracy));
+    }
 
     if (pool.length === 0) continue;
 

@@ -163,14 +163,15 @@
       "nazwa_sali": "Sala Astoria",
       "tryb_treningu": "fbw_synchroniczny",
       "maksymalna_pojemnosc": {
-        "osoby": 30,
+        "osoby": 33,
         "stacje": 15
       },
       "inwentarz": {
-        "stepper": 30,
-        "hantel": 60,
-        "sztanga_5kg": 30,
-        "mata": 30
+        "stepper": 33,
+        "hantel": 66,
+        "sztanga_5kg": 33,
+        "mata": 33,
+        "roller": 33
       },
       "strefy": [
         {
@@ -181,7 +182,8 @@
           "bazowa_pojemnosc_stacji": 30
         }
       ],
-      "reguly_przeplywu_i_kolizji": {}
+      "reguly_przeplywu_i_kolizji": {},
+      "zakazane_tryby_pracy": ["W_Parze"]
     }
   ]
 }

@@ -61,6 +61,7 @@ export interface RoomConfig {
   inwentarz: Record<string, number>;
   strefy: Zone[];
   reguly_przeplywu_i_kolizji: Record<string, string>;
+  zakazane_tryby_pracy?: Array<"Solo" | "W_Parze">;
 }
 
 export interface Station {

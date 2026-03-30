@@ -52,28 +52,31 @@ export const CircuitList = () => {
 
   const handleShare = async () => {
     const text = getSummary();
-    try {
-      // Próba natywnego udostępnienia przez powłokę Capacitor (Dla Android/iOS)
-      await Share.share({
-        title: 'Mój Trening SW Calisthenics',
-        text: text,
-        dialogTitle: 'Prześlij trening ekipie',
-      });
-    } catch (err) {
-      // Fallback awaryjny dla przeglądarki (np. uruchomienie w Chrome / Firebase Studio)
-      if (typeof navigator !== 'undefined' && navigator.share) {
-        try {
-          await navigator.share({
-            title: 'Mój Trening SW Calisthenics',
-            text: text,
-          });
-        } catch (webErr) {
-          // Ignoruj, jeśli użytkownik kliknął "Anuluj"
-          if ((webErr as Error).name !== 'AbortError') handleCopy();
-        }
-      } else {
+    const { Capacitor } = await import('@capacitor/core');
+
+    if (Capacitor.isNativePlatform()) {
+      // Natywne udostępnianie przez Capacitor (Android/iOS)
+      try {
+        await Share.share({
+          title: 'Mój Trening SW Calisthenics',
+          text: text,
+          dialogTitle: 'Prześlij trening ekipie',
+        });
+      } catch (err) {
         handleCopy();
       }
+    } else if (typeof navigator !== 'undefined' && navigator.share) {
+      // Web Share API w przeglądarce
+      try {
+        await navigator.share({
+          title: 'Mój Trening SW Calisthenics',
+          text: text,
+        });
+      } catch (webErr) {
+        if ((webErr as Error).name !== 'AbortError') handleCopy();
+      }
+    } else {
+      handleCopy();
     }
   };
 
@@ -82,7 +85,10 @@ export const CircuitList = () => {
 
   return (
     <div className="flex flex-col h-full max-w-2xl mx-auto pb-12">
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md p-6 flex items-center justify-between border-b border-white/5">
+      <div
+        className="sticky top-0 z-20 bg-background/80 backdrop-blur-md px-6 pb-4 flex items-center justify-between border-b border-white/5"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}
+      >
         <Button variant="ghost" onClick={reset} className="glass-button rounded-xl flex gap-2">
           <ArrowLeft className="h-4 w-4" />
           Wstecz

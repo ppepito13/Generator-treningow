@@ -18,6 +18,13 @@ export default function Home() {
     setHydrated(true);
   }, []);
 
+  // Automatyczne przewijanie na górę po wygenerowaniu treningu
+  useEffect(() => {
+    if (isGenerated) {
+      window.scrollTo(0, 0);
+    }
+  }, [isGenerated]);
+
   if (!hydrated) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">

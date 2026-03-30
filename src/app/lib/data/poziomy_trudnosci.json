@@ -3,7 +3,7 @@
     "id": "fundamenty_regresje",
     "nazwa_grupy": "Fundamenty i Regresje",
     "min_poziom": 1,
-    "max_poziom": 3,
+    "max_poziom": 2,
     "charakterystyka_biomechaniczna": "Ruchy w odciążeniu (skosy, gumy, kolana), pełne wsparcie, izolacja, mobilność i bazowa stabilizacja.",
     "przyklady_z_bazy": "Pompki na kolanach (1), Podciąganie australijskie (1), Pompki klasyczne (3).",
     "logika_algorytmu": "Bezpieczny start dla początkujących, rozgrzewka, „aktywny wypoczynek” w obwodach, powrót po kontuzjach."
@@ -11,8 +11,8 @@
   {
     "id": "baza_silowa_standard",
     "nazwa_grupy": "Baza Siłowa (Standard)",
-    "min_poziom": 4,
-    "max_poziom": 5,
+    "min_poziom": 3,
+    "max_poziom": 4,
     "charakterystyka_biomechaniczna": "Klasyczne ruchy wielostawowe (Bilateral), pełne operowanie masą własnego ciała pod wpływem grawitacji.",
     "przyklady_z_bazy": "Podciąganie klasyczne (4), Dipy na poręczach (4), Przysiad w powietrzu (Airborne) (5).",
     "logika_algorytmu": "Główny, budujący siłę rdzeń treningowy dla osób ćwiczących regularnie (średniozaawansowanych)."
@@ -20,8 +20,8 @@
   {
     "id": "progresja_dynamika",
     "nazwa_grupy": "Progresja i Dynamika",
-    "min_poziom": 6,
-    "max_poziom": 7,
+    "min_poziom": 5,
+    "max_poziom": 6,
     "charakterystyka_biomechaniczna": "Asymetria, pierwsze trudne ruchy unilateralne (jednonóż/jednorącz), wczesne \"skille\" i zaawansowana koordynacja.",
     "przyklady_z_bazy": "Pistol Squat (6), Muscle-up z asystą/wskokiem (6), Tuck Front Lever (7), Wall HSPU (7).",
     "logika_algorytmu": "Pomost do zaawansowanej kalisteniki. Wysokie zapotrzebowanie na stabilizację i duże zaangażowanie CNS."
@@ -29,7 +29,7 @@
   {
     "id": "zaawansowana_sila_strict",
     "nazwa_grupy": "Zaawansowana Siła (Strict)",
-    "min_poziom": 8,
+    "min_poziom": 7,
     "max_poziom": 8,
     "charakterystyka_biomechaniczna": "Ścisła siła, zaawansowany balans bez asekuracji, potężne napięcie izometryczne oraz ekscentryczne.",
     "przyklady_z_bazy": "Wyjścia siłowe / Muscle-up (8), Wolne stanie na rękach (8), Smocza Flaga (8).",
