@@ -8,7 +8,7 @@ import { GenerationConflictDialog } from '@/components/GenerationConflictDialog'
 import { Toaster } from '@/components/ui/toaster';
 
 export default function Home() {
-  const { isGenerated } = useAppStore();
+  const { activeView, popView, generationConflict, resolveConflict } = useAppStore();
   const [hydrated, setHydrated] = useState(false);
 
   // Oczekujemy na tzw. "Hydratację" (Hydration) komponentu na kliencie.
@@ -20,10 +20,46 @@ export default function Home() {
 
   // Automatyczne przewijanie na górę po wygenerowaniu treningu
   useEffect(() => {
-    if (isGenerated) {
+    if (activeView === 'CIRCUIT') {
       window.scrollTo(0, 0);
     }
-  }, [isGenerated]);
+  }, [activeView]);
+
+  // Obsługa sprzętowego przycisku "Wstecz" (Capacitor)
+  useEffect(() => {
+    let backListener: any;
+
+    const setupBackButton = async () => {
+      try {
+        const { App } = await import('@capacitor/app');
+        
+        backListener = await App.addListener('backButton', () => {
+          // 1. Jeśli jest otwarty konflikt/dialog - zamknij go
+          if (generationConflict) {
+            resolveConflict({ action: 'cancel' });
+            return;
+          }
+
+          // 2. Jeśli jesteśmy w widoku innym niż HOME - cofnij widok
+          if (activeView !== 'HOME') {
+            popView();
+            return;
+          }
+
+          // 3. Jeśli jesteśmy na HOME - pozwól aplikacji się zamknąć (domyślna akcja Capacitor)
+          App.exitApp();
+        });
+      } catch (e) {
+        // Ignoruj błędy w przeglądarce (brak pluginu App)
+      }
+    };
+
+    setupBackButton();
+
+    return () => {
+      if (backListener) backListener.remove();
+    };
+  }, [activeView, generationConflict, popView, resolveConflict]);
 
   if (!hydrated) {
     return (
@@ -35,16 +71,12 @@ export default function Home() {
 
   return (
     <main className="min-h-screen overflow-x-hidden">
-      {/* 
-        Główna mechanika przełączania ekranów aplikacji:
-        Jeśli użytkownik jeszcze nie wygenerował treningu, pokazujemy formularz.
-        W przeciwnym wypadku wyświetlamy wygenerowaną, docelową listę (obwód).
+      {activeView === 'HOME' && <ConfigurationForm />}
+      {activeView === 'CIRCUIT' && <CircuitList />}
+      {/* Tu w przyszłości dodamy kolejne widoki:
+          {activeView === 'BMI' && <BMIContent />}
+          ...
       */}
-      {!isGenerated ? (
-        <ConfigurationForm />
-      ) : (
-        <CircuitList />
-      )}
       <GenerationConflictDialog />
       <Toaster />
     </main>

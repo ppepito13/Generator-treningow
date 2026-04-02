@@ -22,6 +22,8 @@ export interface GenerationConflictState {
   contextData?: any;
 }
 
+export type ViewType = 'HOME' | 'CIRCUIT' | 'BMI' | 'TIMER' | 'SETTINGS';
+
 interface AppState {
   selectedRoomId: string;
   participants: number;
@@ -30,10 +32,15 @@ interface AppState {
   isStrictDifficulty: boolean;
   circuit: Station[];
   isGenerated: boolean;
+  activeView: ViewType;
+  navigationStack: ViewType[];
   generationConflict: GenerationConflictState | null;
 
   setGenerationConflict: (conflict: GenerationConflictState | null) => void;
   resolveConflict: (resolutionData: { action: 'loosen' | 'duplicate' | 'reduce' | 'cancel' }) => void;
+  
+  pushView: (view: ViewType) => void;
+  popView: () => void;
 
   setSelectedRoom: (id: string) => void;
   setParticipants: (val: number) => void;
@@ -347,12 +354,39 @@ export const useAppStore = create<AppState>()(
       participants: 8,
       stationCount: 7,
       difficultyId: 'baza_silowa_standard',
-      isStrictDifficulty: false,
+      isStrictDifficulty: true,
       circuit: [],
       isGenerated: false,
+      activeView: 'HOME',
+      navigationStack: ['HOME'],
       generationConflict: null,
-      
+
       setGenerationConflict: (conflict) => set({ generationConflict: conflict }),
+
+      pushView: (view) => {
+        const stack = get().navigationStack;
+        if (stack[stack.length - 1] === view) return;
+        set({
+          navigationStack: [...stack, view],
+          activeView: view
+        });
+      },
+
+      popView: () => {
+        const stack = get().navigationStack;
+        if (stack.length <= 1) return;
+        
+        const newStack = [...stack];
+        newStack.pop();
+        const prevView = newStack[newStack.length - 1];
+        
+        set({
+          navigationStack: newStack,
+          activeView: prevView,
+          // Jeśli wracamy z widoku CIRCUIT do HOME, czyścimy isGenerated
+          ...(prevView === 'HOME' && { isGenerated: false })
+        });
+      },
       resolveConflict: (resolutionData) => {
         const { action } = resolutionData;
         const state = get();
@@ -404,6 +438,7 @@ export const useAppStore = create<AppState>()(
           // Jeżeli strict było odznaczone i loosen podpowiadało mniejsze powtórzenia, to ignorujemy użyte. 
           const duplicateCircuit = executeGeneration(false, true);
           set({ circuit: duplicateCircuit, isGenerated: true, generationConflict: null });
+          get().pushView('CIRCUIT');
         }
       },
 
@@ -476,6 +511,7 @@ export const useAppStore = create<AppState>()(
         }
 
         set({ circuit: newCircuit, isGenerated: true, generationConflict: null });
+        get().pushView('CIRCUIT');
       },
 
       rerollExercise: (stationId, type, segmentId, loosen = false, ignoreUsed = false) => {
@@ -705,7 +741,12 @@ export const useAppStore = create<AppState>()(
         set({ circuit: newCircuit });
       },
 
-      reset: () => set({ isGenerated: false, circuit: [] })
+      reset: () => set({ 
+        isGenerated: false, 
+        circuit: [], 
+        activeView: 'HOME', 
+        navigationStack: ['HOME'] 
+      })
     }),
     {
       name: 'kinetic-circuits-storage',

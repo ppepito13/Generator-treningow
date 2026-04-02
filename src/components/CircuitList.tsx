@@ -18,7 +18,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 
 export const CircuitList = () => {
-  const { circuit, reset, difficultyId, participants } = useAppStore();
+  const { circuit, reset, popView, difficultyId, participants } = useAppStore();
   const currentDiff = DIFFICULTY_LEVELS.find(d => d.id === difficultyId);
   const [copied, setCopied] = React.useState(false);
 
@@ -89,7 +89,7 @@ export const CircuitList = () => {
         className="sticky top-0 z-20 bg-background/80 backdrop-blur-md px-6 pb-4 flex items-center justify-between border-b border-white/5"
         style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}
       >
-        <Button variant="ghost" onClick={reset} className="glass-button rounded-xl flex gap-2">
+        <Button variant="ghost" onClick={popView} className="glass-button rounded-xl flex gap-2">
           <ArrowLeft className="h-4 w-4" />
           Wstecz
         </Button>
