@@ -22,7 +22,7 @@
     "instrukcja": "Ruch rozpoczyna się w odchyleniu w tył z ramionami wyprostowanymi przed sobą trzymającymi kółka. Ćwiczący ciągnie kółka w kierunku twarzy, prowadząc łokcie szeroko na zewnątrz i ściągając łopatki. Faza ekscentryczna to powolny powrót do pełnego wyprostu bez utraty stabilizacji szyi i karku.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
@@ -50,7 +50,7 @@
     "instrukcja": "Zaawansowana figura na kółkach. Ćwiczący przechodzi ze zwisu do pozycji asymetrycznej bocznej, blokując jedno z kółek pod pachą lub w okolicy żeber (Meat Hook), trzymając się silnie jedną ręką. Należy kontrolować wejście w pozycję z użyciem mięśni skośnych brzucha, a następnie powoli wyjść z rotacji.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
@@ -135,7 +135,7 @@
     "instrukcja": "UWAGA: Wymaga adaptacji ścięgnistej. Ruch rozpoczyna się w podporze na kółkach gimnastycznych za plecami, z ramionami w wyproście. Ćwiczący wykonuje głębokie zgięcie łokci do tyłu (ekstremalne rozciągnięcie bicepsów i klatki), a następnie siłą ramion wypycha ciało z powrotem. Wymaga absolutnej kontroli zakresu ruchu, by nie uszkodzić przyczepów.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
@@ -164,7 +164,7 @@
     "instrukcja": "Ruch rozpoczyna się w zwisie na kółkach. Ćwiczący wykonuje podciągnięcie połączone z pełnym, płynnym obrotem ciała o 360 stopni wokół własnej osi. Wymaga to doskonałej propriocepcji i stałego operowania asymetrycznymi wektorami siły w fazie koncentrycznej i ekscentrycznej.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
@@ -474,7 +474,7 @@
     "instrukcja": "Ruch rozpoczyna się w zwisie na kółkach. Ćwiczący podciąga ciało do jednego z kółek, jednocześnie prostując drugie ramię całkowicie do boku (imitacja naciągania łuku), z obróceniem nadgarstka ręki wyprostowanej. Po fazie silnego skurczu jednostronnego następuje kontrolowany powrót do środkowego zwisu.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
@@ -888,7 +888,7 @@
     "instrukcja": "Ruch rozpoczyna się pod kółkami, jednak nogi są ugięte w kolanach pod kątem 90 stopni (odciążenie dźwigni). Ćwiczący przyciąga klatkę piersiową do kółek, pchając jednocześnie biodra lekko w górę do utrzymania płaskiego tułowia. Faza ekscentryczna to płynny wyprost rąk z pełną kontrolą core.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
@@ -979,7 +979,7 @@
   },
   {
     "id_cwiczenia": "ex_036",
-    "nazwa": "TRX Single-Arm Row + KB Plank",
+    "nazwa": "Wiosłowanie kettlebell w podporze na TRX (Plank)",
     "wariant": "Klasyczny",
     "segment_id": 1,
     "segment_nazwa": "PULL",
@@ -1001,7 +1001,7 @@
       "FBW",
       "Cross"
     ],
-    "instrukcja": "Ruch rozpoczyna się w asymetrycznym podporze na ziemi: jedna dłoń na kettlebellu, druga ręka chwyta TRX w zwisie. Ćwiczący wykonuje jednorącz wiosłowanie na TRX z jednoczesną mocną stabilizacją podporu na kettlebellu. Faza powrotna to powolne odpuszczenie ruchu bez rotacji miednicy.",
+    "instrukcja": "Ruch rozpoczyna się w pozycji planka wysokiego (podpór przodem). Jedna dłoń chwyta nisko zawieszony uchwyt TRX (ok. 10–15 cm nad podłożem), druga dłoń spoczywa na rękojeści Kettlebella ustawionego na ziemi. Ćwiczący szeroko rozstawia stopy, stabilizuje miednicę i utrzymując ramię na TRX w pełnym, aktywnym zablokowaniu (silne wypchnięcie barku), wykonuje wiosłowanie odważnikiem KB do biodra. Najważniejszym elementem jest walka z siłami rotacyjnymi – klatka piersiowa i biodra muszą pozostać idealnie równolegle do podłogi przez cały czas trwania ruchu. Faza powrotna to powolne odstawienie KB bez \"pływania\" uchwytu TRX na boki.",
     "wymagania_sprzetowe": [
       {
         "trx": 1,
@@ -1031,7 +1031,7 @@
     "instrukcja": "Ruch rozpoczyna się w odchyleniu w tył, chwytając kółka podchwytem (ciało w prostej linii). Ćwiczący wykonuje ugięcie przedramion, ciągnąc kółka w stronę czoła (wyłącznie praca łokcia, brak ruchu w barkach). Następnie powoli prostuje ramiona w fazie ekscentrycznej.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
@@ -1085,7 +1085,8 @@
     "wymagania_sprzetowe": [
       {
         "stepper": 1,
-        "hantel": 2
+        "hantel": 2,
+        "mata": 1
       }
     ]
   },
@@ -1146,7 +1147,7 @@
     "instrukcja": "Ruch rozpoczyna się w odchyleniu pod kółkami (ciało w prostej linii, stopy na ziemi). Ćwiczący przyciąga klatkę do kółek, prowadząc łokcie blisko żeber i ściągając łopatki do środka. Powrót to w pełni kontrolowana faza ekscentryczna bez opuszczania bioder.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
@@ -1170,10 +1171,10 @@
     "kategorie_treningu": [
       "Kalistenika"
     ],
-    "instrukcja": "Ruch rozpoczyna się jak klasyczne wiosłowanie na kółkach. W końcowej fazie przyciągania ćwiczący wykonuje dodatkową rotację zewnętrzną w barkach, kierując przedramiona do pionu. Następnie odkręca rotację i kontrolowanie wraca do wyprostu rąk w zwisie.",
+    "instrukcja": "Ruch rozpoczyna się od przyciągania tułowia w szerokim ustawieniu łokci (prowadzonych na wysokości barków). W końcowej fazie przyciągania ćwiczący wykonuje rotację zewnętrzną, unosząc przedramiona do pionu przy zachowaniu łokci jako stałej osi obrotu (tworząc ramionami kształt litery \"W\"). Następnie następuje odkręcenie rotacji do płaszczyzny poziomej i kontrolowany powrót do pełnego wyprostu rąk w zwisie.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
@@ -1199,7 +1200,7 @@
       "Kalistenika",
       "FBW"
     ],
-    "instrukcja": "Prawdziwe wiosłowanie typu Meadows. Ruch rozpoczyna się w opadzie tułowia w asymetrycznym ustawieniu bokiem do końca sztangi opierającej się w minie lądowej (lub rogu). Ćwiczący chwyta gruby koniec sztangi jednorącz nachwytem i ciągnie szeroko łokieć na zewnątrz, mocno angażując górę pleców i obły większy.",
+    "instrukcja": "Ruch wykonywany w opadzie tułowia w pozycji bokiem do sztangi zamocowanej w obrotowej tulei typu landmine lub umieszczonej w rogu ścian. Ćwiczący chwyta nachwytem za grubą tuleję gryfu. Noga po stronie pracującej jest wycofana, a przedramię ręki niepracującej może opierać się o udo dla lepszej stabilizacji. Podczas przyciągania łokieć prowadzony jest szeroko na zewnątrz, co pozwala na silne zaangażowanie mięśnia obłego większego oraz górnej części pleców.",
     "wymagania_sprzetowe": [
       {
         "gryf_olimpijski": 1
@@ -1228,9 +1229,16 @@
     "instrukcja": "Ruch rozpoczyna się w staniu, z gumą zakotwiczoną przed ćwiczącym (np. o bramę). Ćwiczący wykonuje oburącz lub jednorącz ruch przyciągania gumy do tułowia, aktywując łopatki i najszerszy grzbietu. Powrót musi być powolny, by w pełni kontrolować opór kurczącej się gumy.",
     "wymagania_sprzetowe": [
       {
-        "guma_oporowa_dluga": 1,
-        "brama_rig": 1
-      }
+        "guma_oporowa_dluga": 1
+      },
+      [
+        {
+          "drabinka_pionowa": 1
+        },
+        {
+          "brama_rig": 1
+        }
+      ]
     ]
   },
   {
@@ -1343,7 +1351,7 @@
   },
   {
     "id_cwiczenia": "ex_049",
-    "nazwa": "Zwis głowa pod drążkiem",
+    "nazwa": "Zwis aktywny w pozycji L (L-Hang)",
     "wariant": "Izometria (l-hang prep)",
     "segment_id": 1,
     "segment_nazwa": "PULL",
@@ -1362,7 +1370,7 @@
     "kategorie_treningu": [
       "Kalistenika"
     ],
-    "instrukcja": "Ćwiczenie izometryczne lub przejściowe. Ćwiczący w zwisie wykonuje zgięcie w biodrach, przyciągając proste lub ugięte nogi w stronę drążka, przygotowując układ nerwowy i mięśniowy pod L-sit. Pozycję należy utrzymać ze spiętym brzuchem, po czym kontrolowanie opuścić nogi.",
+    "instrukcja": "Pozycja izometryczna wzmacniająca mięśnie brzucha oraz stabilizatory obręczy barkowej. Ćwiczący wykonuje aktywny zwis na drążku poprzez ściągnięcie łopatek w dół i oddalenie barków od uszu. Następnie unosi wyprostowane lub ugięte nogi do kąta prostego w biodrach i utrzymuje tę pozycję przez określony czas. Ćwiczenie buduje bazę siłową pod L-sit oraz uczy kontroli miednicy w zwisie, co zapobiega niekontrolowanemu bujaniu ciałem.",
     "wymagania_sprzetowe": [
       {
         "drazek": 1
@@ -1394,7 +1402,7 @@
     "instrukcja": "Ruch rozpoczyna się w podporze na kółkach gimnastycznych. W fazie ekscentrycznej (opuszczania) ćwiczący celowo odwodzi ramiona (kółka rozchodzą się na zewnątrz), doprowadzając do potężnego rozciągnięcia klatki piersiowej, po czym, przywodząc ręce do środka, wyciska ciało w górę. Z uwagi na brak stabilizacji sprzętu, wymaga maksymalnej pracy m. zębatego przedniego i mięśni piersiowych.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
@@ -1449,7 +1457,7 @@
     "instrukcja": "Ruch rozpoczyna się w podporze na kółkach. Ćwiczący opuszcza ciało na jedno ugięte ramię, jednocześnie prowadząc drugą rękę do wyprostu daleko w bok (imitacja naciągania łuku). Po osiągnięciu maksymalnego asymetrycznego opadu następuje wyciśnięcie tułowia z powrotem do startu. Ćwiczenie mocno obciąża stronę uginaną.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
@@ -1773,7 +1781,7 @@
     "instrukcja": "Ruch rozpoczyna się w podporze przodem na paraletkach. Dzięki deficytowi ćwiczący opuszcza klatkę piersiową poniżej poziomu dłoni, co generuje ekstremalne rozciągnięcie mięśni piersiowych. Wypchnięcie w górę wymaga znacznej siły i pełnej kontroli stabilizacji stawów ramiennych na samym dole.",
     "wymagania_sprzetowe": [
       {
-        "paraletka": 1
+        "paraletka": 2
       }
     ]
   },
@@ -1901,7 +1909,7 @@
     "instrukcja": "Ruch rozpoczyna się w podporze przodem z dłońmi w kółkach gimnastycznych. Ćwiczący wykonuje pompkę, celowo odwodząc dłonie na boki (kółka rozchodzą się szerzej niż klatka), a następnie wyciskając się do góry spina dłonie z powrotem wzdłuż osi tułowia. Rozstaw na zewnątrz ekstremalnie angażuje mięśnie piersiowe.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
@@ -2085,11 +2093,16 @@
     "kategorie_treningu": [
       "Kalistenika"
     ],
-    "instrukcja": "Ruch rozpoczyna się w podporze tyłem, dłonie opierają się na krawędzi steppera (zastępstwo dla ławki), a stopy znajdują się na ziemi z ugiętymi w kąt prosty kolanami. Ćwiczący opuszcza miednicę pionowo w dół poprzez zgięcie stawów łokciowych do kąta ok. 90 stopni, a następnie siłą tricepsów wyciska ciężar powracając do pełnego wyprostu ramion.",
+    "instrukcja": "Ruch rozpoczyna się w podporze tyłem, dłonie opierają się na krawędzi steppera lub skrzyni (zastępstwo dla ławki), a stopy znajdują się na ziemi z ugiętymi w kąt prosty kolanami. Ćwiczący opuszcza miednicę pionowo w dół poprzez zgięcie stawów łokciowych do kąta ok. 90 stopni, a następnie siłą tricepsów wyciska ciężar powracając do pełnego wyprostu ramion.",
     "wymagania_sprzetowe": [
-      {
-        "stepper": 1
-      }
+      [
+        {
+          "stepper": 1
+        },
+        {
+          "skrzynia_drewniana": 1
+        }
+      ]
     ]
   },
   {
@@ -2138,7 +2151,7 @@
     "instrukcja": "Ruch rozpoczyna się w staniu na rękach przy ścianie z dłońmi na paraletkach. Wykorzystując deficyt, ćwiczący opuszcza się poniżej linii dłoni (ekstremalny zakres ruchu w barkach), a następnie wypycha w górę. Faza opuszczania musi być wykonywana pod pełną kontrolą z uwagi na ogromne siły działające na aparat więzadłowy stawu ramiennego.",
     "wymagania_sprzetowe": [
       {
-        "paraletka": 1,
+        "paraletka": 2,
         "sciana_handstand": 1
       }
     ]
@@ -2382,7 +2395,7 @@
     "instrukcja": "Ruch rozpoczyna się w staniu, trzymając w obu dłoniach kettlebelle w pozycji Rack (na klatce). Ćwiczący na przemian wyciska pionowo jeden ciężar nad głowę, podczas gdy w fazie opuszczania naprzemiennie wyrusza w górę drugie ramię. Kluczowe jest przeniesienie pędu, naturalna rotacja tułowia oraz zachowanie dynamicznej stabilizacji kręgosłupa.",
     "wymagania_sprzetowe": [
       {
-        "kettlebell": 1
+        "kettlebell": 2
       }
     ]
   },
@@ -2469,7 +2482,7 @@
       "Kalistenika",
       "FBW"
     ],
-    "instrukcja": "Ruch rozpoczyna się w staniu asymetrycznym: jedna noga oparta o ziemię (wiodąca), druga oparta na palcach nieco z tyłu (asekuracyjna). Ćwiczący chwyta kettlebell i wykonuje zawias biodrowy (hip hinge) kierując pośladki w tył. Ciężar ciągnie noga z przodu, podczas pełnego utrzymania naturalnych krzywizn pleców.",
+    "instrukcja": "Ćwiczący przyjmuje pozycję asymetryczną, w której noga przednia całą stopą dotyka podłoża, a noga tylna jest lekko wycofana i oparta jedynie na palcach (pełni rolę podpórki). Ruch polega na wykonaniu zawiasu biodrowego poprzez wypchnięcie pośladków w tył przy zachowaniu neutralnej krzywizny kręgosłupa. Ciężar ciała w około 80 procentach powinien spoczywać na nodze przedniej, która dominuje w fazie wyprostu biodra. Kettlebell prowadzony jest blisko nogi wykrocznej, a ruch kończy się pełnym napięciem pośladka w pozycji stojącej.",
     "wymagania_sprzetowe": [
       {
         "kettlebell": 1
@@ -2498,7 +2511,11 @@
       "FBW"
     ],
     "instrukcja": "Ruch rozpoczyna się w leżeniu tyłem z nogami ugiętymi, stopy oparte o matę. Ćwiczący wykonuje wyprost bioder, silnie napinając pośladki w górnej fazie (unikając przeprostu lędźwiowego). Faza ekscentryczna to kontrolowane opuszczenie miednicy tuż nad matę przed kolejnym powtórzeniem.",
-    "wymagania_sprzetowe": []
+    "wymagania_sprzetowe": [
+      {
+        "mata": 1
+      }
+    ]
   },
   {
     "id_cwiczenia": "ex_092",
@@ -2663,10 +2680,20 @@
       "Kalistenika",
       "FBW"
     ],
-    "instrukcja": "Pozycja izometryczna przy ścianie z dodatkowym ciężarem trzymanym na klatce piersiowej lub na udach. Ćwiczący przyjmuje kąt 90 stopni w kolanach i opiera plecy o ścianę. Dodatkowe obciążenie wymusza wzmożoną pracę mięśni ud oraz core w celu utrzymania stabilnej, nieopadającej sylwetki.",
+    "instrukcja": "Pozycja izometryczna przy ścianie z dodatkowym ciężarem trzymanym na klatce piersiowej lub na wyprostowanych rękach. Ćwiczący przyjmuje kąt 90 stopni w kolanach i opiera plecy o ścianę. Dodatkowe obciążenie wymusza wzmożoną pracę mięśni ud oraz core w celu utrzymania stabilnej, nieopadającej sylwetki.",
     "wymagania_sprzetowe": [
+      [
+        {
+          "talerz": 1
+        },
+        {
+          "hantel": 1
+        },
+        {
+          "kettlebell": 1
+        }
+      ],
       {
-        "talerz": 1,
         "sciana_handstand": 1
       }
     ]
@@ -2700,8 +2727,8 @@
   },
   {
     "id_cwiczenia": "ex_099",
-    "nazwa": "Marsz w podporze tyłem",
-    "wariant": "Podwyższenie (bieg tyłem)",
+    "nazwa": "Marsz w podporze tyłem z nogami na podwyższeniu",
+    "wariant": "Elewacja stóp (dynamiczna stabilizacja)",
     "segment_id": 3,
     "segment_nazwa": "LEGS",
     "tryb_pracy": "Solo",
@@ -2720,7 +2747,7 @@
       "Kalistenika",
       "FBW"
     ],
-    "instrukcja": "Ruch rozpoczyna się w podporze tyłem na wyprostowanych ramionach, dłonie za plecami (Reverse Plank). Ćwiczący wykonuje naprzemienny marsz w tył, utrzymując sztywno zablokowaną w górze miednicę. Wymaga to doskonałej aktywacji pośladków i mięśni grupy kulszowo-goleniowej podczas fazy przenoszenia nogi.",
+    "instrukcja": "Ruch wykonywany w podporze tyłem (Reverse Plank), gdzie dłonie spoczywają na podłodze, a stopy oparte są o skrzynię lub stepper. Ćwiczący unosi biodra do linii prostej z tułowiem, a następnie wykonuje naprzemienny marsz polegający na odrywaniu stóp od podwyższenia i przyciąganiu kolan w stronę klatki piersiowej. Najważniejszym elementem techniki jest utrzymanie miednicy na stałej wysokości i niedopuszczenie do jej rotacji lub opadania w momencie, gdy ciężar ciała spoczywa tylko na jednej nodze.",
     "wymagania_sprzetowe": [
       [
         {
@@ -2898,7 +2925,7 @@
           "guma_oporowa_dluga": 1
         },
         {
-          "porecz_dip": 1
+          "trx": 1
         }
       ]
     ]
@@ -2930,6 +2957,9 @@
       [
         {
           "kettlebell": 1
+        },
+        {
+          "hantel": 1
         },
         {
           "talerz": 1
@@ -3011,7 +3041,7 @@
     "instrukcja": "Ruch rozpoczyna się na klinie (slant board) z uniesionymi piętami. Ćwiczący wykonuje przysiad prowadzony w pionie, pozwalając kolanom daleko przekroczyć linię palców stóp. Zwiększone ugięcie stawu skokowego izoluje maksymalnie pracę mięśni czworogłowych, odciążając lędźwia.",
     "wymagania_sprzetowe": [
       {
-        "stepper": 1
+        "klin": 2
       }
     ]
   },
@@ -3039,7 +3069,7 @@
     "instrukcja": "Ruch rozpoczyna się w staniu (z podparciem asekuracyjnym). Ćwiczący pochyla tułów w tył od linii kolan i opuszcza biodra wypychając kolana mocno do przodu (oderwane pięty). Następuje silne rozciągnięcie pasma przedniego ud, z którego ćwiczący siłowo wyciąga ciało z powrotem do stania.",
     "wymagania_sprzetowe": [
       {
-        "sciana_handstand": 1
+        "guma_oporowa_dluga": 1
       }
     ]
   },
@@ -3093,6 +3123,9 @@
     "wymagania_sprzetowe": [
       {
         "pilka_lekarska": 1
+      },
+      { 
+        "sciana_handstand": 1
       }
     ]
   },
@@ -3203,6 +3236,12 @@
       [
         {
           "worek_obciazeniowy": 1
+        },
+        {
+          "kettlebell": 1
+        },
+        {
+          "talerz": 1
         },
         {
           "hantel": 1
@@ -3379,7 +3418,7 @@
     "instrukcja": "Ruch rozpoczyna się w staniu na klinie (slant board) ze stopami ułożonymi piętami w dół (maksymalne rozciągnięcie łydek). Ćwiczący wykonuje silne wspięcie na palce, kurcząc mięsień brzuchaty łydki w pełnym zakresie, a następnie powoli opuszcza pięty do pełnego rozciągnięcia.",
     "wymagania_sprzetowe": [
       {
-        "stepper": 1
+        "klin": 2
       }
     ]
   },
@@ -3539,10 +3578,10 @@
     "wymagania_sprzetowe": [
       [
         {
-          "kettlebell": 1
+          "kettlebell": 2
         },
         {
-          "hantel": 1
+          "hantel": 2
         }
       ]
     ]
@@ -3567,7 +3606,11 @@
       "Kalistenika"
     ],
     "instrukcja": "Pozycja izometryczna. Ćwiczący opiera się na przedramionach i palcach stóp. Należy utrzymać ciało w idealnej linii: miednica w delikatnym tyłopochyleniu (napięty pośladek), łopatki lekko rozchylone, wzrok skierowany w dół w celu utrzymania neutralnej szyi.",
-    "wymagania_sprzetowe": []
+    "wymagania_sprzetowe": [
+      {
+        "mata": 1
+      }
+    ]
   },
   {
     "id_cwiczenia": "ex_130",
@@ -3615,7 +3658,8 @@
     "instrukcja": "Ruch dynamiczny w oparciu o drabinki (bokiem). Ćwiczący wykonuje opad biodra i dynamiczne uniesienie go w górę, korzystając z chwytu o wyższy punkt. Skupienie na izolowanej pracy mięśni skośnych z odpowiednim wyhamowaniem ekscentrycznym.",
     "wymagania_sprzetowe": [
       {
-        "drabinka_pionowa": 1
+        "drabinka_pionowa": 1,
+        "mata": 1
       }
     ]
   },
@@ -3639,7 +3683,11 @@
       "Kalistenika"
     ],
     "instrukcja": "Ruch rozpoczyna się w desce bocznej. Ćwiczący powoli opuszcza biodro tuż nad matę, po czym siłą mięśni skośnych wypycha je z powrotem wysoko w górę. Oś ramienia i klatki piersiowej musi pozostać stabilna przez całą fazę izotoniczną.",
-    "wymagania_sprzetowe": []
+    "wymagania_sprzetowe": [
+      {
+        "mata": 1
+      }
+    ]
   },
   {
     "id_cwiczenia": "ex_133",
@@ -3661,7 +3709,11 @@
       "Kalistenika"
     ],
     "instrukcja": "Pozycja izometryczna. Ćwiczący opiera się bokiem na jednym przedramieniu oraz krawędzi stopy. Ciało uniesione, tworząc linię prostą, biodra wypchnięte w górę i lekko w przód. Należy egzekwować aktywną postawę barku oporowego, zapobiegając wpadaniu tułowia w staw.",
-    "wymagania_sprzetowe": []
+    "wymagania_sprzetowe": [
+      {
+        "mata": 1
+      }
+    ]
   },
   {
     "id_cwiczenia": "ex_134",
@@ -3685,7 +3737,8 @@
     "instrukcja": "Pozycja izometryczna boczna. Ćwiczący trzyma się szczebla drabinki jednorącz (lub na przedramieniu opartym wyżej), ciało ustawione pod kątem. Utrzymanie sztywnej struktury bocznej przy odciążonym kącie to idealna pozycja do budowania stabilizacji tułowia.",
     "wymagania_sprzetowe": [
       {
-        "drabinka_pionowa": 1
+        "drabinka_pionowa": 1,
+        "mata": 1
       }
     ]
   },
@@ -3737,7 +3790,8 @@
     "instrukcja": "Pozycja izometryczna. Ćwiczący umieszcza przedramiona na dużej piłce gimnastycznej i wypycha nogi do tyłu do pozycji deski. Walka z brakiem stabilności przyrządu maksymalnie zwiększa rekrutację jednostek motorycznych mięśni głębokich tułowia i obręczy barkowej.",
     "wymagania_sprzetowe": [
       {
-        "pilka_gimnastyczna": 1
+        "pilka_gimnastyczna": 1,
+        "mata": 1
       }
     ]
   },
@@ -3761,7 +3815,11 @@
       "Kalistenika"
     ],
     "instrukcja": "Pozycja izometryczna w podporze. Dłonie przesunięte są znacznie przed linię barków, co drastycznie wydłuża dźwignię. Ćwiczący musi przeciwdziałać przeprostowi lędźwiowemu za pomocą silnego spięcia prostego brzucha i pośladków.",
-    "wymagania_sprzetowe": []
+    "wymagania_sprzetowe": [
+      {
+        "mata": 1
+      }
+    ]
   },
   {
     "id_cwiczenia": "ex_138",
@@ -3807,7 +3865,6 @@
     "instrukcja": "Ruch rozpoczyna się w klasycznym podporze na przedramionach. Ćwiczący naprzemiennie opuszcza na moment jedno kolano do maty, nie pozwalając przy tym na jakiekolwiek obniżenie lub rotację miednicy. Ćwiczenie buduje mikrostabilizację obręczy biodrowej w anty-wyproście.",
     "wymagania_sprzetowe": [
       {
-        "recznik": 1,
         "mata": 1
       }
     ]
@@ -4125,7 +4182,7 @@
     "instrukcja": "Ruch rozpoczyna się w klęku, oburącz trzymając kółko przed sobą. Ćwiczący wyjeżdża zablokowanym (niezałamanym) tułowiem do przodu, pracując na ekstremalnym oporze ekscentrycznym prostego brzucha, po czym siłowo \"zwija\" sylwetkę, wracając do startu.",
     "wymagania_sprzetowe": [
       {
-        "kolko_do_pompek": 1
+        "ab_wheel": 1
       }
     ]
   },
@@ -4149,7 +4206,11 @@
       "Kalistenika"
     ],
     "instrukcja": "Ruch rozpoczyna się w siadzie równoważnym (tułów odchylony, stopy lekko nad ziemią). Ćwiczący wykonuje skręty klatki piersiowej i obręczy barkowej z boku na bok, dotykając dłońmi podłoża. Należy dbać o rotację w osi kręgosłupa, a nie jedynie wymachiwanie ramionami.",
-    "wymagania_sprzetowe": []
+    "wymagania_sprzetowe": [
+      {
+        "mata": 1
+      }
+    ]
   },
   {
     "id_cwiczenia": "ex_153",
@@ -4180,7 +4241,10 @@
         {
           "pilka_lekarska": 1
         }
-      ]
+      ],
+      {
+        "mata": 1
+      }
     ]
   },
   {
@@ -4203,7 +4267,11 @@
       "Kalistenika"
     ],
     "instrukcja": "Ruch rozpoczyna się w leżeniu tyłem. Ćwiczący wykonuje jednoczesny, dynamiczny wznos wyprostowanych nóg oraz klatki piersiowej, dążąc dłońmi do stóp w kształt litery V. Faza ekscentryczna to powolne rozwarcie sylwetki do pozycji wyjściowej przed dotknięciem ziemi.",
-    "wymagania_sprzetowe": []
+    "wymagania_sprzetowe": [
+      {
+        "mata": 1
+      }
+    ]
   },
   {
     "id_cwiczenia": "ex_155",
@@ -4255,7 +4323,11 @@
       "Kalistenika"
     ],
     "instrukcja": "Ruch rozpoczyna się w leżeniu przodem. Ćwiczący jednocześnie unosi wyprostowane ramiona i nogi poprzez aktywację prostowników grzbietu i pośladków. Po chwilowym zatrzymaniu w górze (skurcz izometryczny), płynnie opuszcza kończyny na podłogę.",
-    "wymagania_sprzetowe": []
+    "wymagania_sprzetowe": [
+      {
+        "mata": 1
+      }
+    ]
   },
   {
     "id_cwiczenia": "ex_158",
@@ -4400,8 +4472,8 @@
   },
   {
     "id_cwiczenia": "ex_162",
-    "nazwa": "Wycieraczki na ręcznikach",
-    "wariant": "Ręczniki",
+    "nazwa": "Wycieraczki na ręczniku",
+    "wariant": "Ręcznik",
     "segment_id": 4,
     "segment_nazwa": "CORE",
     "tryb_pracy": "Solo",
@@ -4417,7 +4489,7 @@
     "kategorie_treningu": [
       "Kalistenika"
     ],
-    "instrukcja": "Ruch rozpoczyna się w podporze przodem z obu stopami opartymi o małe ręczniki. Ćwiczący przyciąga obie proste nogi bokiem w kierunku jednej pachy, a następnie płynnym ruchem \"zamiata\" (odwodząc na zewnątrz i do tyłu) w stronę drugiej, izolując mięśnie skośne.",
+    "instrukcja": "Ruch rozpoczyna się w podporze przodem z obu stopami opartymi o ręcznik. Ćwiczący przyciąga obie proste nogi bokiem w kierunku jednej pachy, a następnie płynnym ruchem \"zamiata\" (odwodząc na zewnątrz i do tyłu) w stronę drugiej, izolując mięśnie skośne.",
     "wymagania_sprzetowe": [
       {
         "recznik": 1
@@ -4503,11 +4575,16 @@
     "kategorie_treningu": [
       "Kalistenika"
     ],
-    "instrukcja": "Ruch rozpoczyna się w zwisie na drążku. Ćwiczący napina brzuch (tyłopochylenie miednicy) i unosi ugięte kolana do klatki piersiowej. Następnie w pełni kontrolowany sposób opuszcza nogi w dół, unikając rozluźnienia core i bujania tułowiem.",
+    "instrukcja": "Ruch rozpoczyna się w zwisie na drążku lub drabinkach. Ćwiczący napina brzuch (tyłopochylenie miednicy) i unosi ugięte kolana do klatki piersiowej. Następnie w pełni kontrolowany sposób opuszcza nogi w dół, unikając rozluźnienia core i bujania tułowiem.",
     "wymagania_sprzetowe": [
-      {
-        "drazek": 1
-      }
+      [
+        {
+          "drazek": 1
+        },
+        {
+          "drabinka_pionowa": 1
+        }
+      ]
     ]
   },
   {
@@ -4530,11 +4607,16 @@
     "kategorie_treningu": [
       "Kalistenika"
     ],
-    "instrukcja": "Ruch rozpoczyna się w aktywnym zwisie na drążku. Ćwiczący unosi wyprostowane w kolanach nogi aż do uzyskania kąta 90 stopni z tułowiem (pozycja L). Faza ekscentryczna polega na powolnym opuszczaniu prostych nóg, utrzymując stałe napięcie brzucha, by zablokować pęd ciała.",
+    "instrukcja": "Ruch rozpoczyna się w aktywnym zwisie na drążku lub drabinkach. Ćwiczący unosi wyprostowane w kolanach nogi aż do uzyskania kąta 90 stopni z tułowiem (pozycja L). Faza ekscentryczna polega na powolnym opuszczaniu prostych nóg, utrzymując stałe napięcie brzucha, by zablokować pęd ciała.",
     "wymagania_sprzetowe": [
-      {
-        "drazek": 1
-      }
+      [
+        {
+          "drazek": 1
+        },
+        {
+          "drabinka_pionowa": 1
+        }
+      ]
     ]
   },
   {
@@ -4833,7 +4915,7 @@
     "instrukcja": "Ruch rozpoczyna się w zwisie na kółkach. Ćwiczący pociąga kolana do klatki i odchyla tułów w tył, aż jego ciało znajdzie się idealnie pionowo, głową w dół (kształt świecy). Pozycję blokuje spięciem pośladków, złączonymi nogami i neutralną postawą miednicy.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
@@ -5226,7 +5308,7 @@
     "instrukcja": "Pozycja izometryczna na kółkach gimnastycznych. Z podporu górnego ćwiczący powoli rozsuwa ręce na boki, dążąc do ułożenia ramion i tułowia w kształt krzyża. Obciąża to potężnie układ ścięgnisty łokci, bicepsy i klatkę piersiową. Wymaga bardzo stopniowego budowania siły łącznej.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
@@ -5254,7 +5336,11 @@
       "Kalistenika"
     ],
     "instrukcja": "Ruch rozpoczyna się w solidnym podporze przodem. Ćwiczący wykonuje szybkie, naprzemienne przyciąganie kolan w kierunku klatki piersiowej. Bezwzględnym priorytetem jest utrzymanie poziomej, stabilnej osi bioder bez ich nadmiernego unoszenia ani rotacji bocznej.",
-    "wymagania_sprzetowe": []
+    "wymagania_sprzetowe": [
+      {
+        "mata": 1
+      }
+    ]
   },
   {
     "id_cwiczenia": "ex_193",
@@ -5288,7 +5374,10 @@
         {
           "stepper": 1
         }
-      ]
+      ],
+      {
+        "mata": 1
+      }
     ]
   },
   {
@@ -5638,7 +5727,7 @@
     "instrukcja": "Wymagająca sekwencja układu nerwowego. Ćwiczący wskakuje na pierwszą przeszkodę, natychmiast zeskakuje i wykorzystując skumulowaną w ścięgnach energię sprężystą, od razu odbija się na drugą. Prawidłowa absorpcja i zero opóźnienia to fundament efektywności.",
     "wymagania_sprzetowe": [
       {
-        "skrzynia_drewniana": 1
+        "skrzynia_drewniana": 2
       }
     ]
   },
@@ -6010,7 +6099,8 @@
     ],
     "kategorie_treningu": [
       "Kalistenika",
-      "Neuro"
+      "Neuro",
+      "FBW"
     ],
     "instrukcja": "Ćwiczenie na de-synchronizację (rozdzielenie pracy półkul mózgowych). Ćwiczący wykonuje krążenia obu ramion w płaszczyźnie strzałkowej, z tym że jedno ramię kręci się do przodu, a drugie symultanicznie do tyłu. Rozwija zaawansowaną świadomość i niezależną kontrolę układu nerwowego nad kończynami.",
     "wymagania_sprzetowe": []
@@ -6264,7 +6354,7 @@
     "instrukcja": "Trening refleksu i koordynacji dłoni. Ćwiczący wyciąga ręce przed siebie, trzymając w każdej piłeczkę. Jednocześnie puszcza obie piłeczki i musi na krzyż (prawa ręka do lewej piłki i odwrotnie) błyskawicznie złapać je, zanim spadną na ziemię. Wyostrza percepcję i szybkość skurczu mięśni.",
     "wymagania_sprzetowe": [
       {
-        "pilka_tenisowa": 1
+        "pilka_tenisowa": 2
       }
     ]
   },
@@ -6294,7 +6384,7 @@
     "instrukcja": "Ćwiczący wykonuje dynamiczną \"walkę z cieniem\", luźno wyprowadzając ciosy bokserskie, jednocześnie cały czas lekko podrzucając w obu dłoniach piłeczki tenisowe i je chwytając. Gwarantuje to absolutne rozluźnienie dłoni podczas ruchu i spięcie dopiero w momencie kontaktu (nauka generowania impulsu mocy).",
     "wymagania_sprzetowe": [
       {
-        "pilka_tenisowa": 1
+        "pilka_tenisowa": 2
       }
     ]
   },
@@ -6326,7 +6416,7 @@
     "wymagania_sprzetowe": [
       {
         "pilka_bosu": 1,
-        "pilka_tenisowa": 1
+        "pilka_tenisowa": 2
       }
     ]
   },
@@ -6357,7 +6447,7 @@
     "wymagania_sprzetowe": [
       {
         "pilka_bosu": 1,
-        "pilka_tenisowa": 1
+        "pilka_tenisowa": 2
       }
     ]
   },
@@ -6385,7 +6475,8 @@
     "instrukcja": "Ćwiczący leżą tyłem do siebie z zaplecionymi stopami. Wykonują jednoczesny, zsynchronizowany wznos tułowia z podaniem piłki lekarskiej nad głową. Dodatkowy element przekazania piłki w górze wydłuża czas pod napięciem (TUT) dla prostego brzucha w najwyższym punkcie.",
     "wymagania_sprzetowe": [
       {
-        "pilka_lekarska": 1
+        "pilka_lekarska": 1,
+        "mata": 1
       }
     ]
   },
@@ -6490,7 +6581,11 @@
       "FBW"
     ],
     "instrukcja": "Jeden z ćwiczących leży na płasko, trzymając stojącego obok (nad jego głową) partnera za kostki. Podnosi wyprostowane nogi maksymalnie pionowo w górę. Partner stojący silnie odpycha mu nogi (prosto lub po skosie), zmuszając leżącego do wyhamowania impetu tuż nad ziemią i natychmiastowego powrotu.",
-    "wymagania_sprzetowe": []
+    "wymagania_sprzetowe": [
+      {
+        "mata": 1
+      }
+    ]
   },
   {
     "id_cwiczenia": "ex_237",
@@ -6571,7 +6666,7 @@
   {
     "id_cwiczenia": "ex_240",
     "nazwa": "Przysiad na podwyższeniu",
-    "wariant": "Rzut do partnera",
+    "wariant": "Rzut piłki do partnera",
     "segment_id": 8,
     "segment_nazwa": "PARTNER",
     "tryb_pracy": "W_Parze",
@@ -6842,14 +6937,10 @@
     ],
     "instrukcja": "Jeden ćwiczący znajduje się w stabilnym zwisie z wyprostowanymi, uniesionymi nogami. Drugi (stojąc) umieszcza piłkę między jego stopami. Osoba w zwisie opuszcza nogi z ciężarem powoli w dół (faza ekscentryczna) i ponownie podciąga je do góry, by zwrócić obciążenie.",
     "wymagania_sprzetowe": [
-      [
-        {
-          "drazek": 1
-        },
-        {
-          "pilka_lekarska": 1
-        }
-      ]
+      {
+        "drazek": 1,
+        "pilka_lekarska": 1
+      }
     ]
   },
   {
@@ -6877,7 +6968,7 @@
     "instrukcja": "Stając na kątowym bloku (desce Slant Board) w pozycji twarzą ku górze pochylni, ćwiczący prostuje maksymalnie nogę. Pięty w najgłębszym wgłębieniu kąta zmuszają ścięgno Achillesa i płaszczkowaty do potężnego i wydłużonego napięcia izometryczno/statycznego na wiele sekund.",
     "wymagania_sprzetowe": [
       {
-        "stepper": 1
+        "klin": 1
       }
     ]
   },
@@ -7097,7 +7188,7 @@
     "instrukcja": "Biernie aktywny, bardzo głęboki mobilizator odwodzicieli. W siadzie po turecku, spajając wewnętrzne części stóp ze sobą (pozycja motyla). Ćwiczący nakłada po niedużym ciężarze (kettle) symetrycznie na wnętrze kolan. Opiera się rękoma w tył i głęboko relaksuje miednicę dając grawitacji dopychać kolana do podłoża pod naprężeniem.",
     "wymagania_sprzetowe": [
       {
-        "kettlebell": 1
+        "kettlebell": 2
       }
     ]
   },
@@ -7284,7 +7375,8 @@
     "instrukcja": "Automasaż rolowaniem tkanki na gęstym wałku (Roller). W ułożeniu tyłem opieramy łopatki na rolce, zaplatamy dłonie pod głowę na ochronę odcinka szyjnego. Balansując ciałem rolujemy punktowy środek obszaru piersiowo-lędźwiowego. Można dodać z wdechem element wygięcia głowy statycznie tył na zgięcie spiętego garbu.",
     "wymagania_sprzetowe": [
       {
-        "mata": 1
+        "mata": 1,
+        "roller": 1
       }
     ]
   },
@@ -7374,14 +7466,14 @@
     "instrukcja": "Zaawansowany element rozluźnienia całego pasa barkowego przedniego w pełnym obciążeniu wiszącym. Przez wznos zgiętych kolan w kółkach przekładamy nogi wokół własnej osi rąk obracając się do pionu w dół do tyłu (tzw. German Hang) dając naciągnąć obręcz siłą ciężkości, następnie musimy powrócić własnymi barkami.",
     "wymagania_sprzetowe": [
       {
-        "kolko_gimnastyczne": 1
+        "kolko_gimnastyczne": 2
       }
     ]
   },
   {
     "id_cwiczenia": "ex_267",
     "nazwa": "Skłon w siadzie prostym (z obciążeniem)",
-    "wariant": "Ciężar na plecach/rękach",
+    "wariant": "Ciężar w rękach",
     "segment_id": 9,
     "segment_nazwa": "MOBILITY",
     "tryb_pracy": "Solo",
@@ -7402,11 +7494,19 @@
       "Regeneracja",
       "FBW"
     ],
-    "instrukcja": "Ciężka interwencja na powięzi dwugłowych ud i dołu pleców. Ćwiczący w siadzie płaskim z połączonymi prostymi kolanami wykonuje głęboki skłon w dół do kolan/stóp, używając partnera by go powoli dopychał (naciskał dłonią między łopatki) - ewentualnie obejmuje dociążający talerz dłońmi ponad stopy.",
+    "instrukcja": "Ciężka interwencja na powięzi dwugłowych ud i dołu pleców. Ćwiczący w siadzie płaskim z połączonymi prostymi kolanami wykonuje głęboki skłon w dół do kolan/stóp, używając ciężaru by go powoli dopychał grawitacyjnie.",
     "wymagania_sprzetowe": [
-      {
-        "talerz": 1
-      }
+      [
+        {
+          "kettlebell": 1
+        },
+        {
+          "hantel": 1
+        },
+        {
+          "talerz": 1
+        }
+      ]
     ]
   },
   {
@@ -7438,7 +7538,7 @@
   {
     "id_cwiczenia": "ex_269",
     "nazwa": "Stanie na rękach",
-    "wariant": "Klatką do ściany (nogi ugięte - krzesełko)",
+    "wariant": "Ugięte nogi (krzesełko), klatką do ściany",
     "segment_id": 4,
     "segment_nazwa": "SKILLS",
     "tryb_pracy": "Solo",
