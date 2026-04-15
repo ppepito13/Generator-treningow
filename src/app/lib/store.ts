@@ -50,6 +50,7 @@ interface AppState {
   generateCircuit: () => void;
   rerollExercise: (stationId: string, type: 'A' | 'B', segmentId?: number, loosen?: boolean, ignoreUsed?: boolean) => void;
   changeStationZone: (stationId: string, newZoneId: string, loosen?: boolean, ignoreUsed?: boolean) => void;
+  reorderCircuit: (oldIndex: number, newIndex: number) => void;
   reset: () => void;
 }
 
@@ -737,7 +738,15 @@ export const useAppStore = create<AppState>()(
           exerciseB: exB
         };
 
-        newCircuit.sort((a, b) => (a.zone.kolejnosc_sortowania || 99) - (b.zone.kolejnosc_sortowania || 99));
+        // newCircuit.sort((a, b) => (a.zone.kolejnosc_sortowania || 99) - (b.zone.kolejnosc_sortowania || 99));
+        set({ circuit: newCircuit });
+      },
+
+      reorderCircuit: (oldIndex, newIndex) => {
+        const newCircuit = [...get().circuit];
+        if (oldIndex < 0 || oldIndex >= newCircuit.length || newIndex < 0 || newIndex >= newCircuit.length) return;
+        const [movedItem] = newCircuit.splice(oldIndex, 1);
+        newCircuit.splice(newIndex, 0, movedItem);
         set({ circuit: newCircuit });
       },
 

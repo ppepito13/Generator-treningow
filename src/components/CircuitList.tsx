@@ -16,11 +16,45 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from '@/hooks/use-toast';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 export const CircuitList = () => {
-  const { circuit, reset, popView, difficultyId, participants } = useAppStore();
+  const { circuit, reset, popView, difficultyId, participants, reorderCircuit } = useAppStore();
   const currentDiff = DIFFICULTY_LEVELS.find(d => d.id === difficultyId);
   const [copied, setCopied] = React.useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = circuit.findIndex((item) => item.id === active.id);
+      const newIndex = circuit.findIndex((item) => item.id === over.id);
+      reorderCircuit(oldIndex, newIndex);
+    }
+  };
 
   const getSummary = () => {
     const header = `💪 TRENING SW CALISTHENICS\n${currentDiff?.nazwa_grupy || 'Trening'} • ${participants} osób\n\n`;
@@ -146,10 +180,14 @@ export const CircuitList = () => {
         </Dialog>
       </div>
 
-      <div className="px-6 pt-6 space-y-6 overflow-y-auto">
-        {circuit.map((station) => (
-          <StationCard key={station.id} station={station} />
-        ))}
+      <div className="px-6 pt-6 space-y-6 overflow-y-auto pb-6">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={circuit.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+            {circuit.map((station) => (
+              <StationCard key={station.id} station={station} />
+            ))}
+          </SortableContext>
+        </DndContext>
       </div>
 
       <div className="px-6 mt-8">

@@ -4,7 +4,9 @@
 import React from 'react';
 import { Station, Exercise, SEGMENTS, getDifficultyById, ALL_ROOMS } from '@/app/lib/data';
 import { useAppStore, getValidExercisesForZone } from '@/app/lib/store';
-import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle } from 'lucide-react';
+import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle, GripVertical } from 'lucide-react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -32,6 +34,21 @@ export const StationCard = ({ station }: Props) => {
   const isFBW = currentRoom.tryb_treningu === 'fbw_synchroniczny';
   const currentDiff = getDifficultyById(difficultyId);
   const isPairMode = participants > circuit.length;
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: station.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : 'auto',
+  };
 
   const handleReroll = (type: 'A' | 'B', segmentId?: number) => {
     rerollExercise(station.id, type, segmentId);
@@ -238,7 +255,11 @@ export const StationCard = ({ station }: Props) => {
   );
 
   return (
-    <div className="glass-card rounded-[2rem] overflow-hidden transition-all hover:scale-[1.01]">
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      className={`glass-card rounded-[2rem] overflow-hidden transition-all ${isDragging ? 'opacity-80 scale-105 shadow-2xl relative z-50' : 'hover:scale-[1.01]'}`}
+    >
       <div className={`p-4 border-b border-white/5 flex flex-col gap-2 ${isOvercrowded ? 'bg-destructive/20' : 'bg-primary/10'}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -280,6 +301,11 @@ export const StationCard = ({ station }: Props) => {
                   </DropdownMenu>
                 )}
               </div>
+            </div>
+          </div>
+          <div className="flex items-center">
+            <div {...attributes} {...listeners} className="p-2 cursor-grab active:cursor-grabbing text-primary/50 hover:text-primary focus:outline-none touch-none">
+              <GripVertical className="h-5 w-5" />
             </div>
           </div>
         </div>
