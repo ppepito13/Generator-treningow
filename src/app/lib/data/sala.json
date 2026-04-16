@@ -43,13 +43,13 @@
         "recznik": 2,
         "skakanka": 4,
         "skrzynia_drewniana": 2,
-        "skrzynie/boxy plyometryczne miękkie, ciężkie": 2,
         "stepper": 3,
         "sztanga_5kg": 10,
         "trx": 2,
-        "uchwyt_sztanga_rig": 8,
         "worek_obciazeniowy": 4,
-        "sciana_handstand": 5
+        "sciana_handstand": 5,
+        "uchwyt_sztangi_rig": 8,
+        "box_plyometryczny_miekki_ciezki": 2
       },
       "strefy": [
         {
@@ -58,13 +58,13 @@
           "kolejnosc_sortowania": 1,
           "blokada_zmiany_recznej": true,
           "zakazane_kategorie_sprzetu": [
-            "drążek",
             "drazek",
-            "drabink",
-            "kółka",
-            "kółkach",
-            "piłki gimnastyczne",
-            "gum"
+            "drabinka_pionowa",
+            "drabinka_pozioma",
+            "kolko_gimnastyczne",
+            "pilka_gimnastyczna",
+            "guma_oporowa_dluga",
+            "guma_oporowa_mini"
           ],
           "typ": "staly",
           "pojemnosc_stacji": 1,
@@ -84,7 +84,6 @@
           "kolejnosc_sortowania": 2,
           "typ": "klatka_rig",
           "pojemnosc_stacji": 1,
-          "akceptuje_pelen_obrot": true,
           "przypisany_sprzet": [
             "drazek"
           ]
@@ -95,9 +94,15 @@
           "kolejnosc_sortowania": 3,
           "typ": "klatka_rig",
           "pojemnosc_stacji": 2,
-          "akceptuje_pelen_obrot": false,
           "przypisany_sprzet": [
             "drazek"
+          ],
+          "zakazane_kategorie_sprzetu": [
+            "gryf_olimpijski",
+            "sztanga_5kg"
+          ],
+          "ograniczenia": [
+            "zakaz_obrotu_drazek_wysoki"
           ]
         },
         {
@@ -106,9 +111,11 @@
           "kolejnosc_sortowania": 4,
           "typ": "klatka_rig",
           "pojemnosc_stacji": 2,
-          "akceptuje_pelen_obrot": true,
           "przypisany_sprzet": [
             "drazek"
+          ],
+          "ograniczenia": [
+            "zakaz_obrotu_drazek_wysoki"
           ]
         },
         {
@@ -129,6 +136,9 @@
           "pojemnosc_stacji": 2,
           "przypisany_sprzet": [
             "sciana_handstand"
+          ],
+          "ograniczenia": [
+            "zakaz_obrotu_drazek_wysoki"
           ]
         },
         {
@@ -139,6 +149,9 @@
           "pojemnosc_stacji": 1,
           "przypisany_sprzet": [
             "drabinka_pionowa"
+          ],
+          "ograniczenia": [
+            "zakaz_obrotu_drazek_wysoki"
           ]
         },
         {
@@ -150,7 +163,8 @@
           "zaleznosci_pojemnosci_od": [
             "Strefa_Drabinki",
             "Strefa_Sciana"
-          ]
+          ],
+          "ograniczenia": []
         }
       ],
       "reguly_przeplywu_i_kolizji": {
@@ -184,7 +198,9 @@
         }
       ],
       "reguly_przeplywu_i_kolizji": {},
-      "zakazane_tryby_pracy": ["W_Parze"]
+      "zakazane_tryby_pracy": [
+        "W_Parze"
+      ]
     }
   ]
 }

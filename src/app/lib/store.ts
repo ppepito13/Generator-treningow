@@ -158,19 +158,25 @@ export const getValidExercisesForZone = (
     if (zone.ograniczenia.includes("odrzuc_segment_dynamika")) pool = pool.filter(ex => ex.segment_id !== 6);
     if (zone.ograniczenia.includes("odrzuc_kategorie_moc")) pool = pool.filter(ex => !ex.kategorie_treningu.includes('Moc'));
     if (zone.ograniczenia.includes("zakaz_drazkow_i_drabinek")) pool = pool.filter(ex => ex.segment_id !== 1);
-  }
-
-  if (zone.akceptuje_pelen_obrot === false) {
-    pool = pool.filter(ex => !ex.tagi_specjalne.includes('Pełen Obrót'));
+    if (zone.ograniczenia.includes("zakaz_obrotu_drazek_wysoki")) {
+      pool = pool.filter(ex => {
+        const isRot = ex.tagi_specjalne?.includes('Pełen Obrót');
+        const eqStr = getEquipmentString(ex).toLowerCase();
+        // Ban rotation ONLY if it requires a high bar ('drazek')
+        if (isRot && eqStr.includes('drazek')) {
+          return false;
+        }
+        return true;
+      });
+    }
   }
 
   if (zone.typ === 'elastyczny') {
-    pool = pool.filter(ex => ex.segment_id !== 1 && ex.segment_id !== 2);
     pool = pool.filter(ex => !ex.kategorie_treningu.includes('Wyciąg'));
   }
 
   if (zone.typ !== 'klatka_rig') {
-    pool = pool.filter(ex => !(ex.segment_id === 1 && getEquipmentString(ex).includes('drążki')));
+    pool = pool.filter(ex => !(ex.segment_id === 1 && getEquipmentString(ex).includes('drazek')));
   }
 
   if (zoneEquip.length > 0) {

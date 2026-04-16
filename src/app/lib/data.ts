@@ -45,7 +45,6 @@ export interface Zone {
   bazowa_pojemnosc_stacji?: number;
   zaleznosci_pojemnosci_od?: string[];
   ograniczenia?: string[];
-  akceptuje_pelen_obrot?: boolean;
   przypisany_sprzet?: string[];
   uwagi?: string;
 }
