@@ -31,7 +31,7 @@ interface Props {
 export const StationCard = ({ station }: Props) => {
   const { rerollExercise, changeStationZone, difficultyId, participants, circuit, selectedRoomId } = useAppStore();
   const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
-  const isFBW = currentRoom.tryb_treningu === 'fbw_synchroniczny';
+  const isSynchronized = currentRoom.tryb_treningu === 'synchroniczny';
   const currentDiff = getDifficultyById(difficultyId);
   const isPairMode = participants > circuit.length;
 
@@ -83,7 +83,7 @@ export const StationCard = ({ station }: Props) => {
     return pool.length > 0;
   });
 
-  const isFixedStation = station.zone.blokada_zmiany_recznej || isFBW;
+  const isFixedStation = station.zone.blokada_zmiany_recznej || isSynchronized;
   
   // Dynamiczna kalkulacja pojemności strefy
   const getZoneCapacity = (zoneId: string) => {
@@ -268,11 +268,11 @@ export const StationCard = ({ station }: Props) => {
             </div>
             <div className="flex flex-col">
               <h2 className={`text-[10px] font-bold uppercase tracking-widest ${isOvercrowded ? 'text-destructive' : 'text-primary/60'}`}>
-                {isFBW ? 'Stanowisko' : 'Lokalizacja'}
+                {isSynchronized ? 'Stanowisko' : 'Lokalizacja'}
               </h2>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-white uppercase">
-                  {isFBW ? `Ćwiczenie ${circuit.findIndex(s => s.id === station.id) + 1}` : station.zone.nazwa}
+                  {isSynchronized ? `Ćwiczenie ${circuit.findIndex(s => s.id === station.id) + 1}` : station.zone.nazwa}
                 </span>
                 {!isFixedStation && (
                   <DropdownMenu>

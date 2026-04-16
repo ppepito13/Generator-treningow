@@ -3,6 +3,7 @@ import equipment from './data/lista_sprzetu.json';
 import levels from './data/poziomy_trudnosci.json';
 import segments from './data/segmenty.json';
 import sala from './data/sala.json';
+import categories from './data/kategorie_treningow.json';
 
 export type SingleRequirement = Record<string, number>;
 export type EquipmentRequirement = SingleRequirement | SingleRequirement[];
@@ -52,7 +53,7 @@ export interface Zone {
 export interface RoomConfig {
   id_sali: string;
   nazwa_sali: string;
-  tryb_treningu: "obwodowy" | "fbw_synchroniczny";
+  tryb_treningu: "obwodowy" | "synchroniczny";
   maksymalna_pojemnosc: {
     osoby: number;
     stacje: number;
@@ -76,6 +77,7 @@ export const ALL_EQUIPMENT = equipment as string[];
 export const DIFFICULTY_LEVELS = levels as DifficultyLevel[];
 export const SEGMENTS = segments as { id: number; nazwa: string }[];
 export const ALL_ROOMS = sala.sale as RoomConfig[];
+export const KATEGORIE_TRENINGOW = categories as { id: string; nazwa: string }[];
 
 export const getDifficultyById = (id: string) => 
   DIFFICULTY_LEVELS.find(l => l.id === id) || DIFFICULTY_LEVELS[1];

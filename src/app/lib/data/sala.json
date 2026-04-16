@@ -176,7 +176,7 @@
     {
       "id_sali": "astoria",
       "nazwa_sali": "Sala Astoria",
-      "tryb_treningu": "fbw_synchroniczny",
+      "tryb_treningu": "synchroniczny",
       "maksymalna_pojemnosc": {
         "osoby": 33,
         "stacje": 15
@@ -201,6 +201,26 @@
       "zakazane_tryby_pracy": [
         "W_Parze"
       ]
+    },
+    {
+      "id_sali": "custom",
+      "nazwa_sali": "Ustawienia niestandardowe",
+      "tryb_treningu": "obwodowy",
+      "maksymalna_pojemnosc": {
+        "osoby": 50,
+        "stacje": 50
+      },
+      "inwentarz": {},
+      "strefy": [
+        {
+          "id": "strefa_uniwersalna",
+          "nazwa": "Przestrzeń treningowa",
+          "kolejnosc_sortowania": 1,
+          "typ": "elastyczny",
+          "bazowa_pojemnosc_stacji": 50
+        }
+      ],
+      "reguly_przeplywu_i_kolizji": {}
     }
   ]
 }

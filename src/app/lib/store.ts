@@ -30,6 +30,12 @@ interface AppState {
   stationCount: number;
   difficultyId: string;
   isStrictDifficulty: boolean;
+  
+  // Stan dla Sali Niestandardowej
+  customRoomMode: 'obwodowy' | 'synchroniczny';
+  customRoomCategory: string;
+  customRoomEquipment: string[];
+
   circuit: Station[];
   isGenerated: boolean;
   activeView: ViewType;
@@ -47,6 +53,14 @@ interface AppState {
   setStationCount: (val: number) => void;
   setDifficulty: (id: string) => void;
   setStrictDifficulty: (val: boolean) => void;
+  
+  // Akcje dla Sali Niestandardowej
+  setCustomRoomMode: (mode: 'obwodowy' | 'synchroniczny') => void;
+  setCustomRoomCategory: (category: string) => void;
+  toggleCustomEquipment: (id: string) => void;
+  setAllCustomEquipment: (ids: string[]) => void;
+  resetCustomRoom: () => void;
+
   generateCircuit: () => void;
   rerollExercise: (stationId: string, type: 'A' | 'B', segmentId?: number, loosen?: boolean, ignoreUsed?: boolean) => void;
   changeStationZone: (stationId: string, newZoneId: string, loosen?: boolean, ignoreUsed?: boolean) => void;
@@ -91,7 +105,7 @@ const canExerciseBeShared = (ex: Exercise, currentRoom: RoomConfig): boolean => 
 };
 
 const ensureEquipment = (ex: Exercise, currentRoom: RoomConfig, participants: number): boolean => {
-  if (currentRoom.tryb_treningu !== 'fbw_synchroniczny') return true;
+  if (currentRoom.tryb_treningu !== 'synchroniczny' && currentRoom.id_sali !== 'custom') return true;
   if (!ex.wymagania_sprzetowe || ex.wymagania_sprzetowe.length === 0) return true;
 
   const checkSingle = (req: Record<string, number>) => {
@@ -121,12 +135,20 @@ export const getValidExercisesForZone = (
   currentRoom: RoomConfig,
   segmentId?: number,
   ignoreUsed: boolean = false,
-  hasFlagAlready: boolean = false
+  hasFlagAlready: boolean = false,
+  category: string = 'all',
+  participantsCount: number = 1
 ): Exercise[] => {
   let pool = ALL_EXERCISES.filter(ex =>
     ex.poziom >= diffRange.min && ex.poziom <= diffRange.max &&
     (ignoreUsed ? true : !usedIds.has(ex.id_cwiczenia))
   );
+
+  if (category !== 'all') {
+    pool = pool.filter(ex => 
+      ex.kategorie_treningu?.some(cat => cat.toLowerCase() === category.toLowerCase())
+    );
+  }
 
   if (segmentId !== undefined) {
     pool = pool.filter(ex => ex.segment_id === segmentId);
@@ -188,7 +210,8 @@ export const getValidExercisesForZone = (
   }
 
   // OSTATECZNA tarcza ochronna – weryfikacja fizycznego sprzętu na Sali.
-  pool = pool.filter(ex => ensureEquipment(ex, currentRoom, 1));
+  // Dla obwodu participantsCount = 1 (stacja solo) lub 2 (para), dla GRP = cała grupa.
+  pool = pool.filter(ex => ensureEquipment(ex, currentRoom, participantsCount));
 
   // FALLBACK jeśli wyczyściliśmy ćwiczenia z użytych: zezwalamy na potworzenia!
   if (pool.length === 0 && !ignoreUsed) {
@@ -205,7 +228,8 @@ const generateCircuitStrategy = (
   stationCount: number,
   isStrictDifficulty: boolean,
   loosenDifficultyFlag: boolean = false,
-  ignoreUsedFlag: boolean = false
+  ignoreUsedFlag: boolean = false,
+  category: string = 'all'
 ): Station[] => {
   const numDoubleStations = participants - stationCount;
   const isPairMode = participants > stationCount;
@@ -271,9 +295,10 @@ const generateCircuitStrategy = (
       };
     }
 
-    let pool = getValidExercisesForZone(zone, currentRange, usedIds, isThisStationPair, currentRoom, undefined, ignoreUsedFlag, hasFlagAlready);
+    const pCountForThisStation = isThisStationPair ? 2 : 1;
+    let pool = getValidExercisesForZone(zone, currentRange, usedIds, isThisStationPair, currentRoom, undefined, ignoreUsedFlag, hasFlagAlready, category, pCountForThisStation);
     if (pool.length === 0) {
-      pool = getValidExercisesForZone(zone, { min: mainDiff.min_poziom, max: mainDiff.max_poziom }, usedIds, isThisStationPair, currentRoom, undefined, ignoreUsedFlag, hasFlagAlready);
+      pool = getValidExercisesForZone(zone, { min: mainDiff.min_poziom, max: mainDiff.max_poziom }, usedIds, isThisStationPair, currentRoom, undefined, ignoreUsedFlag, hasFlagAlready, category, pCountForThisStation);
     }
     if (pool.length === 0) return;
 
@@ -307,14 +332,15 @@ const generateCircuitStrategy = (
   return generated;
 };
 
-const generateFBWStrategy = (
+const generateSynchronizedStrategy = (
   currentRoom: RoomConfig,
   mainDiff: DifficultyLevel,
   participants: number,
   stationCount: number,
   isStrictDifficulty: boolean,
   loosenDifficultyFlag: boolean = false,
-  ignoreUsedFlag: boolean = false
+  ignoreUsedFlag: boolean = false,
+  category: string = 'all'
 ): Station[] => {
   const generated: Station[] = [];
   const usedIds = new Set<string>();
@@ -331,24 +357,54 @@ const generateFBWStrategy = (
   }
 
   for (let idx = 0; idx < stationCount; idx++) {
-    let pool = ALL_EXERCISES.filter(ex => ignoreUsedFlag ? true : !usedIds.has(ex.id_cwiczenia));
-    pool = pool.filter(ex => ex.poziom >= searchRange.min && ex.poziom <= searchRange.max);
-    pool = pool.filter(ex => ensureEquipment(ex, currentRoom, participants));
+    const pool = getValidExercisesForZone(
+      mainZone, 
+      searchRange, 
+      usedIds, 
+      false, 
+      currentRoom, 
+      undefined, 
+      ignoreUsedFlag, 
+      false, 
+      category, 
+      participants
+    );
 
-    // Filtr reguł sali: zakazane tryby pracy
-    if (currentRoom.zakazane_tryby_pracy && currentRoom.zakazane_tryby_pracy.length > 0) {
-      pool = pool.filter(ex => !currentRoom.zakazane_tryby_pracy!.includes(ex.tryb_pracy));
+    if (pool.length === 0) {
+      // Internal Fallback: Jeśli poluzowany (lub przesunięty) zakres nie znalazł nic, wróć do bazy
+      const fallbackPool = getValidExercisesForZone(
+        mainZone, 
+        currentRange, 
+        usedIds, 
+        false, 
+        currentRoom, 
+        undefined, 
+        ignoreUsedFlag, 
+        false, 
+        category, 
+        participants
+      );
+
+      if (fallbackPool.length === 0) continue;
+      
+      const exA = fallbackPool[Math.floor(Math.random() * fallbackPool.length)];
+      usedIds.add(exA.id_cwiczenia);
+      generated.push({
+        id: `sync-${idx}-${Date.now()}-${Math.random()}`,
+        zone: mainZone,
+        exerciseA: exA,
+        isPair: false
+      });
+      continue;
     }
-
-    if (pool.length === 0) continue;
 
     const exA = pool[Math.floor(Math.random() * pool.length)];
     usedIds.add(exA.id_cwiczenia);
     generated.push({
-      id: `fbw-${idx}-${Date.now()}-${Math.random()}`,
+      id: `sync-${idx}-${Date.now()}-${Math.random()}`,
       zone: mainZone,
       exerciseA: exA,
-      isPair: false // FBW zawsze synchronicznie pojedynczo
+      isPair: false
     });
   }
   return generated;
@@ -362,13 +418,49 @@ export const useAppStore = create<AppState>()(
       stationCount: 7,
       difficultyId: 'baza_silowa_standard',
       isStrictDifficulty: true,
-      circuit: [],
+      
+      customRoomMode: 'obwodowy',
+      customRoomCategory: 'all',
+      customRoomEquipment: [],
+
+      circuit: [] as Station[],
       isGenerated: false,
       activeView: 'HOME',
-      navigationStack: ['HOME'],
-      generationConflict: null,
+      navigationStack: ['HOME'] as ViewType[],
+      generationConflict: null as GenerationConflictState | null,
+
+      // Helper do pobierania aktualnej konfiguracji sali (uwzględnia wirtualną salę Custom)
+      getEffectiveRoomConfig: () => {
+        const { selectedRoomId, customRoomMode, customRoomEquipment } = get();
+        const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
+
+        if (selectedRoomId === 'custom') {
+          return {
+            ...currentRoom,
+            tryb_treningu: customRoomMode,
+            inwentarz: customRoomEquipment.reduce((acc, eq) => ({ ...acc, [eq]: 99 }), {})
+          };
+        }
+        return currentRoom;
+      },
 
       setGenerationConflict: (conflict) => set({ generationConflict: conflict }),
+
+      setCustomRoomMode: (mode) => set({ customRoomMode: mode }),
+      setCustomRoomCategory: (category) => set({ customRoomCategory: category }),
+      toggleCustomEquipment: (id) => {
+        const current = get().customRoomEquipment;
+        const next = current.includes(id) 
+          ? current.filter(x => x !== id)
+          : [...current, id];
+        set({ customRoomEquipment: next });
+      },
+      setAllCustomEquipment: (ids) => set({ customRoomEquipment: ids }),
+      resetCustomRoom: () => set({
+        customRoomMode: 'obwodowy',
+        customRoomCategory: 'all',
+        customRoomEquipment: []
+      }),
 
       pushView: (view) => {
         const stack = get().navigationStack;
@@ -402,10 +494,13 @@ export const useAppStore = create<AppState>()(
         const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
 
         const executeGeneration = (loosen: boolean, ignore: boolean) => {
-           if (currentRoom.tryb_treningu === 'obwodowy') {
-             return generateCircuitStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty, loosen, ignore);
-           }
-           return generateFBWStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty, loosen, ignore);
+            const { customRoomCategory, selectedRoomId } = state;
+            const room = get().getEffectiveRoomConfig();
+
+            if (room.tryb_treningu === 'obwodowy') {
+              return generateCircuitStrategy(room, mainDiff, participants, stationCount, isStrictDifficulty, loosen, ignore, selectedRoomId === 'custom' ? customRoomCategory : 'all');
+            }
+            return generateSynchronizedStrategy(room, mainDiff, participants, stationCount, isStrictDifficulty, loosen, ignore, selectedRoomId === 'custom' ? customRoomCategory : 'all');
         };
 
         if (action === 'cancel') {
@@ -468,7 +563,7 @@ export const useAppStore = create<AppState>()(
       setParticipants: (val) => {
         const room = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
         const newParticipants = Math.min(Math.max(val, 1), room.maksymalna_pojemnosc.osoby);
-        const maxStations = room.tryb_treningu === 'fbw_synchroniczny' 
+        const maxStations = room.tryb_treningu === 'synchroniczny' 
           ? room.maksymalna_pojemnosc.stacje 
           : Math.min(newParticipants, room.maksymalna_pojemnosc.stacje);
         const newStationCount = Math.min(get().stationCount, maxStations);
@@ -478,7 +573,7 @@ export const useAppStore = create<AppState>()(
 
       setStationCount: (val) => {
         const room = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
-        const maxStations = room.tryb_treningu === 'fbw_synchroniczny' 
+        const maxStations = room.tryb_treningu === 'synchroniczny' 
           ? room.maksymalna_pojemnosc.stacje 
           : Math.min(get().participants, room.maksymalna_pojemnosc.stacje);
         set({ stationCount: Math.min(Math.max(val, 1), maxStations) });
@@ -489,32 +584,43 @@ export const useAppStore = create<AppState>()(
       generateCircuit: () => {
         const { participants, difficultyId, stationCount, isStrictDifficulty, selectedRoomId } = get();
         const mainDiff = getDifficultyById(difficultyId);
-        const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
 
         const tryGenerate = (loosen: boolean, ignore: boolean) => {
-           if (currentRoom.tryb_treningu === 'obwodowy') {
-             return generateCircuitStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty, loosen, ignore);
-           }
-           return generateFBWStrategy(currentRoom, mainDiff, participants, stationCount, isStrictDifficulty, loosen, ignore);
+            const { customRoomCategory } = get();
+            const room = get().getEffectiveRoomConfig();
+
+            if (room.tryb_treningu === 'obwodowy') {
+              return generateCircuitStrategy(room, mainDiff, participants, stationCount, isStrictDifficulty, loosen, ignore, selectedRoomId === 'custom' ? customRoomCategory : 'all');
+            }
+            return generateSynchronizedStrategy(room, mainDiff, participants, stationCount, isStrictDifficulty, loosen, ignore, selectedRoomId === 'custom' ? customRoomCategory : 'all');
         };
 
-        const newCircuit = tryGenerate(false, false);
+        // --- AUTOMATYCZNY SYSTEM FALLBACKÓW ---
+        // 1. Próba idealna (sztywne poziomy, brak duplikatów)
+        let newCircuit = tryGenerate(false, false);
 
+        // 2. Próba z poluzowaniem poziomu (jeśli Tryb Ścisły jest wyłączony)
+        if (newCircuit.length < stationCount && !isStrictDifficulty) {
+          const loosened = tryGenerate(true, false);
+          if (loosened.length > newCircuit.length) {
+            newCircuit = loosened;
+          }
+        }
+
+        // --- KONIEC AUTO-NAPRAWY, JEŚLI NADAL BRAKUJE -> DIALOG KONFLIKTU ---
         if (newCircuit.length < stationCount) {
-           // Algorytm się zatrzymał przed metą.
-           // Pre-kalkulacja (Dry Run): Czy poluzowanie trudności rozwiąże wakat?
-           const loosenedCircuit = tryGenerate(true, false);
-           const canLoosenHelp = loosenedCircuit.length >= stationCount;
-           
-           set({
-             generationConflict: {
-               type: 'generate',
-               requestedStations: stationCount,
-               availableStations: newCircuit.length,
-               canLoosenDifficulty: canLoosenHelp
-             }
-           });
-           return;
+             const dryRunLoosen = tryGenerate(true, false);
+             const canLoosenHelp = dryRunLoosen.length >= stationCount;
+             
+             set({
+               generationConflict: {
+                 type: 'generate',
+                 requestedStations: stationCount,
+                 availableStations: newCircuit.length,
+                 canLoosenDifficulty: canLoosenHelp
+               }
+             });
+             return;
         }
 
         set({ circuit: newCircuit, isGenerated: true, generationConflict: null });
@@ -564,8 +670,10 @@ export const useAppStore = create<AppState>()(
         }
 
         if (type === 'A') {
-          const currentRoom = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
-          let pool = getValidExercisesForZone(station.zone, searchRange, usedIds, station.isPair, currentRoom, segmentId, ignoreUsed, hasFlagAlready);
+          const currentRoom = get().getEffectiveRoomConfig();
+          const category = get().selectedRoomId === 'custom' ? get().customRoomCategory : 'all';
+          const pCount = station.isPair ? 2 : 1;
+          let pool = getValidExercisesForZone(station.zone, searchRange, usedIds, station.isPair, currentRoom, segmentId, ignoreUsed, hasFlagAlready, category, pCount);
           
           if (pool.length === 0) {
             searchRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
@@ -612,7 +720,7 @@ export const useAppStore = create<AppState>()(
           newCircuit[stationIndex] = { ...station, exerciseA: newExA, exerciseB: newExB };
           set({ circuit: newCircuit });
         } else if (type === 'B' && station.exerciseB) {
-          const currentRoom = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
+          const currentRoom = get().getEffectiveRoomConfig();
           const pool = ALL_EXERCISES.filter(ex =>
             ex.id_cwiczenia !== station.exerciseA.id_cwiczenia &&
             !usedIds.has(ex.id_cwiczenia) &&
@@ -662,7 +770,7 @@ export const useAppStore = create<AppState>()(
         const stationIndex = circuit.findIndex(s => s.id === stationId);
         if (stationIndex === -1) return;
 
-        const currentRoom = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
+        const currentRoom = get().getEffectiveRoomConfig();
         const newZone = currentRoom.strefy.find(z => z.id === newZoneId);
         if (!newZone) return;
 
@@ -693,7 +801,9 @@ export const useAppStore = create<AppState>()(
           searchRange = { min: Math.max(1, currentRange.min - MAX_DIFFICULTY_LOOSENING), max: Math.min(10, currentRange.max + MAX_DIFFICULTY_LOOSENING) };
         }
 
-        let pool = getValidExercisesForZone(newZone, searchRange, usedExerciseIds, circuit[stationIndex].isPair, currentRoom, undefined, ignoreUsed, hasFlagAlready);
+        const category = get().selectedRoomId === 'custom' ? get().customRoomCategory : 'all';
+        const pCount = circuit[stationIndex].isPair ? 2 : 1;
+        let pool = getValidExercisesForZone(newZone, searchRange, usedExerciseIds, circuit[stationIndex].isPair, currentRoom, undefined, ignoreUsed, hasFlagAlready, category, pCount);
 
         if (pool.length === 0) {
           searchRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
