@@ -446,7 +446,18 @@ export const useAppStore = create<AppState>()(
 
       setGenerationConflict: (conflict) => set({ generationConflict: conflict }),
 
-      setCustomRoomMode: (mode) => set({ customRoomMode: mode }),
+      setCustomRoomMode: (mode) => {
+        set({ customRoomMode: mode });
+        // Po zmianie trybu musimy zweryfikować czy obecna liczba stacji mieści się w nowych limitach
+        const room = get().getEffectiveRoomConfig();
+        const maxStations = room.tryb_treningu === 'synchroniczny' 
+          ? room.maksymalna_pojemnosc.stacje 
+          : Math.min(get().participants, room.maksymalna_pojemnosc.stacje);
+        
+        if (get().stationCount > maxStations) {
+          set({ stationCount: maxStations });
+        }
+      },
       setCustomRoomCategory: (category) => set({ customRoomCategory: category }),
       toggleCustomEquipment: (id) => {
         const current = get().customRoomEquipment;
@@ -561,7 +572,7 @@ export const useAppStore = create<AppState>()(
       },
 
       setParticipants: (val) => {
-        const room = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
+        const room = get().getEffectiveRoomConfig();
         const newParticipants = Math.min(Math.max(val, 1), room.maksymalna_pojemnosc.osoby);
         const maxStations = room.tryb_treningu === 'synchroniczny' 
           ? room.maksymalna_pojemnosc.stacje 
@@ -572,7 +583,7 @@ export const useAppStore = create<AppState>()(
       },
 
       setStationCount: (val) => {
-        const room = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
+        const room = get().getEffectiveRoomConfig();
         const maxStations = room.tryb_treningu === 'synchroniczny' 
           ? room.maksymalna_pojemnosc.stacje 
           : Math.min(get().participants, room.maksymalna_pojemnosc.stacje);

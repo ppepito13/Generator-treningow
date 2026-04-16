@@ -37,7 +37,10 @@ export const ConfigurationForm = () => {
   const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
   const currentDiff = DIFFICULTY_LEVELS.find(d => d.id === difficultyId);
 
-  const isSynchronized = currentRoom.tryb_treningu === 'synchroniczny';
+  // Dynamiczne ustalanie trybu dla potrzeb UI (suwaki itp.)
+  const isSynchronized = selectedRoomId === 'custom' 
+    ? customRoomMode === 'synchroniczny' 
+    : currentRoom.tryb_treningu === 'synchroniczny';
 
   // Obliczenia dla ograniczeń stacji
   const minStations = isSynchronized ? 1 : Math.ceil(participants / 2);
@@ -157,9 +160,6 @@ export const ConfigurationForm = () => {
           <div className="space-y-4">
             <div className="flex justify-between items-end">
               <Label className="text-lg font-medium">Uczestnicy</Label>
-              <span className="text-xs text-primary font-bold bg-primary/10 px-2 py-1 rounded-md uppercase tracking-tighter">
-                {participants} OSÓB
-              </span>
             </div>
             <div className="flex flex-col gap-4">
               <div className="text-5xl font-bold font-mono text-primary text-center">
@@ -188,21 +188,23 @@ export const ConfigurationForm = () => {
               <LayoutGrid className="h-4 w-4 text-secondary" />
               <Label className="text-lg font-medium">Liczba Stacji</Label>
             </div>
-            <span className="text-xs text-secondary font-bold bg-secondary/10 px-2 py-1 rounded-md">
-              {stationCount} STACJI
-            </span>
           </div>
-          <Slider 
-            value={[stationCount]} 
-            onValueChange={(vals) => setStationCount(vals[0])}
-            min={minStations}
-            max={maxStations}
-            step={1}
-            className="py-4"
-          />
-          <div className="flex justify-between text-[10px] text-muted-foreground uppercase font-bold px-1">
-            <span>Minimum: {minStations}</span>
-            <span>Maksimum: {maxStations}</span>
+          <div className="flex flex-col gap-4">
+            <div className="text-5xl font-bold font-mono text-secondary text-center">
+              {stationCount.toString().padStart(2, '0')}
+            </div>
+            <Slider 
+              value={[stationCount]} 
+              onValueChange={(vals) => setStationCount(vals[0])}
+              min={minStations}
+              max={maxStations}
+              step={1}
+              className="py-2"
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground uppercase font-bold px-1">
+              <span>Minimum: {minStations}</span>
+              <span>Maksimum: {maxStations}</span>
+            </div>
           </div>
           {numPairs > 0 && !isSynchronized && (
             <p className="text-[10px] text-primary/80 text-center font-medium bg-primary/5 py-2 rounded-lg border border-primary/10">
