@@ -56,3 +56,11 @@ pytania_do_klienta.md
 
 # skrypty pomocnicze
 /skrypty_robocze/
+
+# Android (Capacitor)
+android/build/
+android/.gradle/
+android/local.properties
+android/app/build/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capsync.json
