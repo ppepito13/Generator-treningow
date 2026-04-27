@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { Station, Exercise, SEGMENTS, getDifficultyById, ALL_ROOMS } from '@/app/lib/data';
 import { useAppStore, getValidExercisesForZone } from '@/app/lib/store';
 import { ExerciseManualSelector } from './ExerciseManualSelector';
-import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle, GripVertical, Search, ChevronRight } from 'lucide-react';
+import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle, GripVertical, Search } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ interface Props {
 }
 
 export const StationCard = ({ station }: Props) => {
-  const { rerollExercise, setStationExercise, changeStationZone, difficultyId, participants, circuit, selectedRoomId } = useAppStore();
+  const { rerollExercise, setStationExercise, difficultyId, participants, circuit, selectedRoomId } = useAppStore();
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [activeSelectType, setActiveSelectType] = useState<'A' | 'B'>('A');
   const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
@@ -95,7 +95,7 @@ export const StationCard = ({ station }: Props) => {
     return pool.length > 0;
   });
 
-  const isFixedStation = station.zone.blokada_zmiany_recznej || isSynchronized;
+
   
   // Dynamiczna kalkulacja pojemności strefy
   const getZoneCapacity = (zoneId: string) => {
@@ -120,12 +120,6 @@ export const StationCard = ({ station }: Props) => {
   const stationsInSameZone = circuit.filter(s => s.zone.id === station.zone.id);
   const currentZoneCapacity = getZoneCapacity(station.zone.id);
   const isOvercrowded = stationsInSameZone.length > currentZoneCapacity;
-
-  const getAvailableZones = () => {
-    return currentRoom.strefy.filter(z => !z.blokada_zmiany_recznej);
-  };
-
-  const availableZones = getAvailableZones();
 
   const ExerciseSubCard = ({ ex, type, shared = false }: { ex: Exercise, type: 'A' | 'B', shared?: boolean }) => (
     <div className={`relative p-5 rounded-2xl border transition-all ${shared ? 'bg-primary/5 border-primary/20' : type === 'B' ? 'bg-secondary/5 border-secondary/10' : 'bg-white/5 border-white/5'}`}>
@@ -303,32 +297,6 @@ export const StationCard = ({ station }: Props) => {
                 <span className="text-sm font-bold text-white uppercase">
                   {isSynchronized ? `Ćwiczenie ${circuit.findIndex(s => s.id === station.id) + 1}` : station.zone.nazwa}
                 </span>
-                {!isFixedStation && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 rounded-md glass-button text-primary/50 hover:text-primary">
-                        <Settings2 className="h-3 w-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="glass-card border-white/10 text-white min-w-[200px] z-[100]">
-                      <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Przenieś Stację</DropdownMenuLabel>
-                      <div className="max-h-[300px] overflow-y-auto">
-                        {availableZones.map(zone => (
-                          <DropdownMenuItem 
-                            key={zone.id} 
-                            onClick={() => changeStationZone(station.id, zone.id)}
-                            className="text-xs font-medium focus:bg-primary focus:text-primary-foreground cursor-pointer py-2.5"
-                          >
-                            <div className="flex justify-between w-full">
-                              <span>{zone.nazwa}</span>
-                              {zone.id === station.zone.id && <span className="text-[8px] text-primary">(Bieżąca)</span>}
-                            </div>
-                          </DropdownMenuItem>
-                        ))}
-                      </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
               </div>
             </div>
           </div>
