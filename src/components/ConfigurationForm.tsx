@@ -67,11 +67,11 @@ export const ConfigurationForm = () => {
         }}
       />
       <div className="flex flex-col gap-8 w-full max-w-md mx-auto pt-[calc(max(env(safe-area-inset-top,0px),48px)+24px)] pb-[calc(env(safe-area-inset-bottom,0px)+64px)] px-6">
-      <div className="text-center space-y-2">
-        <h1 className="text-4xl font-bold tracking-tighter text-primary font-headline cyan-glow inline-block px-4 py-2 rounded-xl">
-          SW Calisthenics
+      <div className="text-center space-y-4">
+        <h1 className="text-3xl font-bold tracking-tighter text-primary font-headline cyan-glow inline-block px-4 py-2 rounded-xl">
+          Generator Treningów<br />SW
         </h1>
-        <p className="text-muted-foreground text-sm uppercase tracking-widest">Generator Treningu Grupowego</p>
+        <p className="text-muted-foreground text-sm uppercase tracking-widest">Elastyczne plany grupowe</p>
       </div>
 
       <div className="glass-card p-8 rounded-3xl space-y-8">

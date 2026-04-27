@@ -130,17 +130,16 @@ export const CircuitList = () => {
       <div
         className="sticky top-0 z-20 bg-background/80 backdrop-blur-md px-6 pb-4 pt-[max(env(safe-area-inset-top,0px),48px)] flex items-center justify-between border-b border-white/5"
       >
-        <Button variant="ghost" onClick={popView} className="glass-button rounded-xl flex gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Wstecz
+        <Button variant="ghost" size="icon" onClick={popView} className="glass-button rounded-xl">
+          <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="text-center">
-          <h1 className="text-xl font-bold text-primary flex items-center gap-2">
-            <ClipboardList className="h-5 w-5" />
+          <h1 className="text-xl font-bold text-primary">
             Twój Obwód
           </h1>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">
-            {currentDiff?.nazwa_grupy || 'Trening'} • {participants} osób
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium leading-tight">
+            {currentDiff?.nazwa_grupy || 'Trening'}
+            <span className="block mt-0.5">{participants} osób</span>
           </p>
         </div>
         
