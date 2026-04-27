@@ -63,6 +63,7 @@ interface AppState {
 
   generateCircuit: () => void;
   rerollExercise: (stationId: string, type: 'A' | 'B', segmentId?: number, loosen?: boolean, ignoreUsed?: boolean) => void;
+  setStationExercise: (stationId: string, type: 'A' | 'B', exercise: Exercise) => void;
   changeStationZone: (stationId: string, newZoneId: string, loosen?: boolean, ignoreUsed?: boolean) => void;
   reorderCircuit: (oldIndex: number, newIndex: number) => void;
   reset: () => void;
@@ -82,30 +83,10 @@ const getEquipmentString = (ex: Pick<Exercise, "wymagania_sprzetowe">): string =
 };
 
 const canExerciseBeShared = (ex: Exercise, currentRoom: RoomConfig): boolean => {
-  if (!ex.wymagania_sprzetowe || ex.wymagania_sprzetowe.length === 0) return true;
-
-  const req = getEquipmentString(ex);
-  if (req === '') return true;
-
-  const allReqKeys = new Set<string>();
-  ex.wymagania_sprzetowe.forEach(rule => {
-    if (Array.isArray(rule)) {
-      rule.forEach(alt => Object.keys(alt).forEach(k => allReqKeys.add(k)));
-    } else {
-      Object.keys(rule).forEach(k => allReqKeys.add(k));
-    }
-  });
-
-  for (const itemKey of allReqKeys) {
-    const gymHas = currentRoom.inwentarz[itemKey] || 0;
-    if (gymHas >= 2) return true;
-  }
-
-  return true;
+  return ensureEquipment(ex, currentRoom, 2);
 };
 
 const ensureEquipment = (ex: Exercise, currentRoom: RoomConfig, participants: number): boolean => {
-  if (currentRoom.tryb_treningu !== 'synchroniczny' && currentRoom.id_sali !== 'custom') return true;
   if (!ex.wymagania_sprzetowe || ex.wymagania_sprzetowe.length === 0) return true;
 
   const checkSingle = (req: Record<string, number>) => {
@@ -647,20 +628,20 @@ export const useAppStore = create<AppState>()(
         const mainDiff = getDifficultyById(difficultyId);
 
         // Budujemy listę użytych ID wykluczając to, które właśnie zmieniamy
-        const usedIds = new Set<string>();
+        const usedOnOtherStations = new Set<string>();
         circuit.forEach(s => {
           if (s.id !== stationId) {
-            usedIds.add(s.exerciseA.id_cwiczenia);
-            if (s.exerciseB) usedIds.add(s.exerciseB.id_cwiczenia);
-          } else {
-            if (type === 'A' && s.exerciseB && s.exerciseB.id_cwiczenia !== s.exerciseA.id_cwiczenia) {
-              usedIds.add(s.exerciseB.id_cwiczenia);
-            }
-            if (type === 'B') {
-              usedIds.add(s.exerciseA.id_cwiczenia);
-            }
+            usedOnOtherStations.add(s.exerciseA.id_cwiczenia);
+            if (s.exerciseB) usedOnOtherStations.add(s.exerciseB.id_cwiczenia);
           }
         });
+
+        const currentAtStationIds = new Set<string>();
+        currentAtStationIds.add(station.exerciseA.id_cwiczenia);
+        if (station.exerciseB) currentAtStationIds.add(station.exerciseB.id_cwiczenia);
+
+        // Initial attempt: exclude everything already used in the circuit
+        const fullUsedIds = new Set([...usedOnOtherStations, ...currentAtStationIds]);
 
         const hasFlagAlready = circuit.some(s =>
           s.id !== stationId && (s.exerciseA.nazwa.toLowerCase().includes('flaga') || s.exerciseB?.nazwa.toLowerCase().includes('flaga'))
@@ -684,19 +665,24 @@ export const useAppStore = create<AppState>()(
           const currentRoom = get().getEffectiveRoomConfig();
           const category = get().selectedRoomId === 'custom' ? get().customRoomCategory : 'all';
           const pCount = station.isPair ? 2 : 1;
-          let pool = getValidExercisesForZone(station.zone, searchRange, usedIds, station.isPair, currentRoom, segmentId, ignoreUsed, hasFlagAlready, category, pCount);
+          let pool = getValidExercisesForZone(station.zone, searchRange, fullUsedIds, station.isPair, currentRoom, segmentId, ignoreUsed, hasFlagAlready, category, pCount);
           
+          if (pool.length === 0) {
+            // Drugie podejście: pozwalamy na duplikaty z innych stacji, ale wciąż wykluczamy obecne
+            pool = getValidExercisesForZone(station.zone, searchRange, currentAtStationIds, station.isPair, currentRoom, segmentId, true, hasFlagAlready, category, pCount);
+          }
+
           if (pool.length === 0) {
             searchRange = { min: mainDiff.min_poziom, max: mainDiff.max_poziom };
             if (loosen) {
               searchRange = { min: Math.max(1, mainDiff.min_poziom - MAX_DIFFICULTY_LOOSENING), max: Math.min(10, mainDiff.max_poziom + MAX_DIFFICULTY_LOOSENING) };
             }
-            pool = getValidExercisesForZone(station.zone, searchRange, usedIds, station.isPair, currentRoom, segmentId, ignoreUsed, hasFlagAlready);
+            pool = getValidExercisesForZone(station.zone, searchRange, currentAtStationIds, station.isPair, currentRoom, segmentId, true, hasFlagAlready);
           }
 
           if (pool.length === 0) {
              const dryLoosenRange = { min: Math.max(1, currentRange.min - MAX_DIFFICULTY_LOOSENING), max: Math.min(10, currentRange.max + MAX_DIFFICULTY_LOOSENING) };
-             const dryPool = getValidExercisesForZone(station.zone, dryLoosenRange, usedIds, station.isPair, currentRoom, segmentId, ignoreUsed, hasFlagAlready);
+             const dryPool = getValidExercisesForZone(station.zone, dryLoosenRange, currentAtStationIds, station.isPair, currentRoom, segmentId, true, hasFlagAlready);
              set({
                generationConflict: {
                  type: 'reroll',
@@ -732,17 +718,36 @@ export const useAppStore = create<AppState>()(
           set({ circuit: newCircuit });
         } else if (type === 'B' && station.exerciseB) {
           const currentRoom = get().getEffectiveRoomConfig();
-          const pool = ALL_EXERCISES.filter(ex =>
+          const category = get().selectedRoomId === 'custom' ? get().customRoomCategory : 'all';
+
+          let pool = ALL_EXERCISES.filter(ex =>
             ex.id_cwiczenia !== station.exerciseA.id_cwiczenia &&
-            !usedIds.has(ex.id_cwiczenia) &&
+            !fullUsedIds.has(ex.id_cwiczenia) &&
             ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
             ex.glowne_partie.some(p => station.exerciseA.glowne_partie.includes(p)) &&
             ensureEquipment(ex, currentRoom, 1) &&
             ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
           );
 
+          if (pool.length === 0) {
+            pool = ALL_EXERCISES.filter(ex =>
+              ex.id_cwiczenia !== station.exerciseA.id_cwiczenia &&
+              !currentAtStationIds.has(ex.id_cwiczenia) &&
+              ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
+              ex.glowne_partie.some(p => station.exerciseA.glowne_partie.includes(p)) &&
+              ensureEquipment(ex, currentRoom, 1) &&
+              ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
+            );
+          }
+
+          if (category !== 'all') {
+            pool = pool.filter(ex => 
+              ex.kategorie_treningu?.some(cat => cat.toLowerCase() === category.toLowerCase())
+            );
+          }
+
           if (hasFlagAlready) {
-            pool.filter(ex => !ex.nazwa.toLowerCase().includes('flaga'));
+            pool = pool.filter(ex => !ex.nazwa.toLowerCase().includes('flaga'));
           }
 
           const filteredPool = segmentId !== undefined ? pool.filter(ex => ex.segment_id === segmentId) : pool;
@@ -750,17 +755,23 @@ export const useAppStore = create<AppState>()(
              const dryLoosenRange = { min: Math.max(1, currentRange.min - MAX_DIFFICULTY_LOOSENING), max: Math.min(10, currentRange.max + MAX_DIFFICULTY_LOOSENING) };
              const dryPool = ALL_EXERCISES.filter(ex =>
                 ex.id_cwiczenia !== station.exerciseA.id_cwiczenia &&
-                !usedIds.has(ex.id_cwiczenia) &&
+                !currentAtStationIds.has(ex.id_cwiczenia) &&
                 ex.poziom >= dryLoosenRange.min && ex.poziom <= dryLoosenRange.max &&
                 ex.glowne_partie.some(p => station.exerciseA.glowne_partie.includes(p)) &&
                 ensureEquipment(ex, currentRoom, 1) &&
                 ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
              );
+
+             // Apply category search even in dryPool
+             const dryFiltered = category !== 'all' 
+                ? dryPool.filter(ex => ex.kategorie_treningu?.some(cat => cat.toLowerCase() === category.toLowerCase()))
+                : dryPool;
+
              set({
                generationConflict: {
                  type: 'reroll',
                  requestedStations: 1, availableStations: 0,
-                 canLoosenDifficulty: dryPool.length > 0,
+                 canLoosenDifficulty: dryFiltered.length > 0,
                  contextData: { action: 'reroll', stationId, paramType: type, segmentId }
                }
              });
@@ -866,6 +877,29 @@ export const useAppStore = create<AppState>()(
         };
 
         // newCircuit.sort((a, b) => (a.zone.kolejnosc_sortowania || 99) - (b.zone.kolejnosc_sortowania || 99));
+        set({ circuit: newCircuit });
+      },
+
+      setStationExercise: (stationId: string, type: 'A' | 'B', exercise: Exercise) => {
+        const { circuit } = get();
+        const stationIndex = circuit.findIndex(s => s.id === stationId);
+        if (stationIndex === -1) return;
+
+        const station = circuit[stationIndex];
+        const newCircuit = [...circuit];
+
+        if (type === 'A') {
+          // Jeśli stacja jest wspóldzielona (oba ćwiczenia te same), podmień oba
+          const isShared = station.exerciseB && station.exerciseA.id_cwiczenia === station.exerciseB.id_cwiczenia;
+          newCircuit[stationIndex] = { 
+            ...station, 
+            exerciseA: exercise,
+            exerciseB: isShared ? exercise : station.exerciseB
+          };
+        } else {
+          newCircuit[stationIndex] = { ...station, exerciseB: exercise };
+        }
+
         set({ circuit: newCircuit });
       },
 

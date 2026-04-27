@@ -1,10 +1,11 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Station, Exercise, SEGMENTS, getDifficultyById, ALL_ROOMS } from '@/app/lib/data';
 import { useAppStore, getValidExercisesForZone } from '@/app/lib/store';
-import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle, GripVertical } from 'lucide-react';
+import { ExerciseManualSelector } from './ExerciseManualSelector';
+import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle, GripVertical, Search, ChevronRight } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 
 interface Props {
@@ -29,7 +34,9 @@ interface Props {
 }
 
 export const StationCard = ({ station }: Props) => {
-  const { rerollExercise, changeStationZone, difficultyId, participants, circuit, selectedRoomId } = useAppStore();
+  const { rerollExercise, setStationExercise, changeStationZone, difficultyId, participants, circuit, selectedRoomId } = useAppStore();
+  const [selectorOpen, setSelectorOpen] = useState(false);
+  const [activeSelectType, setActiveSelectType] = useState<'A' | 'B'>('A');
   const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
   const isSynchronized = currentRoom.tryb_treningu === 'synchroniczny';
   const currentDiff = getDifficultyById(difficultyId);
@@ -52,6 +59,11 @@ export const StationCard = ({ station }: Props) => {
 
   const handleReroll = (type: 'A' | 'B', segmentId?: number) => {
     rerollExercise(station.id, type, segmentId);
+  };
+
+  const handleManualSelect = (type: 'A' | 'B') => {
+    setActiveSelectType(type);
+    setSelectorOpen(true);
   };
 
   const isShared = station.exerciseB && station.exerciseB.id_cwiczenia === station.exerciseA.id_cwiczenia;
@@ -214,27 +226,44 @@ export const StationCard = ({ station }: Props) => {
                 <RefreshCw className="h-4 w-4 transition-transform group-hover:rotate-180" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="glass-card border-white/10 text-white min-w-[180px] z-[100]">
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Zmień Ćwiczenie</DropdownMenuLabel>
+            <DropdownMenuContent className="glass-card border-white/10 text-white min-w-[200px] z-[100]">
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Zmiana Ćwiczenia</DropdownMenuLabel>
               <DropdownMenuItem 
                 onClick={() => handleReroll(type)}
-                className="text-xs font-bold focus:bg-primary focus:text-primary-foreground cursor-pointer py-2.5"
+                className="text-xs font-bold focus:bg-primary focus:text-primary-foreground cursor-pointer py-2.5 flex items-center gap-2"
               >
+                <RefreshCw className="h-3.5 w-3.5" />
                 Losuj dowolne
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-white/5" />
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Segment (kompatybilny)</DropdownMenuLabel>
-              <div className="grid grid-cols-1 gap-0.5">
-                {availableSegmentsA.map(seg => (
-                  <DropdownMenuItem 
-                    key={seg.id} 
-                    onClick={() => handleReroll(type, seg.id)}
-                    className="text-xs focus:bg-primary focus:text-primary-foreground cursor-pointer py-2"
-                  >
-                    {seg.nazwa}
-                  </DropdownMenuItem>
-                ))}
-              </div>
+
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="text-xs font-bold focus:bg-primary focus:text-primary-foreground cursor-pointer py-2.5 flex items-center gap-2">
+                  <Settings2 className="h-3.5 w-3.5" />
+                  Wybierz segment
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent className="glass-card border-white/10 text-white min-w-[180px] z-[110]">
+                    <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Kompatybilne segmenty</DropdownMenuLabel>
+                    {availableSegmentsA.map(seg => (
+                      <DropdownMenuItem 
+                        key={seg.id} 
+                        onClick={() => handleReroll(type, seg.id)}
+                        className="text-xs focus:bg-primary focus:text-primary-foreground cursor-pointer py-2"
+                      >
+                        {seg.nazwa}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+
+              <DropdownMenuItem 
+                onClick={() => handleManualSelect(type)}
+                className="text-xs font-bold focus:bg-primary focus:text-primary-foreground cursor-pointer py-2.5 flex items-center gap-2"
+              >
+                <Search className="h-3.5 w-3.5" />
+                Wybierz ćwiczenie
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -332,6 +361,12 @@ export const StationCard = ({ station }: Props) => {
           </>
         )}
       </div>
+
+      <ExerciseManualSelector 
+        open={selectorOpen}
+        onOpenChange={setSelectorOpen}
+        onSelect={(ex) => setStationExercise(station.id, activeSelectType, ex)}
+      />
     </div>
   );
 };
