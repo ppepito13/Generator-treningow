@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useAppStore } from '@/app/lib/store';
 import { StationCard } from './StationCard';
 import { Button } from '@/components/ui/button';
@@ -36,25 +36,31 @@ export const CircuitList = () => {
   const currentDiff = DIFFICULTY_LEVELS.find(d => d.id === difficultyId);
   const [copied, setCopied] = React.useState(false);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  const sensors = useMemo(() => [
+    {
+      sensor: PointerSensor,
+      options: {
+        activationConstraint: {
+          distance: 8,
+        },
+      }
+    },
+    {
+      sensor: KeyboardSensor,
+      options: {
+        coordinateGetter: sortableKeyboardCoordinates,
+      }
+    }
+  ], []);
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = circuit.findIndex((item) => item.id === active.id);
       const newIndex = circuit.findIndex((item) => item.id === over.id);
       reorderCircuit(oldIndex, newIndex);
     }
-  };
+  }, [circuit, reorderCircuit]);
 
   const getSummary = () => {
     const header = `💪 TRENING SW CALISTHENICS\n${currentDiff?.nazwa_grupy || 'Trening'} • ${participants} osób\n\n`;
@@ -116,6 +122,8 @@ export const CircuitList = () => {
 
   // Zawsze pokazujemy przycisk nawigacyjny udostępniania
   const isShareSupported = true;
+
+  const circuitIds = useMemo(() => circuit.map((s) => s.id), [circuit]);
 
   return (
     <div className="flex flex-col h-full max-w-2xl mx-auto pb-12">
@@ -182,7 +190,7 @@ export const CircuitList = () => {
 
       <div className="px-6 pt-6 space-y-6 overflow-y-auto pb-6">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={circuit.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={circuitIds} strategy={verticalListSortingStrategy}>
             {circuit.map((station) => (
               <StationCard key={station.id} station={station} />
             ))}

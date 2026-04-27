@@ -24,9 +24,7 @@ export const ExerciseManualSelector = ({ open, onOpenChange, onSelect }: Props) 
     if (!search) return ALL_EXERCISES;
     const lowerSearch = search.toLowerCase();
     return ALL_EXERCISES.filter(ex => 
-      ex.nazwa.toLowerCase().includes(lowerSearch) ||
-      ex.segment_nazwa.toLowerCase().includes(lowerSearch) ||
-      (ex.wariant && ex.wariant.toLowerCase().includes(lowerSearch))
+      ex.nazwa.toLowerCase().includes(lowerSearch)
     );
   }, [search]);
 

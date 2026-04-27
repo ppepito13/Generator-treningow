@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { Station, Exercise, SEGMENTS, getDifficultyById, ALL_ROOMS } from '@/app/lib/data';
 import { useAppStore, getValidExercisesForZone } from '@/app/lib/store';
 import { ExerciseManualSelector } from './ExerciseManualSelector';
@@ -33,14 +33,29 @@ interface Props {
   station: Station;
 }
 
-export const StationCard = ({ station }: Props) => {
-  const { rerollExercise, setStationExercise, difficultyId, participants, circuit, selectedRoomId } = useAppStore();
+export const StationCard = memo(({ station }: Props) => {
+  const rerollExercise = useAppStore(state => state.rerollExercise);
+  const setStationExercise = useAppStore(state => state.setStationExercise);
+  const difficultyId = useAppStore(state => state.difficultyId);
+  const participants = useAppStore(state => state.participants);
+  const circuit = useAppStore(state => state.circuit);
+  const selectedRoomId = useAppStore(state => state.selectedRoomId);
+  const getEffectiveRoomConfig = useAppStore(state => state.getEffectiveRoomConfig);
+
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [activeSelectType, setActiveSelectType] = useState<'A' | 'B'>('A');
-  const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
-  const isSynchronized = currentRoom.tryb_treningu === 'synchroniczny';
-  const currentDiff = getDifficultyById(difficultyId);
+  
+  const currentRoom = useMemo(() => getEffectiveRoomConfig(), [getEffectiveRoomConfig, selectedRoomId]);
+  const isSynchronized = useMemo(() => currentRoom.tryb_treningu === 'synchroniczny', [currentRoom.tryb_treningu]);
+  const currentDiff = useMemo(() => getDifficultyById(difficultyId), [difficultyId]);
   const isPairMode = participants > circuit.length;
+
+  const stationIndex = useMemo(() => circuit.findIndex(s => s.id === station.id) + 1, [circuit, station.id]);
+  const isCustom = selectedRoomId === 'custom';
+
+  const displayTitle = useMemo(() => isCustom
+    ? (isSynchronized ? `Ćwiczenie ${stationIndex}` : `Stacja ${stationIndex}`)
+    : (isSynchronized ? `Ćwiczenie ${stationIndex}` : station.zone.nazwa), [isCustom, isSynchronized, stationIndex, station.zone.nazwa]);
 
   const {
     attributes,
@@ -89,16 +104,14 @@ export const StationCard = ({ station }: Props) => {
     return ex.zaangazowane_miesnie || "Praca ogólna";
   };
 
-  const availableSegmentsA = SEGMENTS.filter(seg => {
+  const availableSegmentsA = useMemo(() => SEGMENTS.filter(seg => {
     const levelRange = { min: currentDiff.min_poziom, max: currentDiff.max_poziom };
     const pool = getValidExercisesForZone(station.zone, levelRange, new Set(), station.isPair, currentRoom, seg.id, true);
     return pool.length > 0;
-  });
+  }), [currentDiff, station.zone, station.isPair, currentRoom]);
 
-
-  
   // Dynamiczna kalkulacja pojemności strefy
-  const getZoneCapacity = (zoneId: string) => {
+  const getZoneCapacity = useMemo(() => (zoneId: string) => {
     const zone = currentRoom.strefy.find(z => z.id === zoneId);
     if (!zone) return 1;
 
@@ -115,13 +128,13 @@ export const StationCard = ({ station }: Props) => {
     if (isPairMode && zone.typ === 'klatka_rig') return 1;
 
     return zone.pojemnosc_stacji || 1;
-  };
+  }, [currentRoom.strefy, circuit, isPairMode]);
 
-  const stationsInSameZone = circuit.filter(s => s.zone.id === station.zone.id);
-  const currentZoneCapacity = getZoneCapacity(station.zone.id);
-  const isOvercrowded = stationsInSameZone.length > currentZoneCapacity;
+  const stationsInSameZone = useMemo(() => circuit.filter(s => s.zone.id === station.zone.id), [circuit, station.zone.id]);
+  const currentZoneCapacity = useMemo(() => getZoneCapacity(station.zone.id), [getZoneCapacity, station.zone.id]);
+  const isOvercrowded = useMemo(() => stationsInSameZone.length > currentZoneCapacity, [stationsInSameZone.length, currentZoneCapacity]);
 
-  const ExerciseSubCard = ({ ex, type, shared = false }: { ex: Exercise, type: 'A' | 'B', shared?: boolean }) => (
+  const renderExerciseSubCard = (ex: Exercise, type: 'A' | 'B', shared: boolean = false) => (
     <div className={`relative p-5 rounded-2xl border transition-all ${shared ? 'bg-primary/5 border-primary/20' : type === 'B' ? 'bg-secondary/5 border-secondary/10' : 'bg-white/5 border-white/5'}`}>
       <div className="flex justify-between items-start gap-2">
         <div className="space-y-1">
@@ -295,7 +308,7 @@ export const StationCard = ({ station }: Props) => {
               </h2>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-white uppercase">
-                  {isSynchronized ? `Ćwiczenie ${circuit.findIndex(s => s.id === station.id) + 1}` : station.zone.nazwa}
+                  {displayTitle}
                 </span>
               </div>
             </div>
@@ -319,12 +332,12 @@ export const StationCard = ({ station }: Props) => {
       
       <div className="p-4 space-y-4">
         {isShared ? (
-          <ExerciseSubCard ex={station.exerciseA} type="A" shared={true} />
+          renderExerciseSubCard(station.exerciseA, 'A', true)
         ) : (
           <>
-            <ExerciseSubCard ex={station.exerciseA} type="A" />
+            {renderExerciseSubCard(station.exerciseA, 'A')}
             {station.exerciseB && (
-              <ExerciseSubCard ex={station.exerciseB} type="B" />
+              renderExerciseSubCard(station.exerciseB, 'B')
             )}
           </>
         )}
@@ -337,4 +350,4 @@ export const StationCard = ({ station }: Props) => {
       />
     </div>
   );
-};
+});
