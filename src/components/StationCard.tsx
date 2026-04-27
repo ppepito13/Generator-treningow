@@ -5,7 +5,7 @@ import React, { useState, useMemo, memo } from 'react';
 import { Station, Exercise, SEGMENTS, getDifficultyById, ALL_ROOMS } from '@/app/lib/data';
 import { useAppStore, getValidExercisesForZone } from '@/app/lib/store';
 import { ExerciseManualSelector } from './ExerciseManualSelector';
-import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle, GripVertical, Search, ChevronDown } from 'lucide-react';
+import { RefreshCw, MoreVertical, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle, GripVertical, Search, ChevronDown } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
@@ -231,7 +231,7 @@ export const StationCard = memo(({ station }: Props) => {
                 size="icon" 
                 className={`h-8 w-8 rounded-lg glass-button group ${shared ? 'text-primary' : type === 'B' ? 'text-secondary' : 'text-primary'}`}
               >
-                <RefreshCw className="h-4 w-4 transition-transform group-hover:rotate-180" />
+                <MoreVertical className="h-4 w-4" />
               </Button>
             </DialogTrigger>
             <DialogContent className="glass-card border-white/10 text-white w-full sm:max-w-sm outline-none flex flex-col p-6">
