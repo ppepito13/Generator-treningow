@@ -3,6 +3,24 @@
 Wszystkie istotne zmiany i wydania aplikacji będą dokumentowane w tym pliku.
 Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.0] - 2026-04-27
+### Dodano
+- **Rebranding**: Przebudowano identyfikację wizualną na ekranie głównym. Nowa nazwa: "Generator Treningów SW" wraz z nowym tagline "Elastyczne plany grupowe".
+- **Sala "Ustawienia własne"**: Nowy moduł pozwalający na ręczny wybór sprzętu, typu treningu oraz liczby stacji niezależnie od predefiniowanych sal.
+- **Ręczny wybór ćwiczeń**: Możliwość manualnej podmiany wylosowanego ćwiczenia poprzez wybór z pełnej, kategoryzowanej bazy danych.
+- **Edge-to-Edge Status Bar**: Implementacja "szklanego" (frosted glass) paska statusu chroniącego systemowe ikony (zegar, bateria) na nowoczesnych urządzeniach z Androidem 16.
+
+### Zmieniono
+- **UX Mobile**: Całkowita rezygnacja z zagnieżdżonych menu typu dropdown na rzecz natywnych, responsywnych okien dialogowych (Action Sheets) wyśrodkowanych na ekranie.
+- **Zarządzanie Stacjami**: Wprowadzono system Drag & Drop umożliwiający intuicyjną zmianę kolejności stacji w obwodzie.
+- **Header "Twój Obwód"**: Odświeżono nagłówek listy treningowej – usunięto zbędne teksty ("Wstecz") i ikony na rzecz czystego, minimalistycznego interfejsu.
+- **Optymalizacja Typografii**: Dostosowano rozmiary czcionek i interlinie dla nagłówków, zapewniając ich czytelność na małych ekranach bez zawijania w nieestetyczny sposób.
+
+### Naprawiono
+- **Sticky Header Bug**: Naprawiono błąd CSS uniemożliwiający "przyklejanie" się nagłówka na mobilnych przeglądarkach Webview.
+- **Layout Clipping**: Rozwiązano problem ucinania przycisków funkcyjnych (np. "Gotowe") w oknach dialogowych na urządzeniach o niskiej rozdzielczości.
+- **Safe Area Insets**: Poprawiono kalkulację bezpiecznych marginesów (paddingów) dla telefonów z wcięciem (notch) i aparatami typu punch-hole.
+
 ## [1.1.0] - 2026-04-02
 ### Dodano
 - **Modularna Nawigacja**: System stosu widoków (Stack) z pełną obsługą sprzętowego przycisku wstecz na Androidzie.
