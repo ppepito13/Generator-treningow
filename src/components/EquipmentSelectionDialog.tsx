@@ -42,9 +42,8 @@ export const EquipmentSelectionDialog = () => {
           </span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="glass-card border-white/10 text-white sm:max-w-[550px] outline-none flex flex-col h-[90vh] sm:h-[80vh] overflow-hidden p-0">
-        <div className="flex flex-col h-full">
-          <DialogHeader className="p-6 pb-2">
+      <DialogContent className="glass-card border-white/10 text-white sm:max-w-[550px] outline-none !flex !flex-col max-h-[85dvh] sm:max-h-[80dvh] overflow-hidden p-0">
+          <DialogHeader className="p-6 pb-2 shrink-0">
             <DialogTitle className="text-primary flex items-center gap-2 text-xl font-bold">
               <Dumbbell className="h-5 w-5" />
               Dostępny Sprzęt
@@ -54,7 +53,7 @@ export const EquipmentSelectionDialog = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex gap-2 px-6 py-4 border-b border-white/5">
+          <div className="flex gap-2 px-6 py-4 border-b border-white/5 shrink-0">
             <Button 
               variant="ghost" 
               size="sm" 
@@ -75,7 +74,7 @@ export const EquipmentSelectionDialog = () => {
             </Button>
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-4">
+          <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-4 min-h-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pb-4">
               {sortedEquipment.map((item) => {
                 const isSelected = customRoomEquipment.includes(item);
@@ -105,7 +104,7 @@ export const EquipmentSelectionDialog = () => {
             </div>
           </div>
 
-          <DialogFooter className="p-6 pt-4 border-t border-white/5">
+          <DialogFooter className="p-6 pt-4 border-t border-white/5 pb-[calc(env(safe-area-inset-bottom,0px)+32px)] shrink-0">
             <DialogClose asChild>
               <Button 
                 variant="default" 
@@ -115,7 +114,6 @@ export const EquipmentSelectionDialog = () => {
               </Button>
             </DialogClose>
           </DialogFooter>
-        </div>
       </DialogContent>
     </Dialog>
   );

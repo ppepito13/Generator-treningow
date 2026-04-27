@@ -126,10 +126,9 @@ export const CircuitList = () => {
   const circuitIds = useMemo(() => circuit.map((s) => s.id), [circuit]);
 
   return (
-    <div className="flex flex-col h-full max-w-2xl mx-auto pb-12">
+    <div className="flex flex-col h-full max-w-2xl mx-auto">
       <div
-        className="sticky top-0 z-20 bg-background/80 backdrop-blur-md px-6 pb-4 flex items-center justify-between border-b border-white/5"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}
+        className="sticky top-0 z-20 bg-background/80 backdrop-blur-md px-6 pb-4 pt-[max(env(safe-area-inset-top,0px),48px)] flex items-center justify-between border-b border-white/5"
       >
         <Button variant="ghost" onClick={popView} className="glass-button rounded-xl flex gap-2">
           <ArrowLeft className="h-4 w-4" />
@@ -198,7 +197,7 @@ export const CircuitList = () => {
         </DndContext>
       </div>
 
-      <div className="px-6 mt-8">
+      <div className="px-6 mt-8 pb-[calc(env(safe-area-inset-bottom,0px)+48px)]">
         <div className="p-6 rounded-3xl bg-secondary/10 border border-secondary/20 text-center space-y-2">
           <p className="text-secondary font-bold text-sm">Gotowy na trening?</p>
           <p className="text-xs text-muted-foreground">

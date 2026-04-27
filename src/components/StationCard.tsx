@@ -5,7 +5,7 @@ import React, { useState, useMemo, memo } from 'react';
 import { Station, Exercise, SEGMENTS, getDifficultyById, ALL_ROOMS } from '@/app/lib/data';
 import { useAppStore, getValidExercisesForZone } from '@/app/lib/store';
 import { ExerciseManualSelector } from './ExerciseManualSelector';
-import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle, GripVertical, Search } from 'lucide-react';
+import { RefreshCw, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle, GripVertical, Search, ChevronDown } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -78,7 +79,7 @@ export const StationCard = memo(({ station }: Props) => {
 
   const handleManualSelect = (type: 'A' | 'B') => {
     setActiveSelectType(type);
-    setSelectorOpen(true);
+    setTimeout(() => setSelectorOpen(true), 150);
   };
 
   const isShared = station.exerciseB && station.exerciseB.id_cwiczenia === station.exerciseA.id_cwiczenia;
@@ -223,8 +224,8 @@ export const StationCard = memo(({ station }: Props) => {
             </DialogContent>
           </Dialog>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <Dialog>
+            <DialogTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -232,47 +233,62 @@ export const StationCard = memo(({ station }: Props) => {
               >
                 <RefreshCw className="h-4 w-4 transition-transform group-hover:rotate-180" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="glass-card border-white/10 text-white min-w-[200px] z-[100]">
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Zmiana Ćwiczenia</DropdownMenuLabel>
-              <DropdownMenuItem 
-                onClick={() => handleReroll(type)}
-                className="text-xs font-bold focus:bg-primary focus:text-primary-foreground cursor-pointer py-2.5 flex items-center gap-2"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-                Losuj dowolne
-              </DropdownMenuItem>
+            </DialogTrigger>
+            <DialogContent className="glass-card border-white/10 text-white w-full sm:max-w-sm outline-none flex flex-col p-6">
+              <DialogHeader className="pb-4 border-b border-white/5">
+                <DialogTitle className="text-primary flex items-center gap-2 text-lg font-bold">
+                  <RefreshCw className="h-5 w-5" />
+                  Zmiana Ćwiczenia
+                </DialogTitle>
+              </DialogHeader>
 
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="text-xs font-bold focus:bg-primary focus:text-primary-foreground cursor-pointer py-2.5 flex items-center gap-2">
-                  <Settings2 className="h-3.5 w-3.5" />
-                  Wybierz segment
-                </DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                  <DropdownMenuSubContent className="glass-card border-white/10 text-white min-w-[180px] z-[110]">
-                    <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-primary/60 py-2">Kompatybilne segmenty</DropdownMenuLabel>
+              <div className="flex flex-col gap-2 pt-2">
+                <DialogClose asChild>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleReroll(type)}
+                    className="w-full h-12 justify-start gap-3 bg-white/5 border-white/10 hover:bg-white/10 text-xs font-bold"
+                  >
+                    <RefreshCw className="h-4 w-4 text-primary" />
+                    Losuj dowolne z bazy
+                  </Button>
+                </DialogClose>
+
+                <details className="group border border-white/10 rounded-xl bg-white/5 overflow-hidden">
+                  <summary className="w-full h-12 flex items-center gap-3 px-4 text-xs font-bold cursor-pointer hover:bg-white/10 list-none outline-none">
+                    <Settings2 className="h-4 w-4 text-primary" />
+                    <span className="flex-1 text-left">Wybierz segment...</span>
+                    <ChevronDown className="h-4 w-4 text-white/50 group-open:rotate-180 transition-transform" />
+                  </summary>
+                  <div className="p-2 border-t border-white/10 max-h-[40vh] overflow-y-auto custom-scrollbar flex flex-col gap-1 bg-black/20">
+                    <div className="text-[10px] uppercase tracking-widest text-primary/60 px-2 py-2 font-bold">Kompatybilne segmenty</div>
                     {availableSegmentsA.map(seg => (
-                      <DropdownMenuItem 
-                        key={seg.id} 
-                        onClick={() => handleReroll(type, seg.id)}
-                        className="text-xs focus:bg-primary focus:text-primary-foreground cursor-pointer py-2"
-                      >
-                        {seg.nazwa}
-                      </DropdownMenuItem>
+                      <DialogClose asChild key={seg.id}>
+                        <Button
+                          variant="ghost"
+                          onClick={() => handleReroll(type, seg.id)}
+                          className="w-full justify-start h-10 text-xs text-white/80 hover:bg-primary/20 hover:text-white"
+                        >
+                          {seg.nazwa}
+                        </Button>
+                      </DialogClose>
                     ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-              </DropdownMenuSub>
+                  </div>
+                </details>
 
-              <DropdownMenuItem 
-                onClick={() => handleManualSelect(type)}
-                className="text-xs font-bold focus:bg-primary focus:text-primary-foreground cursor-pointer py-2.5 flex items-center gap-2"
-              >
-                <Search className="h-3.5 w-3.5" />
-                Wybierz ćwiczenie
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DialogClose asChild>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleManualSelect(type)}
+                    className="w-full h-12 justify-start gap-3 bg-white/5 border-white/10 hover:bg-white/10 text-xs font-bold"
+                  >
+                    <Search className="h-4 w-4 text-primary" />
+                    Wyszukaj z listy ręcznie
+                  </Button>
+                </DialogClose>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
       

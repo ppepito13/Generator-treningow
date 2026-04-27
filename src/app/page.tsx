@@ -70,7 +70,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden">
+    <main className="min-h-screen">
       {activeView === 'HOME' && <ConfigurationForm />}
       {activeView === 'CIRCUIT' && <CircuitList />}
       {/* Tu w przyszłości dodamy kolejne widoki:

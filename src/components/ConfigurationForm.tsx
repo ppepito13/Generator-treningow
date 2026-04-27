@@ -55,7 +55,18 @@ export const ConfigurationForm = () => {
   );
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-md mx-auto py-12 px-6">
+    <>
+      <div 
+        className="fixed top-0 left-0 right-0 h-[calc(max(env(safe-area-inset-top,0px),48px)+40px)] z-[40] pointer-events-none"
+        style={{
+          background: 'linear-gradient(to bottom, hsl(var(--background) / 0.95) 0%, hsl(var(--background) / 0) 100%)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)'
+        }}
+      />
+      <div className="flex flex-col gap-8 w-full max-w-md mx-auto pt-[calc(max(env(safe-area-inset-top,0px),48px)+24px)] pb-[calc(env(safe-area-inset-bottom,0px)+64px)] px-6">
       <div className="text-center space-y-2">
         <h1 className="text-4xl font-bold tracking-tighter text-primary font-headline cyan-glow inline-block px-4 py-2 rounded-xl">
           SW Calisthenics
@@ -266,5 +277,6 @@ export const ConfigurationForm = () => {
         </Button>
       </div>
     </div>
+    </>
   );
 };
