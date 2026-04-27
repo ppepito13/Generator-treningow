@@ -83,7 +83,7 @@ export const EquipmentSelectionDialog = () => {
                   <div 
                     key={item}
                     onClick={() => toggleCustomEquipment(item)}
-                    className={`flex items-center space-x-3 p-3 rounded-xl border transition-all cursor-pointer group ${
+                    className={`flex items-center space-x-3 p-3 rounded-xl border transition-all cursor-pointer group select-none ${
                       isSelected 
                         ? 'bg-primary/10 border-primary/30 text-white' 
                         : 'bg-white/5 border-white/5 text-white/60 hover:border-white/20'
@@ -92,16 +92,13 @@ export const EquipmentSelectionDialog = () => {
                     <Checkbox 
                       id={`equip-${item}`} 
                       checked={isSelected}
-                      onCheckedChange={() => toggleCustomEquipment(item)}
-                      className={`border-white/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary`}
+                      className={`pointer-events-none border-white/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary`}
                     />
-                    <label
-                      htmlFor={`equip-${item}`}
-                      className="text-xs font-bold uppercase tracking-tight cursor-pointer flex-1"
-                      onClick={(e) => e.preventDefault()} // Prevent double toggle due to parent div click
+                    <span
+                      className="text-xs font-bold uppercase tracking-tight flex-1 pointer-events-none"
                     >
                       {formatName(item)}
-                    </label>
+                    </span>
                   </div>
                 );
               })}
