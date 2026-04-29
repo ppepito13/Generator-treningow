@@ -5,7 +5,7 @@ import React, { useMemo, useCallback } from 'react';
 import { useAppStore } from '@/app/lib/store';
 import { StationCard } from './StationCard';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Share2, ClipboardList, Copy, Check, Send } from 'lucide-react';
+import { Share2, ClipboardList, Copy, Check, Send, X } from 'lucide-react';
 import { DIFFICULTY_LEVELS } from '@/app/lib/data';
 import { Share } from '@capacitor/share';
 import {
@@ -32,7 +32,7 @@ import {
 } from '@dnd-kit/sortable';
 
 export const CircuitList = () => {
-  const { circuit, reset, popView, difficultyId, participants, reorderCircuit } = useAppStore();
+  const { circuit, reset, difficultyId, participants, reorderCircuit, setActiveTab } = useAppStore();
   const currentDiff = DIFFICULTY_LEVELS.find(d => d.id === difficultyId);
   const [copied, setCopied] = React.useState(false);
 
@@ -130,8 +130,18 @@ export const CircuitList = () => {
       <div
         className="sticky top-0 z-20 bg-background/80 backdrop-blur-md px-6 pb-4 pt-[max(env(safe-area-inset-top,0px),48px)] flex items-center justify-between border-b border-white/5"
       >
-        <Button variant="ghost" size="icon" onClick={popView} className="glass-button rounded-xl">
-          <ArrowLeft className="h-5 w-5" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => {
+            if (window.confirm('Czy na pewno chcesz zakończyć i wyczyścić ten trening?')) {
+              reset();
+              setActiveTab('generator');
+            }
+          }} 
+          className="glass-button rounded-xl text-red-400 hover:text-red-300 hover:bg-red-400/10"
+        >
+          <X className="h-5 w-5" />
         </Button>
         <div className="text-center">
           <h1 className="text-xl font-bold text-primary">

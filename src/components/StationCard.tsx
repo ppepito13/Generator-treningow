@@ -5,7 +5,7 @@ import React, { useState, useMemo, memo } from 'react';
 import { Station, Exercise, SEGMENTS, getDifficultyById, ALL_ROOMS } from '@/app/lib/data';
 import { useAppStore, getValidExercisesForZone } from '@/app/lib/store';
 import { ExerciseManualSelector } from './ExerciseManualSelector';
-import { RefreshCw, MoreVertical, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle, GripVertical, Search, ChevronDown } from 'lucide-react';
+import { RefreshCw, MoreVertical, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle, GripVertical, Search, ChevronDown, Plus } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,9 @@ export const StationCard = memo(({ station }: Props) => {
 
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [activeSelectType, setActiveSelectType] = useState<'A' | 'B'>('A');
+  const [openDialogType, setOpenDialogType] = useState<'A' | 'B' | null>(null);
+  const [isAddingCustom, setIsAddingCustom] = useState(false);
+  const [customExerciseName, setCustomExerciseName] = useState('');
   
   const currentRoom = useMemo(() => getEffectiveRoomConfig(), [getEffectiveRoomConfig, selectedRoomId]);
   const isSynchronized = useMemo(() => currentRoom.tryb_treningu === 'synchroniczny', [currentRoom.tryb_treningu]);
@@ -80,6 +83,29 @@ export const StationCard = memo(({ station }: Props) => {
   const handleManualSelect = (type: 'A' | 'B') => {
     setActiveSelectType(type);
     setTimeout(() => setSelectorOpen(true), 150);
+  };
+
+  const handleSaveCustom = (type: 'A' | 'B') => {
+    if (!customExerciseName.trim()) return;
+    const customEx: Exercise = {
+      id_cwiczenia: `custom-${Date.now()}`,
+      nazwa: customExerciseName.trim(),
+      wariant: "",
+      segment_id: 99,
+      segment_nazwa: "WŁASNE",
+      tryb_pracy: "Solo",
+      biomechanika: "Własna",
+      poziom: 5,
+      glowne_partie: ["Inne"],
+      zaangazowane_miesnie: "Praca ogólna",
+      tagi_specjalne: ["ręcznie dodane"],
+      kategorie_treningu: [],
+      instrukcja: "Zajęcia z ćwiczeniem dodanym ręcznie przez trenera."
+    };
+    setStationExercise(station.id, type, customEx);
+    setOpenDialogType(null);
+    setIsAddingCustom(false);
+    setCustomExerciseName('');
   };
 
   const isShared = station.exerciseB && station.exerciseB.id_cwiczenia === station.exerciseA.id_cwiczenia;
@@ -224,7 +250,13 @@ export const StationCard = memo(({ station }: Props) => {
             </DialogContent>
           </Dialog>
           
-          <Dialog>
+          <Dialog open={openDialogType === type} onOpenChange={(open) => {
+            setOpenDialogType(open ? type : null);
+            if (!open) {
+              setIsAddingCustom(false);
+              setCustomExerciseName('');
+            }
+          }}>
             <DialogTrigger asChild>
               <Button 
                 variant="ghost" 
@@ -243,49 +275,81 @@ export const StationCard = memo(({ station }: Props) => {
               </DialogHeader>
 
               <div className="flex flex-col gap-2 pt-2">
-                <DialogClose asChild>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleReroll(type)}
-                    className="w-full h-12 justify-start gap-3 bg-white/5 border-white/10 hover:bg-white/10 text-xs font-bold"
-                  >
-                    <RefreshCw className="h-4 w-4 text-primary" />
-                    Losuj dowolne z bazy
-                  </Button>
-                </DialogClose>
-
-                <details className="group border border-white/10 rounded-xl bg-white/5 overflow-hidden">
-                  <summary className="w-full h-12 flex items-center gap-3 px-4 text-xs font-bold cursor-pointer hover:bg-white/10 list-none outline-none">
-                    <Settings2 className="h-4 w-4 text-primary" />
-                    <span className="flex-1 text-left">Wybierz segment...</span>
-                    <ChevronDown className="h-4 w-4 text-white/50 group-open:rotate-180 transition-transform" />
-                  </summary>
-                  <div className="p-2 border-t border-white/10 max-h-[40vh] overflow-y-auto custom-scrollbar flex flex-col gap-1 bg-black/20">
-                    <div className="text-[10px] uppercase tracking-widest text-primary/60 px-2 py-2 font-bold">Kompatybilne segmenty</div>
-                    {availableSegmentsA.map(seg => (
-                      <DialogClose asChild key={seg.id}>
-                        <Button
-                          variant="ghost"
-                          onClick={() => handleReroll(type, seg.id)}
-                          className="w-full justify-start h-10 text-xs text-white/80 hover:bg-primary/20 hover:text-white"
-                        >
-                          {seg.nazwa}
-                        </Button>
-                      </DialogClose>
-                    ))}
+                {isAddingCustom ? (
+                  <div className="flex flex-col gap-3 p-4 bg-black/20 border border-white/10 rounded-xl animate-in fade-in zoom-in-95 duration-200">
+                    <input 
+                      autoFocus
+                      placeholder="Wpisz nazwę ćwiczenia..." 
+                      className="w-full h-12 bg-white/5 border border-white/10 rounded-lg px-4 text-sm text-white focus:outline-none focus:border-primary placeholder:text-white/30"
+                      value={customExerciseName}
+                      onChange={e => setCustomExerciseName(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && customExerciseName.trim()) {
+                          handleSaveCustom(type);
+                        }
+                      }}
+                    />
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" className="flex-1 text-xs h-10 border border-white/10" onClick={() => { setIsAddingCustom(false); setCustomExerciseName(''); }}>Anuluj</Button>
+                      <Button size="sm" className="flex-1 text-xs h-10 bg-primary text-primary-foreground hover:bg-primary/90" disabled={!customExerciseName.trim()} onClick={() => handleSaveCustom(type)}>Zapisz i Dodaj</Button>
+                    </div>
                   </div>
-                </details>
+                ) : (
+                  <>
+                    <DialogClose asChild>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => handleReroll(type)}
+                        className="w-full h-12 justify-start gap-3 bg-white/5 border-white/10 hover:bg-white/10 text-xs font-bold"
+                      >
+                        <RefreshCw className="h-4 w-4 text-primary" />
+                        Losuj dowolne z bazy
+                      </Button>
+                    </DialogClose>
 
-                <DialogClose asChild>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleManualSelect(type)}
-                    className="w-full h-12 justify-start gap-3 bg-white/5 border-white/10 hover:bg-white/10 text-xs font-bold"
-                  >
-                    <Search className="h-4 w-4 text-primary" />
-                    Wyszukaj z listy ręcznie
-                  </Button>
-                </DialogClose>
+                    <details className="group border border-white/10 rounded-xl bg-white/5 overflow-hidden">
+                      <summary className="w-full h-12 flex items-center gap-3 px-4 text-xs font-bold cursor-pointer hover:bg-white/10 list-none outline-none">
+                        <Settings2 className="h-4 w-4 text-primary" />
+                        <span className="flex-1 text-left">Wybierz segment...</span>
+                        <ChevronDown className="h-4 w-4 text-white/50 group-open:rotate-180 transition-transform" />
+                      </summary>
+                      <div className="p-2 border-t border-white/10 max-h-[40vh] overflow-y-auto custom-scrollbar flex flex-col gap-1 bg-black/20">
+                        <div className="text-[10px] uppercase tracking-widest text-primary/60 px-2 py-2 font-bold">Kompatybilne segmenty</div>
+                        {availableSegmentsA.map(seg => (
+                          <DialogClose asChild key={seg.id}>
+                            <Button
+                              variant="ghost"
+                              onClick={() => handleReroll(type, seg.id)}
+                              className="w-full justify-start h-10 text-xs text-white/80 hover:bg-primary/20 hover:text-white"
+                            >
+                              {seg.nazwa}
+                            </Button>
+                          </DialogClose>
+                        ))}
+                      </div>
+                    </details>
+
+                    <DialogClose asChild>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => handleManualSelect(type)}
+                        className="w-full h-12 justify-start gap-3 bg-white/5 border-white/10 hover:bg-white/10 text-xs font-bold"
+                      >
+                        <Search className="h-4 w-4 text-primary" />
+                        Wyszukaj z listy ręcznie
+                      </Button>
+                    </DialogClose>
+
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsAddingCustom(true)}
+                      className="w-full h-12 justify-start gap-3 bg-white/5 border-white/10 hover:bg-white/10 text-xs font-bold"
+                    >
+                      <Plus className="h-4 w-4 text-primary" />
+                      Dodaj własne ćwiczenie
+                    </Button>
+                  </>
+                )}
               </div>
             </DialogContent>
           </Dialog>

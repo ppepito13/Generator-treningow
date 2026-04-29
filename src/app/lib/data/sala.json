@@ -5,8 +5,8 @@
       "nazwa_sali": "Sala Balaton",
       "tryb_treningu": "obwodowy",
       "maksymalna_pojemnosc": {
-        "osoby": 14,
-        "stacje": 7
+        "osoby": 16,
+        "stacje": 8
       },
       "inwentarz": {
         "box_posladki": 1,

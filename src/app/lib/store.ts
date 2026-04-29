@@ -23,6 +23,7 @@ export interface GenerationConflictState {
 }
 
 export type ViewType = 'HOME' | 'CIRCUIT' | 'BMI' | 'TIMER' | 'SETTINGS';
+export type TabType = 'generator' | 'circuit' | 'timer' | 'calculators' | 'studio';
 
 interface AppState {
   selectedRoomId: string;
@@ -39,9 +40,11 @@ interface AppState {
   circuit: Station[];
   isGenerated: boolean;
   activeView: ViewType;
+  activeTab: TabType;
   navigationStack: ViewType[];
   generationConflict: GenerationConflictState | null;
 
+  setActiveTab: (tab: TabType) => void;
   setGenerationConflict: (conflict: GenerationConflictState | null) => void;
   resolveConflict: (resolutionData: { action: 'loosen' | 'duplicate' | 'reduce' | 'cancel' }) => void;
   
@@ -65,6 +68,8 @@ interface AppState {
   rerollExercise: (stationId: string, type: 'A' | 'B', segmentId?: number, loosen?: boolean, ignoreUsed?: boolean) => void;
   setStationExercise: (stationId: string, type: 'A' | 'B', exercise: Exercise) => void;
   reorderCircuit: (oldIndex: number, newIndex: number) => void;
+  changeStationZone: (stationId: string, newZoneId: string, loosen?: boolean, ignoreUsed?: boolean) => void;
+  getEffectiveRoomConfig: () => RoomConfig;
   reset: () => void;
 }
 
@@ -398,16 +403,19 @@ export const useAppStore = create<AppState>()(
       stationCount: 7,
       difficultyId: 'baza_silowa_standard',
       isStrictDifficulty: true,
-      
-      customRoomMode: 'obwodowy',
+  customRoomMode: 'obwodowy',
       customRoomCategory: 'all',
       customRoomEquipment: [],
 
       circuit: [] as Station[],
       isGenerated: false,
       activeView: 'HOME',
+      activeTab: 'generator' as TabType,
       navigationStack: ['HOME'] as ViewType[],
       generationConflict: null as GenerationConflictState | null,
+
+      setActiveTab: (tab: TabType) => set({ activeTab: tab }),
+      setGenerationConflict: (conflict) => set({ generationConflict: conflict }),
 
       // Helper do pobierania aktualnej konfiguracji sali (uwzględnia wirtualną salę Custom)
       getEffectiveRoomConfig: () => {
@@ -423,8 +431,6 @@ export const useAppStore = create<AppState>()(
         }
         return currentRoom;
       },
-
-      setGenerationConflict: (conflict) => set({ generationConflict: conflict }),
 
       setCustomRoomMode: (mode) => {
         set({ customRoomMode: mode });
@@ -531,7 +537,7 @@ export const useAppStore = create<AppState>()(
           // Jeżeli strict było odznaczone i loosen podpowiadało mniejsze powtórzenia, to ignorujemy użyte. 
           const duplicateCircuit = executeGeneration(false, true);
           set({ circuit: duplicateCircuit, isGenerated: true, generationConflict: null });
-          get().pushView('CIRCUIT');
+          get().setActiveTab('circuit');
         }
       },
 
@@ -615,7 +621,7 @@ export const useAppStore = create<AppState>()(
         }
 
         set({ circuit: newCircuit, isGenerated: true, generationConflict: null });
-        get().pushView('CIRCUIT');
+        get().setActiveTab('circuit');
       },
 
       rerollExercise: (stationId, type, segmentId, loosen = false, ignoreUsed = false) => {
@@ -702,7 +708,7 @@ export const useAppStore = create<AppState>()(
             } else {
               const potentialB = ALL_EXERCISES.filter(ex =>
                 ex.id_cwiczenia !== newExA.id_cwiczenia &&
-                !usedIds.has(ex.id_cwiczenia) &&
+                !usedOnOtherStations.has(ex.id_cwiczenia) &&
                 ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
                 ex.glowne_partie.some(p => newExA.glowne_partie.includes(p)) &&
                 ensureEquipment(ex, currentRoom, 1) &&
@@ -817,6 +823,11 @@ export const useAppStore = create<AppState>()(
         const [movedItem] = newCircuit.splice(oldIndex, 1);
         newCircuit.splice(newIndex, 0, movedItem);
         set({ circuit: newCircuit });
+      },
+
+      changeStationZone: (stationId, newZoneId, loosen, ignoreUsed) => {
+        // TODO: Implement zone changing logic if needed later
+        console.warn('changeStationZone not implemented yet', { stationId, newZoneId, loosen, ignoreUsed });
       },
 
       reset: () => set({ 

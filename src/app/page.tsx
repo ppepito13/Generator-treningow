@@ -8,7 +8,7 @@ import { GenerationConflictDialog } from '@/components/GenerationConflictDialog'
 import { Toaster } from '@/components/ui/toaster';
 
 export default function Home() {
-  const { activeView, popView, generationConflict, resolveConflict } = useAppStore();
+  const { activeTab, activeView, popView, generationConflict, resolveConflict } = useAppStore();
   const [hydrated, setHydrated] = useState(false);
 
   // Oczekujemy na tzw. "Hydratację" (Hydration) komponentu na kliencie.
@@ -20,10 +20,10 @@ export default function Home() {
 
   // Automatyczne przewijanie na górę po wygenerowaniu treningu
   useEffect(() => {
-    if (activeView === 'CIRCUIT') {
+    if (activeTab === 'circuit') {
       window.scrollTo(0, 0);
     }
-  }, [activeView]);
+  }, [activeTab]);
 
   // Obsługa sprzętowego przycisku "Wstecz" (Capacitor)
   useEffect(() => {
@@ -40,9 +40,9 @@ export default function Home() {
             return;
           }
 
-          // 2. Jeśli jesteśmy w widoku innym niż HOME - cofnij widok
-          if (activeView !== 'HOME') {
-            popView();
+          // 2. Jeśli jesteśmy w widoku innym niż HOME (generator) - cofnij widok (TODO: dostosować do Tabs)
+          if (activeTab !== 'generator') {
+            useAppStore.getState().setActiveTab('generator');
             return;
           }
 
@@ -59,7 +59,7 @@ export default function Home() {
     return () => {
       if (backListener) backListener.remove();
     };
-  }, [activeView, generationConflict, popView, resolveConflict]);
+  }, [activeTab, generationConflict, resolveConflict]);
 
   if (!hydrated) {
     return (
@@ -71,10 +71,14 @@ export default function Home() {
 
   return (
     <main className="min-h-screen">
-      {activeView === 'HOME' && <ConfigurationForm />}
-      {activeView === 'CIRCUIT' && <CircuitList />}
+      <div style={{ display: activeTab === 'generator' ? 'block' : 'none' }}>
+        <ConfigurationForm />
+      </div>
+      <div style={{ display: activeTab === 'circuit' ? 'block' : 'none' }}>
+        <CircuitList />
+      </div>
       {/* Tu w przyszłości dodamy kolejne widoki:
-          {activeView === 'BMI' && <BMIContent />}
+          {activeTab === 'timer' && <TimerContent />}
           ...
       */}
       <GenerationConflictDialog />
