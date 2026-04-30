@@ -3,6 +3,20 @@
 Wszystkie istotne zmiany i wydania aplikacji będą dokumentowane w tym pliku.
 Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.3.0] - 2026-04-30
+### Dodano
+- **Hub Nawigacyjny (Bottom Nav)**: Całkowicie nowa struktura nawigacji oparta na dolnym pasku (Bottom Navigation) w stylu glassmorphism. Pozwala na natychmiastowe przełączanie między Generatorem, wygenerowanym Zestawem oraz przyszłymi modułami (Zegar, Kalkulatory).
+- **Trwałość Treningu (Zustand Persist)**: Wprowadzono system automatycznego zapamiętywania wygenerowanego treningu w pamięci lokalnej urządzenia. Trening nie znika po odświeżeniu strony, zamknięciu przeglądarki czy ubiciu aplikacji przez system.
+- **Szybkie dodawanie ćwiczeń**: Nowa funkcja w menu "re-roll" pozwalająca na ręczne wpisanie nazwy własnego ćwiczenia "na szybko" do aktualnego obwodu bez konieczności dodawania go do stałej bazy danych.
+- **Potwierdzenie Zakończenia**: Nowy przycisk "Zakończ" (X) w widoku zestawu z systemowym potwierdzeniem, chroniący przed przypadkowym usunięciem treningu.
+
+### Zmieniono
+- **Architektura Tabs**: Rozdzielono widok Generatora od widoku Zestawu, co pozwala na powrót do edycji parametrów bez utraty wygenerowanych już ćwiczeń.
+- **Ikona Re-roll**: Odświeżono ikonę losowania ćwiczenia na bardziej czytelną i intuicyjną.
+
+### Naprawiono
+- **Stan Nawigacji**: Rozwiązano problem z przyciskiem "Wstecz", który w poprzedniej wersji mógł nieoczekiwanie minimalizować aplikację.
+
 ## [1.2.0] - 2026-04-27
 ### Dodano
 - **Rebranding**: Przebudowano identyfikację wizualną na ekranie głównym. Nowa nazwa: "Generator Treningów SW" wraz z nowym tagline "Elastyczne plany grupowe".
