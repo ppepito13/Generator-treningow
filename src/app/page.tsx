@@ -7,6 +7,8 @@ import { CircuitList } from '@/components/CircuitList';
 import { GenerationConflictDialog } from '@/components/GenerationConflictDialog';
 import { Toaster } from '@/components/ui/toaster';
 
+import { ExerciseStudioView } from '@/components/ExerciseStudioView';
+
 export default function Home() {
   const { activeTab, activeView, popView, generationConflict, resolveConflict } = useAppStore();
   const [hydrated, setHydrated] = useState(false);
@@ -20,7 +22,7 @@ export default function Home() {
 
   // Automatyczne przewijanie na górę po wygenerowaniu treningu
   useEffect(() => {
-    if (activeTab === 'circuit') {
+    if (activeTab === 'circuit' || activeTab === 'studio') {
       window.scrollTo(0, 0);
     }
   }, [activeTab]);
@@ -77,12 +79,11 @@ export default function Home() {
       <div style={{ display: activeTab === 'circuit' ? 'block' : 'none' }}>
         <CircuitList />
       </div>
-      {/* Tu w przyszłości dodamy kolejne widoki:
-          {activeTab === 'timer' && <TimerContent />}
-          ...
-      */}
+      <div style={{ display: activeTab === 'studio' ? 'block' : 'none' }}>
+        <ExerciseStudioView />
+      </div>
       <GenerationConflictDialog />
       <Toaster />
     </main>
   );
-}
+}

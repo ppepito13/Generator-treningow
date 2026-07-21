@@ -23,7 +23,49 @@ export interface Exercise {
   tagi_specjalne: string[];
   kategorie_treningu: string[];
   instrukcja: string;
+  isCustom?: boolean;
+  isOverridden?: boolean;
 }
+
+export const createDefaultExercise = (input: {
+  id_cwiczenia?: string;
+  nazwa: string;
+  wariant?: string;
+  segment_id?: number;
+  segment_nazwa?: string;
+  tryb_pracy?: "Solo" | "W_Parze";
+  poziom?: number;
+  glowne_partie?: string[];
+  zaangazowane_miesnie?: string | string[];
+  tagi_specjalne?: string[];
+  kategorie_treningu?: string[];
+  instrukcja?: string;
+  wymagania_sprzetowe?: EquipmentRequirement[];
+  biomechanika?: string;
+  isOverridden?: boolean;
+}): Exercise => {
+  const isBuiltInId = input.id_cwiczenia && !input.id_cwiczenia.startsWith('custom-');
+  const isOverridden = input.isOverridden ?? (isBuiltInId ? true : false);
+
+  return {
+    id_cwiczenia: input.id_cwiczenia || `custom-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    nazwa: input.nazwa.trim(),
+    wariant: input.wariant?.trim() ?? "",
+    segment_id: input.segment_id ?? 99,
+    segment_nazwa: input.segment_nazwa ?? "NIEWYBRANY / OGÓLNE",
+    tryb_pracy: input.tryb_pracy ?? "Solo",
+    poziom: input.poziom ?? 0, // 0 = poziom uniwersalny (pasuje do każdego poziomu 1-10)
+    glowne_partie: input.glowne_partie && input.glowne_partie.length > 0 ? input.glowne_partie : ["Wszystkie / Uniwersalne"],
+    zaangazowane_miesnie: input.zaangazowane_miesnie ?? "Brak szczegółowych danych",
+    tagi_specjalne: input.tagi_specjalne ?? ["Własne"],
+    kategorie_treningu: input.kategorie_treningu && input.kategorie_treningu.length > 0 ? input.kategorie_treningu : ["all", "Kalistenika", "FBW", "Cross"],
+    instrukcja: input.instrukcja?.trim() || "Brak opisu (dodano w trybie szybkim)",
+    wymagania_sprzetowe: input.wymagania_sprzetowe ?? [],
+    biomechanika: input.biomechanika ?? "Ogólna",
+    isCustom: true,
+    isOverridden: isOverridden,
+  };
+};
 
 export interface DifficultyLevel {
   id: string;

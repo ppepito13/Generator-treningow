@@ -40,7 +40,7 @@ export const BottomNav = () => {
       id: 'studio',
       icon: Database,
       label: 'Studio',
-      disabled: true,
+      disabled: false,
     },
   ];
 

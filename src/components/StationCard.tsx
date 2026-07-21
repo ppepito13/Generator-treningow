@@ -5,7 +5,8 @@ import React, { useState, useMemo, memo } from 'react';
 import { Station, Exercise, SEGMENTS, getDifficultyById, ALL_ROOMS } from '@/app/lib/data';
 import { useAppStore, getValidExercisesForZone } from '@/app/lib/store';
 import { ExerciseManualSelector } from './ExerciseManualSelector';
-import { RefreshCw, MoreVertical, MapPin, Dumbbell, Info, Users, Trophy, Activity, Settings2, AlertTriangle, GripVertical, Search, ChevronDown, Plus } from 'lucide-react';
+import { ExerciseDetailDialog } from './ExerciseDetailDialog';
+import { RefreshCw, MoreVertical, MapPin, Dumbbell, Info, Users, User, Check, Trophy, Activity, Settings2, AlertTriangle, GripVertical, Search, ChevronDown, Plus } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ interface Props {
 export const StationCard = memo(({ station }: Props) => {
   const rerollExercise = useAppStore(state => state.rerollExercise);
   const setStationExercise = useAppStore(state => state.setStationExercise);
+  const addCustomExercise = useAppStore(state => state.addCustomExercise);
   const difficultyId = useAppStore(state => state.difficultyId);
   const participants = useAppStore(state => state.participants);
   const circuit = useAppStore(state => state.circuit);
@@ -48,7 +50,9 @@ export const StationCard = memo(({ station }: Props) => {
   const [openDialogType, setOpenDialogType] = useState<'A' | 'B' | null>(null);
   const [isAddingCustom, setIsAddingCustom] = useState(false);
   const [customExerciseName, setCustomExerciseName] = useState('');
-  
+  const [customTrybPracy, setCustomTrybPracy] = useState<'Solo' | 'W_Parze'>('Solo');
+  const [infoExercise, setInfoExercise] = useState<Exercise | null>(null);
+
   const currentRoom = useMemo(() => getEffectiveRoomConfig(), [getEffectiveRoomConfig, selectedRoomId]);
   const isSynchronized = useMemo(() => currentRoom.tryb_treningu === 'synchroniczny', [currentRoom.tryb_treningu]);
   const currentDiff = useMemo(() => getDifficultyById(difficultyId), [difficultyId]);
@@ -87,21 +91,10 @@ export const StationCard = memo(({ station }: Props) => {
 
   const handleSaveCustom = (type: 'A' | 'B') => {
     if (!customExerciseName.trim()) return;
-    const customEx: Exercise = {
-      id_cwiczenia: `custom-${Date.now()}`,
+    const customEx = addCustomExercise({
       nazwa: customExerciseName.trim(),
-      wariant: "",
-      segment_id: 99,
-      segment_nazwa: "WŁASNE",
-      tryb_pracy: "Solo",
-      biomechanika: "Własna",
-      poziom: 5,
-      glowne_partie: ["Inne"],
-      zaangazowane_miesnie: "Praca ogólna",
-      tagi_specjalne: ["ręcznie dodane"],
-      kategorie_treningu: [],
-      instrukcja: "Zajęcia z ćwiczeniem dodanym ręcznie przez trenera."
-    };
+      tryb_pracy: customTrybPracy,
+    });
     setStationExercise(station.id, type, customEx);
     setOpenDialogType(null);
     setIsAddingCustom(false);
@@ -179,76 +172,14 @@ export const StationCard = memo(({ station }: Props) => {
           )}
         </div>
         <div className="flex gap-1">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg glass-button opacity-50 hover:opacity-100">
-                <Info className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="glass-card border-white/10 text-white sm:max-w-md outline-none max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-primary flex flex-col items-start gap-1">
-                  <div className="flex items-center gap-2 text-xl font-bold">
-                    <Info className="h-5 w-5" />
-                    {ex.nazwa}
-                  </div>
-                  {ex.wariant && (
-                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest ml-7">
-                      Wariant: {ex.wariant}
-                    </span>
-                  )}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-6 py-4">
-                <div className="space-y-3">
-                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary/60 border-b border-white/5 pb-1">Instrukcja Wykonania</h4>
-                  <p className="text-sm leading-relaxed text-white/90">{ex.instrukcja}</p>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Wymagany Sprzęt</h4>
-                    <div className="flex items-center gap-2">
-                      <Dumbbell className="h-3.5 w-3.5 text-secondary" />
-                      <span className="text-xs font-bold text-secondary uppercase">{getEquipmentDisplay(ex)}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Partie Mięśniowe</h4>
-                    <p className="text-xs text-white/80 font-medium">{ex.glowne_partie.join(", ")}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Poziom Trudności</h4>
-                    <div className="flex items-center gap-2">
-                      <Trophy className="h-3.5 w-3.5 text-primary" />
-                      <span className="text-xs font-bold text-white/90 uppercase">Poziom {ex.poziom}/10</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary/60">Zaangażowane Mięśnie</h4>
-                    <div className="flex items-start gap-2">
-                      <Activity className="h-3.5 w-3.5 text-accent mt-0.5" />
-                      <p className="text-xs text-white/80 font-medium">{getMusclesDisplay(ex)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 flex-wrap pt-2 border-t border-white/5 mt-2">
-                  <span className="text-[9px] px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 uppercase font-bold">
-                    {ex.segment_nazwa}
-                  </span>
-                  {ex.tagi_specjalne?.map(tag => (
-                    <span key={tag} className="text-[9px] px-2 py-1 rounded-full bg-white/5 text-white/50 border border-white/10">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setInfoExercise(ex)}
+            className="h-8 w-8 rounded-lg glass-button opacity-50 hover:opacity-100"
+          >
+            <Info className="h-4 w-4" />
+          </Button>
           
           <Dialog open={openDialogType === type} onOpenChange={(open) => {
             setOpenDialogType(open ? type : null);
@@ -289,6 +220,38 @@ export const StationCard = memo(({ station }: Props) => {
                         }
                       }}
                     />
+
+                    {/* Szybki przełącznik trybu wykonania */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCustomTrybPracy('Solo')}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border text-xs font-bold transition-all ${
+                          customTrybPracy === 'Solo'
+                            ? 'bg-primary/20 border-primary text-primary shadow-sm'
+                            : 'bg-white/5 border-white/10 text-white/50 hover:text-white'
+                        }`}
+                      >
+                        <User className="h-3.5 w-3.5" />
+                        <span>Solo</span>
+                        {customTrybPracy === 'Solo' && <Check className="h-3 w-3 ml-auto text-primary" />}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setCustomTrybPracy('W_Parze')}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border text-xs font-bold transition-all ${
+                          customTrybPracy === 'W_Parze'
+                            ? 'bg-secondary/20 border-secondary text-secondary shadow-sm'
+                            : 'bg-white/5 border-white/10 text-white/50 hover:text-white'
+                        }`}
+                      >
+                        <Users className="h-3.5 w-3.5" />
+                        <span>W parze</span>
+                        {customTrybPracy === 'W_Parze' && <Check className="h-3 w-3 ml-auto text-secondary" />}
+                      </button>
+                    </div>
+
                     <div className="flex gap-2">
                       <Button variant="ghost" size="sm" className="flex-1 text-xs h-10 border border-white/10" onClick={() => { setIsAddingCustom(false); setCustomExerciseName(''); }}>Anuluj</Button>
                       <Button size="sm" className="flex-1 text-xs h-10 bg-primary text-primary-foreground hover:bg-primary/90" disabled={!customExerciseName.trim()} onClick={() => handleSaveCustom(type)}>Zapisz i Dodaj</Button>
@@ -342,7 +305,10 @@ export const StationCard = memo(({ station }: Props) => {
 
                     <Button 
                       variant="outline" 
-                      onClick={() => setIsAddingCustom(true)}
+                      onClick={() => {
+                        setCustomTrybPracy(station.isPair ? 'W_Parze' : 'Solo');
+                        setIsAddingCustom(true);
+                      }}
                       className="w-full h-12 justify-start gap-3 bg-white/5 border-white/10 hover:bg-white/10 text-xs font-bold"
                     >
                       <Plus className="h-4 w-4 text-primary" />
@@ -427,6 +393,12 @@ export const StationCard = memo(({ station }: Props) => {
         open={selectorOpen}
         onOpenChange={setSelectorOpen}
         onSelect={(ex) => setStationExercise(station.id, activeSelectType, ex)}
+      />
+
+      <ExerciseDetailDialog
+        exercise={infoExercise}
+        open={!!infoExercise}
+        onOpenChange={(open) => !open && setInfoExercise(null)}
       />
     </div>
   );

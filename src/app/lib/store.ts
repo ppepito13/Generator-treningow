@@ -9,7 +9,8 @@ import {
   RoomConfig,
   getDifficultyById,
   Zone,
-  DifficultyLevel
+  DifficultyLevel,
+  createDefaultExercise
 } from './data';
 
 export const MAX_DIFFICULTY_LOOSENING = 1;
@@ -36,6 +37,15 @@ interface AppState {
   customRoomMode: 'obwodowy' | 'synchroniczny';
   customRoomCategory: string;
   customRoomEquipment: string[];
+
+  // Zarządzanie Własną Bazą Ćwiczeń
+  customExercises: Exercise[];
+  getAllExercises: () => Exercise[];
+  addCustomExercise: (input: Partial<Exercise> & { nazwa: string }) => Exercise;
+  removeCustomExercise: (id: string) => void;
+  clearAllCustomExercises: () => void;
+  exportCustomExercises: () => string;
+  importCustomExercises: (importedData: any) => { success: boolean; count: number; error?: string };
 
   circuit: Station[];
   isGenerated: boolean;
@@ -122,16 +132,19 @@ export const getValidExercisesForZone = (
   ignoreUsed: boolean = false,
   hasFlagAlready: boolean = false,
   category: string = 'all',
-  participantsCount: number = 1
+  participantsCount: number = 1,
+  allExercisesSource?: Exercise[]
 ): Exercise[] => {
-  let pool = ALL_EXERCISES.filter(ex =>
-    ex.poziom >= diffRange.min && ex.poziom <= diffRange.max &&
+  const source = allExercisesSource || (useAppStore.getState ? useAppStore.getState().getAllExercises() : ALL_EXERCISES);
+
+  let pool = source.filter(ex =>
+    (ex.poziom === 0 || (ex.poziom >= diffRange.min && ex.poziom <= diffRange.max)) &&
     (ignoreUsed ? true : !usedIds.has(ex.id_cwiczenia))
   );
 
   if (category !== 'all') {
     pool = pool.filter(ex => 
-      ex.kategorie_treningu?.some(cat => cat.toLowerCase() === category.toLowerCase())
+      ex.kategorie_treningu?.some(cat => cat.toLowerCase() === 'all' || cat.toLowerCase() === category.toLowerCase())
     );
   }
 
@@ -296,11 +309,12 @@ const generateCircuitStrategy = (
       if (exA.tryb_pracy === 'W_Parze' || canExerciseBeShared(exA, currentRoom)) {
         exB = exA;
       } else {
-        const potentialB = ALL_EXERCISES.filter(ex =>
+        const allExercises = useAppStore.getState().getAllExercises();
+        const potentialB = allExercises.filter(ex =>
           ex.id_cwiczenia !== exA.id_cwiczenia &&
           !usedIds.has(ex.id_cwiczenia) &&
-          ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
-          ex.glowne_partie.some(p => exA.glowne_partie.includes(p)) &&
+          (ex.poziom === 0 || (ex.poziom >= currentRange.min && ex.poziom <= currentRange.max)) &&
+          (ex.glowne_partie.includes("Wszystkie / Uniwersalne") || ex.glowne_partie.some(p => exA.glowne_partie.includes(p))) &&
           ensureEquipment(ex, currentRoom, 1) &&
           ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
         );
@@ -403,9 +417,88 @@ export const useAppStore = create<AppState>()(
       stationCount: 7,
       difficultyId: 'baza_silowa_standard',
       isStrictDifficulty: true,
-  customRoomMode: 'obwodowy',
+      customRoomMode: 'obwodowy',
       customRoomCategory: 'all',
       customRoomEquipment: [],
+
+      customExercises: [] as Exercise[],
+
+      getAllExercises: () => {
+        const custom = get().customExercises || [];
+        if (custom.length === 0) return ALL_EXERCISES;
+
+        const customMap = new Map<string, Exercise>();
+        const newCustom: Exercise[] = [];
+
+        custom.forEach(ex => {
+          if (ex.isOverridden || !ex.id_cwiczenia.startsWith('custom-')) {
+            customMap.set(ex.id_cwiczenia, { ...ex, isOverridden: true, isCustom: true });
+          } else {
+            newCustom.push(ex);
+          }
+        });
+
+        const baseList = ALL_EXERCISES.map(ex => customMap.get(ex.id_cwiczenia) || ex);
+        return [...baseList, ...newCustom];
+      },
+
+      addCustomExercise: (input) => {
+        const created = createDefaultExercise(input);
+        const existing = get().customExercises || [];
+        const filtered = existing.filter(ex => ex.id_cwiczenia !== created.id_cwiczenia);
+        const updated = [...filtered, created];
+        set({ customExercises: updated });
+        return created;
+      },
+
+      removeCustomExercise: (id) => {
+        const existing = get().customExercises || [];
+        set({ customExercises: existing.filter(ex => ex.id_cwiczenia !== id) });
+      },
+
+      clearAllCustomExercises: () => {
+        set({ customExercises: [] });
+      },
+
+      exportCustomExercises: () => {
+        const custom = get().customExercises || [];
+        return JSON.stringify(custom, null, 2);
+      },
+
+      importCustomExercises: (imported) => {
+        try {
+          let list: Exercise[] = [];
+          if (typeof imported === 'string') {
+            list = JSON.parse(imported);
+          } else if (Array.isArray(imported)) {
+            list = imported;
+          }
+
+          if (!Array.isArray(list)) {
+            return { success: false, count: 0, error: 'Nieprawidłowy format pliku JSON (oczekiwano tablicy ćwiczeń).' };
+          }
+
+          const validEntries = list.filter(item => item && typeof item === 'object' && typeof item.nazwa === 'string');
+          if (validEntries.length === 0) {
+            return { success: false, count: 0, error: 'Plik nie zawiera poprawnych wpisów ćwiczeń.' };
+          }
+
+          const existingMap = new Map<string, Exercise>();
+          (get().customExercises || []).forEach(ex => existingMap.set(ex.id_cwiczenia, ex));
+
+          let importedCount = 0;
+          validEntries.forEach(raw => {
+            const exercise = createDefaultExercise(raw);
+            existingMap.set(exercise.id_cwiczenia, exercise);
+            importedCount++;
+          });
+
+          set({ customExercises: Array.from(existingMap.values()) });
+          return { success: true, count: importedCount };
+        } catch (e: any) {
+          return { success: false, count: 0, error: e?.message || 'Błąd odczytu pliku JSON.' };
+        }
+      },
 
       circuit: [] as Station[],
       isGenerated: false,
@@ -700,17 +793,18 @@ export const useAppStore = create<AppState>()(
           }
           const newExA = pool[Math.floor(Math.random() * pool.length)];
 
+          const allExercises = get().getAllExercises();
           let newExB = undefined;
           if (station.isPair) {
             const currentRoom = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
             if (newExA.tryb_pracy === 'W_Parze' || canExerciseBeShared(newExA, currentRoom)) {
               newExB = newExA;
             } else {
-              const potentialB = ALL_EXERCISES.filter(ex =>
+              const potentialB = allExercises.filter(ex =>
                 ex.id_cwiczenia !== newExA.id_cwiczenia &&
                 !usedOnOtherStations.has(ex.id_cwiczenia) &&
-                ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
-                ex.glowne_partie.some(p => newExA.glowne_partie.includes(p)) &&
+                (ex.poziom === 0 || (ex.poziom >= currentRange.min && ex.poziom <= currentRange.max)) &&
+                (ex.glowne_partie.includes("Wszystkie / Uniwersalne") || ex.glowne_partie.some(p => newExA.glowne_partie.includes(p))) &&
                 ensureEquipment(ex, currentRoom, 1) &&
                 ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
               );
@@ -724,22 +818,23 @@ export const useAppStore = create<AppState>()(
         } else if (type === 'B' && station.exerciseB) {
           const currentRoom = get().getEffectiveRoomConfig();
           const category = get().selectedRoomId === 'custom' ? get().customRoomCategory : 'all';
+          const allExercises = get().getAllExercises();
 
-          let pool = ALL_EXERCISES.filter(ex =>
+          let pool = allExercises.filter(ex =>
             ex.id_cwiczenia !== station.exerciseA.id_cwiczenia &&
             !fullUsedIds.has(ex.id_cwiczenia) &&
-            ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
-            ex.glowne_partie.some(p => station.exerciseA.glowne_partie.includes(p)) &&
+            (ex.poziom === 0 || (ex.poziom >= currentRange.min && ex.poziom <= currentRange.max)) &&
+            (ex.glowne_partie.includes("Wszystkie / Uniwersalne") || ex.glowne_partie.some(p => station.exerciseA.glowne_partie.includes(p))) &&
             ensureEquipment(ex, currentRoom, 1) &&
             ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
           );
 
           if (pool.length === 0) {
-            pool = ALL_EXERCISES.filter(ex =>
+            pool = allExercises.filter(ex =>
               ex.id_cwiczenia !== station.exerciseA.id_cwiczenia &&
               !currentAtStationIds.has(ex.id_cwiczenia) &&
-              ex.poziom >= currentRange.min && ex.poziom <= currentRange.max &&
-              ex.glowne_partie.some(p => station.exerciseA.glowne_partie.includes(p)) &&
+              (ex.poziom === 0 || (ex.poziom >= currentRange.min && ex.poziom <= currentRange.max)) &&
+              (ex.glowne_partie.includes("Wszystkie / Uniwersalne") || ex.glowne_partie.some(p => station.exerciseA.glowne_partie.includes(p))) &&
               ensureEquipment(ex, currentRoom, 1) &&
               ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
             );
@@ -747,7 +842,7 @@ export const useAppStore = create<AppState>()(
 
           if (category !== 'all') {
             pool = pool.filter(ex => 
-              ex.kategorie_treningu?.some(cat => cat.toLowerCase() === category.toLowerCase())
+              ex.kategorie_treningu?.some(cat => cat.toLowerCase() === 'all' || cat.toLowerCase() === category.toLowerCase())
             );
           }
 
@@ -758,11 +853,11 @@ export const useAppStore = create<AppState>()(
           const filteredPool = segmentId !== undefined ? pool.filter(ex => ex.segment_id === segmentId) : pool;
           if (filteredPool.length === 0) {
              const dryLoosenRange = { min: Math.max(1, currentRange.min - MAX_DIFFICULTY_LOOSENING), max: Math.min(10, currentRange.max + MAX_DIFFICULTY_LOOSENING) };
-             const dryPool = ALL_EXERCISES.filter(ex =>
+             const dryPool = allExercises.filter(ex =>
                 ex.id_cwiczenia !== station.exerciseA.id_cwiczenia &&
                 !currentAtStationIds.has(ex.id_cwiczenia) &&
-                ex.poziom >= dryLoosenRange.min && ex.poziom <= dryLoosenRange.max &&
-                ex.glowne_partie.some(p => station.exerciseA.glowne_partie.includes(p)) &&
+                (ex.poziom === 0 || (ex.poziom >= dryLoosenRange.min && ex.poziom <= dryLoosenRange.max)) &&
+                (ex.glowne_partie.includes("Wszystkie / Uniwersalne") || ex.glowne_partie.some(p => station.exerciseA.glowne_partie.includes(p))) &&
                 ensureEquipment(ex, currentRoom, 1) &&
                 ex.tryb_pracy !== 'W_Parze' && ex.segment_id !== 8
              );
