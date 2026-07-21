@@ -102,9 +102,47 @@ export interface RoomConfig {
   };
   inwentarz: Record<string, number>;
   strefy: Zone[];
-  reguly_przeplywu_i_kolizji: Record<string, string>;
+  reguly_przeplywu_i_kolizji?: Record<string, string>;
   zakazane_tryby_pracy?: Array<"Solo" | "W_Parze">;
+  isCustom?: boolean;
+  isOverridden?: boolean;
 }
+
+export const createDefaultRoom = (input: {
+  id_sali?: string;
+  nazwa_sali: string;
+  tryb_treningu?: "obwodowy" | "synchroniczny";
+  maksymalna_pojemnosc?: { osoby: number; stacje: number };
+  inwentarz?: Record<string, number>;
+  strefy?: Zone[];
+  reguly_przeplywu_i_kolizji?: Record<string, string>;
+  zakazane_tryby_pracy?: Array<"Solo" | "W_Parze">;
+  isOverridden?: boolean;
+}): RoomConfig => {
+  const isBuiltInId = input.id_sali && !input.id_sali.startsWith('custom-room-');
+  const isOverridden = input.isOverridden ?? (isBuiltInId ? true : false);
+
+  return {
+    id_sali: input.id_sali || `custom-room-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    nazwa_sali: input.nazwa_sali.trim(),
+    tryb_treningu: input.tryb_treningu ?? "obwodowy",
+    maksymalna_pojemnosc: input.maksymalna_pojemnosc ?? { osoby: 20, stacje: 10 },
+    inwentarz: input.inwentarz ?? {},
+    strefy: input.strefy && input.strefy.length > 0 ? input.strefy : [
+      {
+        id: `strefa_${Date.now()}_1`,
+        nazwa: "Główna Przestrzeń Treningowa",
+        kolejnosc_sortowania: 1,
+        typ: "elastyczny",
+        bazowa_pojemnosc_stacji: input.maksymalna_pojemnosc?.stacje ?? 10,
+      }
+    ],
+    reguly_przeplywu_i_kolizji: input.reguly_przeplywu_i_kolizji ?? {},
+    zakazane_tryby_pracy: input.zakazane_tryby_pracy ?? [],
+    isCustom: true,
+    isOverridden: isOverridden,
+  };
+};
 
 export interface Station {
   id: string;

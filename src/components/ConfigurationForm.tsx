@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useAppStore } from '@/app/lib/store';
 import { DIFFICULTY_LEVELS, ALL_ROOMS, KATEGORIE_TRENINGOW, ALL_EXERCISES } from '@/app/lib/data';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,11 @@ export const ConfigurationForm = () => {
     resetCustomRoom
   } = useAppStore();
 
-  const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
+  const getAllRooms = useAppStore(state => state.getAllRooms);
+  const customRooms = useAppStore(state => state.customRooms);
+  const allRooms = useMemo(() => (getAllRooms ? getAllRooms() : ALL_ROOMS), [getAllRooms, customRooms]);
+
+  const currentRoom = allRooms.find(r => r.id_sali === selectedRoomId) || allRooms[0];
   const currentDiff = DIFFICULTY_LEVELS.find(d => d.id === difficultyId);
 
   // Dynamiczne ustalanie trybu dla potrzeb UI (suwaki itp.)
@@ -99,7 +103,7 @@ export const ConfigurationForm = () => {
               <SelectValue placeholder="Wybierz Salę" />
             </SelectTrigger>
             <SelectContent className="glass-card border-white/10">
-              {ALL_ROOMS.map(room => (
+              {allRooms.map(room => (
                 <SelectItem key={room.id_sali} value={room.id_sali} className="py-3 focus:bg-primary focus:text-primary-foreground">
                   <div className="flex flex-col gap-0.5">
                     <span className="font-bold">{room.nazwa_sali}</span>

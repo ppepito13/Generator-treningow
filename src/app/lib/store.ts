@@ -10,7 +10,8 @@ import {
   getDifficultyById,
   Zone,
   DifficultyLevel,
-  createDefaultExercise
+  createDefaultExercise,
+  createDefaultRoom
 } from './data';
 
 export const MAX_DIFFICULTY_LOOSENING = 1;
@@ -46,6 +47,15 @@ interface AppState {
   clearAllCustomExercises: () => void;
   exportCustomExercises: () => string;
   importCustomExercises: (importedData: any) => { success: boolean; count: number; error?: string };
+
+  // Zarządzanie Własną i Modyfikowaną Bazą Sal
+  customRooms: RoomConfig[];
+  getAllRooms: () => RoomConfig[];
+  addCustomRoom: (input: Partial<RoomConfig> & { nazwa_sali: string }) => RoomConfig;
+  removeCustomRoom: (id: string) => void;
+  clearAllCustomRooms: () => void;
+  exportCustomRooms: () => string;
+  importCustomRooms: (importedData: any) => { success: boolean; count: number; error?: string };
 
   circuit: Station[];
   isGenerated: boolean;
@@ -497,6 +507,87 @@ export const useAppStore = create<AppState>()(
           return { success: true, count: importedCount };
         } catch (e: any) {
           return { success: false, count: 0, error: e?.message || 'Błąd odczytu pliku JSON.' };
+        }
+      },
+
+      customRooms: [] as RoomConfig[],
+
+      getAllRooms: () => {
+        const custom = get().customRooms || [];
+        if (custom.length === 0) return ALL_ROOMS;
+
+        const customMap = new Map<string, RoomConfig>();
+        const newCustom: RoomConfig[] = [];
+
+        custom.forEach(r => {
+          if (r.isOverridden || !r.id_sali.startsWith('custom-room-')) {
+            customMap.set(r.id_sali, { ...r, isOverridden: true, isCustom: true });
+          } else {
+            newCustom.push(r);
+          }
+        });
+
+        const baseList = ALL_ROOMS.map(r => customMap.get(r.id_sali) || r);
+        return [...baseList, ...newCustom];
+      },
+
+      addCustomRoom: (input) => {
+        const created = createDefaultRoom(input);
+        const existing = get().customRooms || [];
+        const filtered = existing.filter(r => r.id_sali !== created.id_sali);
+        const updated = [...filtered, created];
+        set({ customRooms: updated });
+        return created;
+      },
+
+      removeCustomRoom: (id) => {
+        const existing = get().customRooms || [];
+        set({ customRooms: existing.filter(r => r.id_sali !== id) });
+      },
+
+      clearAllCustomRooms: () => {
+        set({ customRooms: [] });
+      },
+
+      exportCustomRooms: () => {
+        const rooms = get().customRooms || [];
+        return JSON.stringify(rooms, null, 2);
+      },
+
+      importCustomRooms: (importedData) => {
+        try {
+          let rooms: RoomConfig[];
+          if (typeof importedData === 'string') {
+            rooms = JSON.parse(importedData);
+          } else {
+            rooms = importedData;
+          }
+
+          if (rooms && typeof rooms === 'object' && 'sale' in rooms && Array.isArray((rooms as any).sale)) {
+            rooms = (rooms as any).sale;
+          }
+
+          if (!Array.isArray(rooms)) {
+            return { success: false, count: 0, error: "Plik musi zawierać tablicę sal." };
+          }
+
+          const existingMap = new Map<string, RoomConfig>();
+          (get().customRooms || []).forEach(r => existingMap.set(r.id_sali, r));
+
+          let importedCount = 0;
+          rooms.forEach(raw => {
+            if (raw.nazwa_sali) {
+              const formatted = createDefaultRoom(raw);
+              existingMap.set(formatted.id_sali, formatted);
+              importedCount++;
+            }
+          });
+
+          const updated = Array.from(existingMap.values());
+          set({ customRooms: updated });
+          return { success: true, count: importedCount };
+        } catch (err: any) {
+          return { success: false, count: 0, error: err?.message || "Niepoprawny format pliku JSON." };
         }
       },
 

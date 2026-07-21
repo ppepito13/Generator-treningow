@@ -2,9 +2,10 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import { useAppStore } from '@/app/lib/store';
-import { Exercise, ALL_EXERCISES, SEGMENTS, DIFFICULTY_LEVELS } from '@/app/lib/data';
+import { Exercise, ALL_EXERCISES, SEGMENTS, DIFFICULTY_LEVELS, ALL_ROOMS } from '@/app/lib/data';
 import { AddExerciseDialog } from './AddExerciseDialog';
 import { ExerciseDetailDialog } from './ExerciseDetailDialog';
+import { RoomStudioSubView } from './RoomStudioSubView';
 import {
   Database,
   Search,
@@ -106,6 +107,11 @@ export const ExerciseStudioView = () => {
   const clearAllCustomExercises = useAppStore((state) => state.clearAllCustomExercises);
   const exportCustomExercises = useAppStore((state) => state.exportCustomExercises);
   const importCustomExercises = useAppStore((state) => state.importCustomExercises);
+
+  const customRooms = useAppStore((state) => state.customRooms);
+  const getAllRooms = useAppStore((state) => state.getAllRooms);
+
+  const roomCount = useMemo(() => (getAllRooms ? getAllRooms().length : ALL_ROOMS.length), [customRooms, getAllRooms]);
 
   const [activeSubTab, setActiveSubTab] = useState<'exercises' | 'rooms' | 'categories'>('exercises');
   
@@ -338,32 +344,19 @@ export const ExerciseStudioView = () => {
 
   return (
     <div className="min-h-screen pb-28 pt-4 px-4 max-w-4xl mx-auto space-y-6">
-      {/* Nagłówek Studio */}
+      {/* Nagłówek Centrum Zasobów */}
       <div className="glass-card p-6 rounded-[2rem] border border-white/10 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-              <Database className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black uppercase tracking-tight text-white">Studio Bazy Treningowej</h1>
-              <p className="text-xs text-white/50">Zarządzaj swoją bazą ćwiczeń, edytuj pozycje wbudowane i dodawaj własne</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+            <Database className="h-6 w-6" />
           </div>
-
-          <Button
-            onClick={() => {
-              setEditingExercise(null);
-              setIsAddDialogOpen(true);
-            }}
-            className="rounded-2xl h-12 px-5 bg-cyan-500 text-neutral-950 font-bold hover:bg-cyan-400 transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/20"
-          >
-            <Plus className="h-5 w-5 stroke-[2.5]" />
-            <span>Dodaj ćwiczenie</span>
-          </Button>
+          <div>
+            <h1 className="text-xl font-black uppercase tracking-tight text-white">Centrum Zasobów i Konfiguracji</h1>
+            <p className="text-xs text-white/50">Kompleksowe zarządzanie ćwiczeniami, salami oraz inwentarzem treningowym</p>
+          </div>
         </div>
 
-        {/* Wewnętrzne zakładki Studio */}
+        {/* Wewnętrzne zakładki Centrum Zasobów */}
         <div className="flex gap-2 border-t border-white/5 pt-4 overflow-x-auto scrollbar-none">
           <button
             onClick={() => setActiveSubTab('exercises')}
@@ -378,12 +371,15 @@ export const ExerciseStudioView = () => {
           </button>
 
           <button
-            disabled
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-white/5 border border-white/5 text-white/20 cursor-not-allowed opacity-50"
-            title="Dostępne w przyszłych aktualizacjach"
+            onClick={() => setActiveSubTab('rooms')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              activeSubTab === 'rooms'
+                ? 'bg-cyan-500/20 border border-cyan-500/40 text-cyan-400'
+                : 'bg-white/5 border border-white/5 text-white/50 hover:text-white'
+            }`}
           >
             <Building2 className="h-4 w-4" />
-            <span>Sale (W przygotowaniu)</span>
+            <span>Sale ({roomCount})</span>
           </button>
 
           <button
@@ -397,9 +393,14 @@ export const ExerciseStudioView = () => {
         </div>
       </div>
 
-      {/* PASEK FILTRÓW, WYSZUKIWANIA I NARZĘDZI BAZY */}
+      {activeSubTab === 'rooms' ? (
+        <RoomStudioSubView />
+      ) : (
+        <>
+
+      {/* PASEK FILTRÓW, WYSZUKIWANIA I NARZĘDZI BAZY ĆWICZEŃ */}
       <div className="glass-card p-5 rounded-[2rem] border border-white/10 space-y-4">
-        {/* Wiersz 1: Źródło bazy + Wyszukiwarka + Przycisk Zwijania Filtrów */}
+        {/* Wiersz 1: Źródło bazy + Wyszukiwarka + Przycisk Dodawania Ćwiczenia + Przycisk Zwijania Filtrów */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Filtry źródeł: Wszystkie / Wbudowane / Zmodyfikowane i Własne */}
           <div className="flex items-center gap-1 p-1 bg-white/5 rounded-2xl border border-white/5 self-start sm:self-auto">
@@ -455,11 +456,23 @@ export const ExerciseStudioView = () => {
               )}
             </div>
 
+            {/* Przycisk Dodawania Ćwiczenia powiązany bezpośrednio z modułem Ćwiczeń */}
+            <Button
+              onClick={() => {
+                setEditingExercise(null);
+                setIsAddDialogOpen(true);
+              }}
+              className="rounded-2xl h-11 px-4 bg-cyan-500 text-neutral-950 font-bold hover:bg-cyan-400 transition-all flex items-center gap-1.5 shadow-lg shadow-cyan-500/20 text-xs shrink-0"
+            >
+              <Plus className="h-4 w-4 stroke-[2.5]" />
+              <span className="hidden xs:inline">Dodaj ćwiczenie</span>
+            </Button>
+
             {/* Przycisk Zwijania / Rozwijania dodatkowych filtrów i narzędzi */}
             <Button
               variant="outline"
               onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
-              className={`rounded-2xl h-11 px-3.5 border text-xs font-bold transition-all flex items-center gap-2 ${
+              className={`rounded-2xl h-11 px-3.5 border text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
                 isFiltersExpanded || activeFiltersCount > 0
                   ? 'bg-cyan-500/10 border-cyan-500/40 text-cyan-300'
                   : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white'
@@ -910,6 +923,8 @@ export const ExerciseStudioView = () => {
           });
         }}
       />
+      </>
+      )}
     </div>
   );
 };
