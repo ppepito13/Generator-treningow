@@ -35,10 +35,14 @@ export const ConfigurationForm = () => {
   } = useAppStore();
 
   const getAllRooms = useAppStore(state => state.getAllRooms);
+  const getEffectiveRoomConfig = useAppStore(state => state.getEffectiveRoomConfig);
   const customRooms = useAppStore(state => state.customRooms);
   const allRooms = useMemo(() => (getAllRooms ? getAllRooms() : ALL_ROOMS), [getAllRooms, customRooms]);
 
-  const currentRoom = allRooms.find(r => r.id_sali === selectedRoomId) || allRooms[0];
+  const currentRoom = useMemo(
+    () => (getEffectiveRoomConfig ? getEffectiveRoomConfig() : (allRooms.find(r => r.id_sali === selectedRoomId) || allRooms[0])),
+    [getEffectiveRoomConfig, selectedRoomId, allRooms, customRooms]
+  );
   const currentDiff = DIFFICULTY_LEVELS.find(d => d.id === difficultyId);
 
   // Dynamiczne ustalanie trybu dla potrzeb UI (suwaki itp.)

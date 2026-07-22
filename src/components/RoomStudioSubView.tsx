@@ -59,10 +59,8 @@ export const RoomStudioSubView = () => {
   const [selectedRoomInfo, setSelectedRoomInfo] = useState<RoomConfig | null>(null);
 
   const allRooms = useMemo(() => {
-    if (typeof getAllRooms === 'function') {
-      return getAllRooms();
-    }
-    return ALL_ROOMS;
+    const raw = typeof getAllRooms === 'function' ? getAllRooms() : ALL_ROOMS;
+    return raw.filter((r) => r.id_sali !== 'custom');
   }, [customRooms, getAllRooms]);
 
   const filteredRooms = useMemo(() => {
@@ -94,8 +92,8 @@ export const RoomStudioSubView = () => {
 
   const counts = useMemo(() => {
     const total = allRooms.length;
-    const customCount = customRooms.length;
-    const builtinCount = ALL_ROOMS.length;
+    const customCount = customRooms.filter((r) => r.id_sali !== 'custom').length;
+    const builtinCount = ALL_ROOMS.filter((r) => r.id_sali !== 'custom').length;
     return { total, customCount, builtinCount };
   }, [allRooms, customRooms]);
 

@@ -27,6 +27,20 @@ export interface Exercise {
   isOverridden?: boolean;
 }
 
+export const normalizeExerciseKey = (name: string): string => {
+  if (!name) return '';
+  const plMap: Record<string, string> = {
+    'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+    'Ą': 'a', 'Ć': 'c', 'Ę': 'e', 'Ł': 'l', 'Ń': 'n', 'Ó': 'o', 'Ś': 's', 'Ź': 'z', 'Ż': 'z',
+  };
+  let result = name.split('').map(char => plMap[char] || char).join('');
+  result = result
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return result || `cwiczenie_${Date.now()}`;
+};
+
 export const createDefaultExercise = (input: {
   id_cwiczenia?: string;
   nazwa: string;
@@ -47,8 +61,12 @@ export const createDefaultExercise = (input: {
   const isBuiltInId = input.id_cwiczenia && !input.id_cwiczenia.startsWith('custom-');
   const isOverridden = input.isOverridden ?? (isBuiltInId ? true : false);
 
+  const generatedId = input.id_cwiczenia
+    ? input.id_cwiczenia.trim()
+    : normalizeExerciseKey(input.nazwa);
+
   return {
-    id_cwiczenia: input.id_cwiczenia || `custom-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    id_cwiczenia: generatedId,
     nazwa: input.nazwa.trim(),
     wariant: input.wariant?.trim() ?? "",
     segment_id: input.segment_id ?? 99,
@@ -158,6 +176,97 @@ export const DIFFICULTY_LEVELS = levels as DifficultyLevel[];
 export const SEGMENTS = segments as { id: number; nazwa: string }[];
 export const ALL_ROOMS = sala.sale as RoomConfig[];
 export const KATEGORIE_TRENINGOW = categories as { id: string; nazwa: string }[];
+
+export interface EquipmentItem {
+  id: string;
+  nazwa: string;
+  opis?: string;
+  isCustom?: boolean;
+  isOverridden?: boolean;
+}
+
+export const normalizeEquipmentKey = (name: string): string => {
+  if (!name) return '';
+  const plMap: Record<string, string> = {
+    'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+    'Ą': 'a', 'Ć': 'c', 'Ę': 'e', 'Ł': 'l', 'Ń': 'n', 'Ó': 'o', 'Ś': 's', 'Ź': 'z', 'Ż': 'z',
+  };
+  let result = name.split('').map(char => plMap[char] || char).join('');
+  result = result
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return result || `sprzet_${Date.now()}`;
+};
+
+export const createDefaultEquipment = (input: {
+  id?: string;
+  nazwa: string;
+  opis?: string;
+  isOverridden?: boolean;
+}): EquipmentItem => {
+  const generatedId = input.id ? input.id.trim() : normalizeEquipmentKey(input.nazwa);
+  const isBuiltIn = ALL_EQUIPMENT.includes(generatedId);
+  const isOverridden = input.isOverridden ?? (isBuiltIn ? true : false);
+
+  return {
+    id: generatedId,
+    nazwa: input.nazwa.trim(),
+    opis: input.opis?.trim() || "",
+    isCustom: true,
+    isOverridden: isOverridden,
+  };
+};
+
+export const formatEquipmentName = (key: string): string => {
+  if (!key) return '';
+  const dictionary: Record<string, string> = {
+    ab_wheel: "AB Wheel (Kółko)",
+    bloczek_joga: "Bloczek do jogi",
+    box_plyometryczny_miekki_ciezki: "Box miękki / ciężki",
+    box_posladki: "Box do pośladków",
+    brama_rig: "Brama / RIG",
+    drabinka_pionowa: "Drabinka pionowa",
+    drabinka_pozioma: "Drabinka pozioma",
+    drazek: "Drążek",
+    gryf_olimpijski: "Gryf olimpijski",
+    guma_oporowa_dluga: "Guma oporowa długa",
+    guma_oporowa_mini: "Guma oporowa mini",
+    hantel: "Hantel / Hantle",
+    kamizelka_obciazeniowa: "Kamizelka obciążeniowa",
+    kettlebell: "Kettlebell",
+    kij_drewniany: "Kij drewniany",
+    klin: "Klin mobilizacyjny",
+    kolko_gimnastyczne: "Kółka gimnastyczne",
+    kulki_drazek: "Kulki na drążek",
+    mata: "Mata do ćwiczeń",
+    materac: "Materac ochronny",
+    nunczako: "Nunczako / Uchwyty",
+    obciazenia_kostki: "Obciążniki na kostki",
+    paraletka: "Paraletki",
+    pilka_bosu: "Piłka Bosu",
+    pilka_gimnastyczna: "Piłka gimnastyczna",
+    pilka_lekarska: "Piłka lekarska",
+    pilka_materialowa: "Piłka materiałowa",
+    pilka_tenisowa: "Piłka tenisowa",
+    porecz_dip: "Poręcze do dipów",
+    ramiona_asekuracyjne: "Ramiona asekuracyjne",
+    recznik: "Ręcznik",
+    roller: "Roller / Wałek",
+    sciana_handstand: "Ściana do Handstandu",
+    skakanka: "Skakanka",
+    skrzynia_drewniana: "Skrzynia drewniana",
+    stepper: "Stepper",
+    sztanga_5kg: "Sztanga 5kg",
+    talerz: "Talerz / Obciążenie",
+    trx: "Taśmy TRX",
+    uchwyt_sztangi_rig: "Uchwyt sztangi RIG",
+    worek_obciazeniowy: "Worek obciążeniowy",
+  };
+
+  if (dictionary[key]) return dictionary[key];
+  return key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+};
 
 export const getDifficultyById = (id: string) => 
   DIFFICULTY_LEVELS.find(l => l.id === id) || DIFFICULTY_LEVELS[1];

@@ -10,9 +10,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { SEGMENTS, Exercise } from "@/app/lib/data";
+import { SEGMENTS, Exercise, normalizeExerciseKey } from "@/app/lib/data";
 import { useAppStore } from "@/app/lib/store";
-import { Dumbbell, Plus, Users, User, ChevronDown, ChevronUp, Sparkles, Check, Pencil, Edit3 } from "lucide-react";
+import { Dumbbell, Plus, Users, User, ChevronDown, ChevronUp, Sparkles, Check, Pencil, Edit3, Key } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -46,6 +46,13 @@ export const AddExerciseDialog = ({
 
   const isEditing = !!initialExercise;
   const isOverridingBuiltIn = isEditing && (!initialExercise.isCustom || initialExercise.isOverridden);
+
+  const autoKey = React.useMemo(() => {
+    if (isOverridingBuiltIn && initialExercise?.id_cwiczenia) {
+      return initialExercise.id_cwiczenia;
+    }
+    return normalizeExerciseKey(nazwa);
+  }, [nazwa, initialExercise, isOverridingBuiltIn]);
 
   useEffect(() => {
     if (open) {
@@ -93,7 +100,7 @@ export const AddExerciseDialog = ({
     const selectedSegment = SEGMENTS.find((s) => s.id === segmentId);
 
     const created = addCustomExercise({
-      id_cwiczenia: initialExercise?.id_cwiczenia,
+      id_cwiczenia: autoKey,
       nazwa: nazwa.trim(),
       tryb_pracy: trybPracy,
       wariant: wariant.trim() || undefined,
@@ -153,6 +160,26 @@ export const AddExerciseDialog = ({
               onChange={(e) => setNazwa(e.target.value)}
               className="bg-white/5 border-white/10 rounded-2xl h-14 text-sm font-semibold placeholder:text-white/20 focus:border-primary"
             />
+          </div>
+
+          {/* Klucz w bazie / ID ćwiczenia (Automatyczny - Widoczny, Nieedytowalny) */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-white/70 uppercase tracking-wider flex items-center gap-1.5">
+                <Key className="h-3.5 w-3.5 text-cyan-400" />
+                <span>Klucz w bazie / ID ćwiczenia</span>
+              </label>
+              <span className="text-[10px] text-white/40 font-mono">automatyczny format</span>
+            </div>
+            <Input
+              value={autoKey}
+              disabled
+              readOnly
+              className="bg-black/30 border-white/10 rounded-xl h-11 text-xs font-mono text-cyan-300/80 cursor-not-allowed opacity-75"
+            />
+            <p className="text-[10px] text-white/40 leading-normal">
+              *Klucz tworzy się automatycznie na podstawie nazwy ćwiczenia (bez polskich znaków, ze znakami _).
+            </p>
           </div>
 
           {/* Szybki przełącznik trybu pracy: Solo / W parze */}

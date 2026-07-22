@@ -6,12 +6,16 @@ import {
   Station,
   ALL_EXERCISES,
   ALL_ROOMS,
+  ALL_EQUIPMENT,
   RoomConfig,
+  EquipmentItem,
   getDifficultyById,
   Zone,
   DifficultyLevel,
   createDefaultExercise,
-  createDefaultRoom
+  createDefaultRoom,
+  createDefaultEquipment,
+  formatEquipmentName
 } from './data';
 
 export const MAX_DIFFICULTY_LOOSENING = 1;
@@ -56,6 +60,15 @@ interface AppState {
   clearAllCustomRooms: () => void;
   exportCustomRooms: () => string;
   importCustomRooms: (importedData: any) => { success: boolean; count: number; error?: string };
+
+  // Zarządzanie Własną i Modyfikowaną Bazą Sprzętu
+  customEquipment: EquipmentItem[];
+  getAllEquipmentItems: () => EquipmentItem[];
+  addCustomEquipment: (input: { id?: string; nazwa: string; opis?: string; isOverridden?: boolean }) => EquipmentItem;
+  removeCustomEquipment: (id: string) => void;
+  clearAllCustomEquipment: () => void;
+  exportCustomEquipment: () => string;
+  importCustomEquipment: (importedData: any) => { success: boolean; count: number; error?: string };
 
   circuit: Station[];
   isGenerated: boolean;
@@ -533,16 +546,35 @@ export const useAppStore = create<AppState>()(
 
       addCustomRoom: (input) => {
         const created = createDefaultRoom(input);
+        if (created.id_sali === 'custom') return created;
+
         const existing = get().customRooms || [];
         const filtered = existing.filter(r => r.id_sali !== created.id_sali);
         const updated = [...filtered, created];
         set({ customRooms: updated });
+
+        if (get().selectedRoomId === created.id_sali) {
+          const currentP = get().participants;
+          const currentS = get().stationCount;
+          set({
+            participants: Math.min(Math.max(currentP, 1), created.maksymalna_pojemnosc.osoby),
+            stationCount: Math.min(Math.max(currentS, 1), created.maksymalna_pojemnosc.stacje)
+          });
+        }
         return created;
       },
 
       removeCustomRoom: (id) => {
         const existing = get().customRooms || [];
         set({ customRooms: existing.filter(r => r.id_sali !== id) });
+        if (get().selectedRoomId === id) {
+          const allRooms = get().getAllRooms();
+          const room = allRooms.find(r => r.id_sali === id) || allRooms[0];
+          set({
+            participants: Math.min(get().participants, room.maksymalna_pojemnosc.osoby),
+            stationCount: Math.min(get().stationCount, room.maksymalna_pojemnosc.stacje)
+          });
+        }
       },
 
       clearAllCustomRooms: () => {
@@ -576,7 +608,7 @@ export const useAppStore = create<AppState>()(
 
           let importedCount = 0;
           rooms.forEach(raw => {
-            if (raw.nazwa_sali) {
+            if (raw.nazwa_sali && raw.id_sali !== 'custom') {
               const formatted = createDefaultRoom(raw);
               existingMap.set(formatted.id_sali, formatted);
               importedCount++;
@@ -585,6 +617,101 @@ export const useAppStore = create<AppState>()(
 
           const updated = Array.from(existingMap.values());
           set({ customRooms: updated });
+          return { success: true, count: importedCount };
+        } catch (err: any) {
+          return { success: false, count: 0, error: err?.message || "Niepoprawny format pliku JSON." };
+        }
+      },
+
+      customEquipment: [] as EquipmentItem[],
+
+      getAllEquipmentItems: () => {
+        const custom = get().customEquipment || [];
+        const customMap = new Map<string, EquipmentItem>();
+        const newCustom: EquipmentItem[] = [];
+
+        custom.forEach(eq => {
+          if (eq.isOverridden || !ALL_EQUIPMENT.includes(eq.id)) {
+            customMap.set(eq.id, { ...eq, isOverridden: true, isCustom: true });
+          } else {
+            newCustom.push(eq);
+          }
+        });
+
+        const baseList = ALL_EQUIPMENT.map(key => {
+          return customMap.get(key) || {
+            id: key,
+            nazwa: formatEquipmentName(key),
+            isCustom: false,
+          };
+        });
+
+        return [...baseList, ...newCustom];
+      },
+
+      addCustomEquipment: (input) => {
+        const created = createDefaultEquipment(input);
+        const existing = get().customEquipment || [];
+        const filtered = existing.filter(e => e.id !== created.id);
+        const updated = [...filtered, created];
+        set({ customEquipment: updated });
+        return created;
+      },
+
+      removeCustomEquipment: (id) => {
+        const existing = get().customEquipment || [];
+        set({ customEquipment: existing.filter(e => e.id !== id) });
+      },
+
+      clearAllCustomEquipment: () => {
+        set({ customEquipment: [] });
+      },
+
+      exportCustomEquipment: () => {
+        const custom = get().customEquipment || [];
+        return JSON.stringify(custom, null, 2);
+      },
+
+      importCustomEquipment: (importedData) => {
+        try {
+          let items: any[];
+          if (typeof importedData === 'string') {
+            items = JSON.parse(importedData);
+          } else {
+            items = importedData;
+          }
+
+          if (items && typeof items === 'object' && 'sprzet' in items && Array.isArray((items as any).sprzet)) {
+            items = (items as any).sprzet;
+          }
+
+          if (!Array.isArray(items)) {
+            return { success: false, count: 0, error: "Plik musi zawierać tablicę sprzętu." };
+          }
+
+          const existingMap = new Map<string, EquipmentItem>();
+          (get().customEquipment || []).forEach(e => existingMap.set(e.id, e));
+
+          let importedCount = 0;
+          items.forEach(raw => {
+            if (typeof raw === 'string' && raw.trim()) {
+              const formatted = createDefaultEquipment({ id: raw.trim(), nazwa: formatEquipmentName(raw.trim()) });
+              existingMap.set(formatted.id, formatted);
+              importedCount++;
+            } else if (raw && typeof raw === 'object' && (raw.nazwa || raw.id)) {
+              const formatted = createDefaultEquipment({
+                id: raw.id,
+                nazwa: raw.nazwa || formatEquipmentName(raw.id || ''),
+                opis: raw.opis,
+                isOverridden: raw.isOverridden
+              });
+              existingMap.set(formatted.id, formatted);
+              importedCount++;
+            }
+          });
+
+          const updated = Array.from(existingMap.values());
+          set({ customEquipment: updated });
           return { success: true, count: importedCount };
         } catch (err: any) {
           return { success: false, count: 0, error: err?.message || "Niepoprawny format pliku JSON." };
@@ -604,7 +731,8 @@ export const useAppStore = create<AppState>()(
       // Helper do pobierania aktualnej konfiguracji sali (uwzględnia wirtualną salę Custom)
       getEffectiveRoomConfig: () => {
         const { selectedRoomId, customRoomMode, customRoomEquipment } = get();
-        const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
+        const allRooms = get().getAllRooms ? get().getAllRooms() : ALL_ROOMS;
+        const currentRoom = allRooms.find(r => r.id_sali === selectedRoomId) || allRooms[0];
 
         if (selectedRoomId === 'custom') {
           return {
@@ -672,7 +800,7 @@ export const useAppStore = create<AppState>()(
         const state = get();
         const { participants, difficultyId, stationCount, isStrictDifficulty, selectedRoomId } = state;
         const mainDiff = getDifficultyById(difficultyId);
-        const currentRoom = ALL_ROOMS.find(r => r.id_sali === selectedRoomId) || ALL_ROOMS[0];
+        const currentRoom = get().getEffectiveRoomConfig();
 
         const executeGeneration = (loosen: boolean, ignore: boolean) => {
             const { customRoomCategory, selectedRoomId } = state;
@@ -726,7 +854,8 @@ export const useAppStore = create<AppState>()(
       },
 
       setSelectedRoom: (roomId) => {
-        const newRoom = ALL_ROOMS.find(r => r.id_sali === roomId);
+        const allRooms = get().getAllRooms ? get().getAllRooms() : ALL_ROOMS;
+        const newRoom = allRooms.find(r => r.id_sali === roomId);
         if (!newRoom) return;
 
         const currentParticipants = get().participants;
@@ -887,7 +1016,7 @@ export const useAppStore = create<AppState>()(
           const allExercises = get().getAllExercises();
           let newExB = undefined;
           if (station.isPair) {
-            const currentRoom = ALL_ROOMS.find(r => r.id_sali === get().selectedRoomId) || ALL_ROOMS[0];
+            const currentRoom = get().getEffectiveRoomConfig();
             if (newExA.tryb_pracy === 'W_Parze' || canExerciseBeShared(newExA, currentRoom)) {
               newExB = newExA;
             } else {

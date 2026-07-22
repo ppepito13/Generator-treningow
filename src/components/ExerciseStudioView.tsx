@@ -2,10 +2,12 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import { useAppStore } from '@/app/lib/store';
-import { Exercise, ALL_EXERCISES, SEGMENTS, DIFFICULTY_LEVELS, ALL_ROOMS } from '@/app/lib/data';
+import { Exercise, ALL_EXERCISES, SEGMENTS, DIFFICULTY_LEVELS, ALL_ROOMS, ALL_EQUIPMENT } from '@/app/lib/data';
 import { AddExerciseDialog } from './AddExerciseDialog';
 import { ExerciseDetailDialog } from './ExerciseDetailDialog';
 import { RoomStudioSubView } from './RoomStudioSubView';
+import { DifficultyLevelsSubView } from './DifficultyLevelsSubView';
+import { EquipmentStudioSubView } from './EquipmentStudioSubView';
 import {
   Database,
   Search,
@@ -19,6 +21,8 @@ import {
   Sparkles,
   Info,
   Building2,
+  BarChart3,
+  Dumbbell,
   Layers,
   AlertCircle,
   FileJson,
@@ -46,56 +50,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-// Słownik tłumaczeń kluczy sprzętowych na przyjazne etykiety po polsku
-export const formatEquipmentName = (key: string): string => {
-  if (!key) return '';
-  const dictionary: Record<string, string> = {
-    ab_wheel: "AB Wheel (Kółko)",
-    bloczek_joga: "Bloczek do jogi",
-    box_plyometryczny_miekki_ciezki: "Box miękki / ciężki",
-    box_posladki: "Box do pośladków",
-    brama_rig: "Brama / RIG",
-    drabinka_pionowa: "Drabinka pionowa",
-    drabinka_pozioma: "Drabinka pozioma",
-    drazek: "Drążek",
-    gryf_olimpijski: "Gryf olimpijski",
-    guma_oporowa_dluga: "Guma oporowa długa",
-    guma_oporowa_mini: "Guma oporowa mini",
-    hantel: "Hantel / Hantle",
-    kamizelka_obciazeniowa: "Kamizelka obciążeniowa",
-    kettlebell: "Kettlebell",
-    kij_drewniany: "Kij drewniany",
-    klin: "Klin mobilizacyjny",
-    kolko_gimnastyczne: "Kółka gimnastyczne",
-    kulki_drazek: "Kulki na drążek",
-    mata: "Mata do ćwiczeń",
-    materac: "Materac ochronny",
-    nunczako: "Nunczako / Uchwyty",
-    obciazenia_kostki: "Obciążniki na kostki",
-    paraletka: "Paraletki",
-    pilka_bosu: "Piłka Bosu",
-    pilka_gimnastyczna: "Piłka gimnastyczna",
-    pilka_lekarska: "Piłka lekarska",
-    pilka_materialowa: "Piłka materiałowa",
-    pilka_tenisowa: "Piłka tenisowa",
-    porecz_dip: "Poręcze do dipów",
-    ramiona_asekuracyjne: "Ramiona asekuracyjne",
-    recznik: "Ręcznik",
-    roller: "Roller / Wałek",
-    sciana_handstand: "Ściana do Handstandu",
-    skakanka: "Skakanka",
-    skrzynia_drewniana: "Skrzynia drewniana",
-    stepper: "Stepper",
-    sztanga_5kg: "Sztanga 5kg",
-    talerz: "Talerz / Obciążenie",
-    trx: "Taśmy TRX",
-    uchwyt_sztangi_rig: "Uchwyt sztangi RIG",
-    worek_obciazeniowy: "Worek obciążeniowy",
-  };
-
-  if (dictionary[key]) return dictionary[key];
-  return key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-};
+import { formatEquipmentName } from '@/app/lib/data';
+export { formatEquipmentName };
 
 export const ExerciseStudioView = () => {
   const { toast } = useToast();
@@ -111,9 +67,20 @@ export const ExerciseStudioView = () => {
   const customRooms = useAppStore((state) => state.customRooms);
   const getAllRooms = useAppStore((state) => state.getAllRooms);
 
-  const roomCount = useMemo(() => (getAllRooms ? getAllRooms().length : ALL_ROOMS.length), [customRooms, getAllRooms]);
+  const roomCount = useMemo(() => {
+    const raw = getAllRooms ? getAllRooms() : ALL_ROOMS;
+    return raw.filter((r) => r.id_sali !== 'custom').length;
+  }, [customRooms, getAllRooms]);
 
-  const [activeSubTab, setActiveSubTab] = useState<'exercises' | 'rooms' | 'categories'>('exercises');
+  const customEquipment = useAppStore((state) => state.customEquipment);
+  const getAllEquipmentItems = useAppStore((state) => state.getAllEquipmentItems);
+
+  const equipmentCount = useMemo(() => {
+    const raw = getAllEquipmentItems ? getAllEquipmentItems() : ALL_EQUIPMENT.map(k => ({ id: k, nazwa: k }));
+    return raw.length;
+  }, [customEquipment, getAllEquipmentItems]);
+
+  const [activeSubTab, setActiveSubTab] = useState<'exercises' | 'rooms' | 'levels' | 'equipment' | 'categories'>('exercises');
   
   // Stan rozwijania panelu filtrów i narzędzi
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
@@ -383,19 +350,35 @@ export const ExerciseStudioView = () => {
           </button>
 
           <button
-            disabled
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-white/5 border border-white/5 text-white/20 cursor-not-allowed opacity-50"
-            title="Dostępne w przyszłych aktualizacjach"
+            onClick={() => setActiveSubTab('levels')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              activeSubTab === 'levels'
+                ? 'bg-cyan-500/20 border border-cyan-500/40 text-cyan-400'
+                : 'bg-white/5 border border-white/5 text-white/50 hover:text-white'
+            }`}
           >
-            <Layers className="h-4 w-4" />
-            <span>Kategorie (W przygotowaniu)</span>
+            <BarChart3 className="h-4 w-4" />
+            <span>Poziomy trudności (5)</span>
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('equipment')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              activeSubTab === 'equipment'
+                ? 'bg-cyan-500/20 border border-cyan-500/40 text-cyan-400'
+                : 'bg-white/5 border border-white/5 text-white/50 hover:text-white'
+            }`}
+          >
+            <Dumbbell className="h-4 w-4" />
+            <span>Lista sprzętu ({equipmentCount})</span>
           </button>
         </div>
       </div>
 
-      {activeSubTab === 'rooms' ? (
-        <RoomStudioSubView />
-      ) : (
+      {activeSubTab === 'rooms' && <RoomStudioSubView />}
+      {activeSubTab === 'levels' && <DifficultyLevelsSubView />}
+      {activeSubTab === 'equipment' && <EquipmentStudioSubView />}
+      {activeSubTab === 'exercises' && (
         <>
 
       {/* PASEK FILTRÓW, WYSZUKIWANIA I NARZĘDZI BAZY ĆWICZEŃ */}
