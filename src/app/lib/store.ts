@@ -17,6 +17,8 @@ import {
   createDefaultEquipment,
   formatEquipmentName
 } from './data';
+import { IntervalPreset, TimerAudioSettings } from '@/types/timer';
+import { FlattenedQueueItem } from '@/components/GymViewModal';
 
 export const MAX_DIFFICULTY_LOOSENING = 1;
 
@@ -69,6 +71,30 @@ interface AppState {
   clearAllCustomEquipment: () => void;
   exportCustomEquipment: () => string;
   importCustomEquipment: (importedData: any) => { success: boolean; count: number; error?: string };
+
+  // Zarządzanie Presety Zegara i Audio
+  customIntervalPresets: IntervalPreset[];
+  timerAudioSettings: TimerAudioSettings;
+  addCustomIntervalPreset: (preset: IntervalPreset) => void;
+  removeCustomIntervalPreset: (id: string) => void;
+  updateTimerAudioSettings: (settings: Partial<TimerAudioSettings>) => void;
+
+  // Aktywne Wykonanie Zegara Interwałowego (Globalne)
+  activeIntervalExecution: {
+    preset: IntervalPreset;
+    queue: FlattenedQueueItem[];
+    currentIndex: number;
+    remainingSec: number;
+    isRunning: boolean;
+    isFinished: boolean;
+    isGymViewOpen: boolean;
+    isGymViewMinimized: boolean;
+  } | null;
+  setActiveIntervalExecution: (exec: any) => void;
+  updateActiveIntervalExecution: (update: any) => void;
+  minimizeGymView: () => void;
+  maximizeGymView: () => void;
+  closeActiveIntervalExecution: () => void;
 
   circuit: Station[];
   isGenerated: boolean;
@@ -717,6 +743,52 @@ export const useAppStore = create<AppState>()(
           return { success: false, count: 0, error: err?.message || "Niepoprawny format pliku JSON." };
         }
       },
+
+      customIntervalPresets: [] as IntervalPreset[],
+      timerAudioSettings: {
+        soundEnabled: true,
+        ttsEnabled: true,
+        ttsOption: 'stepName',
+        ttsCountdownOption: 'both',
+        volume: 0.9,
+      } as TimerAudioSettings,
+
+      addCustomIntervalPreset: (preset) => {
+        const existing = get().customIntervalPresets || [];
+        const filtered = existing.filter(p => p.id !== preset.id);
+        set({ customIntervalPresets: [...filtered, preset] });
+      },
+
+      removeCustomIntervalPreset: (id) => {
+        const existing = get().customIntervalPresets || [];
+        set({ customIntervalPresets: existing.filter(p => p.id !== id) });
+      },
+
+      updateTimerAudioSettings: (settings) => {
+        set({ timerAudioSettings: { ...get().timerAudioSettings, ...settings } });
+      },
+
+      activeIntervalExecution: null,
+      setActiveIntervalExecution: (exec) => set({ activeIntervalExecution: exec }),
+      updateActiveIntervalExecution: (update) => {
+        const current = get().activeIntervalExecution;
+        if (current) {
+          set({ activeIntervalExecution: { ...current, ...update } });
+        }
+      },
+      minimizeGymView: () => {
+        const current = get().activeIntervalExecution;
+        if (current) {
+          set({ activeIntervalExecution: { ...current, isGymViewOpen: true, isGymViewMinimized: true } });
+        }
+      },
+      maximizeGymView: () => {
+        const current = get().activeIntervalExecution;
+        if (current) {
+          set({ activeIntervalExecution: { ...current, isGymViewOpen: true, isGymViewMinimized: false } });
+        }
+      },
+      closeActiveIntervalExecution: () => set({ activeIntervalExecution: null }),
 
       circuit: [] as Station[],
       isGenerated: false,

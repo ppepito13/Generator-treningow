@@ -28,7 +28,7 @@ export const BottomNav = () => {
       id: 'timer',
       icon: Timer,
       label: 'Zegar',
-      disabled: true,
+      disabled: false,
     },
     {
       id: 'calculators',

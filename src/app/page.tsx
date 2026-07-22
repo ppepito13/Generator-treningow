@@ -8,6 +8,8 @@ import { GenerationConflictDialog } from '@/components/GenerationConflictDialog'
 import { Toaster } from '@/components/ui/toaster';
 
 import { ExerciseStudioView } from '@/components/ExerciseStudioView';
+import { TimerView } from '@/components/TimerView';
+import { GlobalIntervalTimerController } from '@/components/GlobalIntervalTimerController';
 
 export default function Home() {
   const { activeTab, activeView, popView, generationConflict, resolveConflict } = useAppStore();
@@ -22,7 +24,7 @@ export default function Home() {
 
   // Automatyczne przewijanie na górę po wygenerowaniu treningu
   useEffect(() => {
-    if (activeTab === 'circuit' || activeTab === 'studio') {
+    if (activeTab === 'circuit' || activeTab === 'studio' || activeTab === 'timer') {
       window.scrollTo(0, 0);
     }
   }, [activeTab]);
@@ -79,9 +81,16 @@ export default function Home() {
       <div style={{ display: activeTab === 'circuit' ? 'block' : 'none' }}>
         <CircuitList />
       </div>
+      <div style={{ display: activeTab === 'timer' ? 'block' : 'none' }}>
+        <TimerView />
+      </div>
       <div style={{ display: activeTab === 'studio' ? 'block' : 'none' }}>
         <ExerciseStudioView />
       </div>
+
+      {/* Globalny Kontroler Zegara Interwałowego (Działanie w tle + Pływający Widget + Fullscreen Gym View) */}
+      <GlobalIntervalTimerController />
+
       <GenerationConflictDialog />
       <Toaster />
     </main>
