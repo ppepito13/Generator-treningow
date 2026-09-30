@@ -9,6 +9,7 @@ import { Toaster } from '@/components/ui/toaster';
 
 import { ExerciseStudioView } from '@/components/ExerciseStudioView';
 import { TimerView } from '@/components/TimerView';
+import { CalculatorsView } from '@/components/CalculatorsView';
 import { GlobalIntervalTimerController } from '@/components/GlobalIntervalTimerController';
 
 export default function Home() {
@@ -24,7 +25,7 @@ export default function Home() {
 
   // Automatyczne przewijanie na górę po wygenerowaniu treningu
   useEffect(() => {
-    if (activeTab === 'circuit' || activeTab === 'studio' || activeTab === 'timer') {
+    if (activeTab === 'circuit' || activeTab === 'studio' || activeTab === 'timer' || activeTab === 'calculators') {
       window.scrollTo(0, 0);
     }
   }, [activeTab]);
@@ -83,6 +84,9 @@ export default function Home() {
       </div>
       <div style={{ display: activeTab === 'timer' ? 'block' : 'none' }}>
         <TimerView />
+      </div>
+      <div style={{ display: activeTab === 'calculators' ? 'block' : 'none' }}>
+        <CalculatorsView />
       </div>
       <div style={{ display: activeTab === 'studio' ? 'block' : 'none' }}>
         <ExerciseStudioView />

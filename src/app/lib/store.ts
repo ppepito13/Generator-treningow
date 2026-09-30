@@ -19,6 +19,7 @@ import {
 } from './data';
 import { IntervalPreset, TimerAudioSettings } from '@/types/timer';
 import { FlattenedQueueItem } from '@/components/GymViewModal';
+import { UserProfileData } from '@/types/calculators';
 
 export const MAX_DIFFICULTY_LOOSENING = 1;
 
@@ -95,6 +96,13 @@ interface AppState {
   minimizeGymView: () => void;
   maximizeGymView: () => void;
   closeActiveIntervalExecution: () => void;
+
+  // Współdzielony Profil Użytkownika dla Kalkulatorów (Narzędzia)
+  sharedUserProfile: UserProfileData;
+  updateSharedProfile: (profile: Partial<UserProfileData>) => void;
+  clearSharedProfile: () => void;
+  calculatorResults: Record<string, any>;
+  setCalculatorResult: (calcKey: string, result: any) => void;
 
   circuit: Station[];
   isGenerated: boolean;
@@ -789,6 +797,40 @@ export const useAppStore = create<AppState>()(
         }
       },
       closeActiveIntervalExecution: () => set({ activeIntervalExecution: null }),
+
+      sharedUserProfile: {
+        gender: 'male',
+        weight: null,
+        height: null,
+        age: null,
+        waist: null,
+        bodyFat: null,
+        activityLevel: 1.55,
+      } as UserProfileData,
+
+      updateSharedProfile: (update) => {
+        set({ sharedUserProfile: { ...get().sharedUserProfile, ...update } });
+      },
+
+      clearSharedProfile: () => {
+        set({
+          sharedUserProfile: {
+            gender: 'male',
+            weight: null,
+            height: null,
+            age: null,
+            waist: null,
+            bodyFat: null,
+            activityLevel: 1.55,
+          },
+          calculatorResults: {},
+        });
+      },
+
+      calculatorResults: {},
+      setCalculatorResult: (calcKey, result) => {
+        set({ calculatorResults: { ...get().calculatorResults, [calcKey]: result } });
+      },
 
       circuit: [] as Station[],
       isGenerated: false,

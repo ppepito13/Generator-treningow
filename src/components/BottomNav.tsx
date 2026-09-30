@@ -34,7 +34,7 @@ export const BottomNav = () => {
       id: 'calculators',
       icon: Calculator,
       label: 'Narzędzia',
-      disabled: true,
+      disabled: false,
     },
     {
       id: 'studio',
