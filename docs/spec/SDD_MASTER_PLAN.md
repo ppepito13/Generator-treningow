@@ -48,17 +48,20 @@ Cel: Przygotowanie siatki bezpieczeństwa. Zatrzymanie złego kodu przed opuszcz
 ### Faza 2: Dług Technologiczny i Ochrona Danych (Branch: `fix/tech-debt-and-data`)
 Cel: Aplikacja musi kompilować się bez maskowania błędów, a dane użytkowników muszą być bezpieczne.
 
-- [ ] **2.1 Naprawa błędów TypeScript:**
-  - `EquipmentStudioSubView.tsx`: Dodanie brakujących pól (np. `opis`) do typów.
-  - `calendar.tsx`: Aktualizacja API pod nowe wymogi `react-day-picker`.
-- [ ] **2.2 Odmaskowanie błędów kompilacji:**
-  - W `next.config.ts` usunięcie flag: `ignoreBuildErrors: true` i `ignoreDuringBuilds: true`.
-  - Upewnienie się, że `npm run build` przechodzi na czysto.
-- [ ] **2.3 Zustand Persist Migration (Zabezpieczenie localStorage):**
-  - Modyfikacja pliku `store.ts` (konfiguracja `persist`):
-    - Dodanie numeru `version: 1`.
-    - Dodanie funkcji `migrate` do obsługi starych schematów bez niszczenia bazy.
-    - Opcjonalnie: Dodanie do interfejsu aplikacji paska z ostrzeżeniem "Wkrótce duża aktualizacja – wyeksportuj swoje dane z ustawień".
+- [ ] **2.1 Naprawa błędów TypeScript (Czysty typecheck):**
+  - [ ] 2.1.1 `EquipmentStudioSubView.tsx`: Dodanie opcjonalnego pola `opis?: string` do inline typu wyposażenia.
+  - [ ] 2.1.2 `calendar.tsx`: Dostosowanie komponentów `IconLeft` i `IconRight` pod API `react-day-picker` v9.
+  - [ ] 2.1.3 Weryfikacja: Uruchomienie `npm run typecheck` (`tsc --noEmit`) – wynik: 0 błędów.
+- [ ] **2.2 Odmaskowanie kompilacji Next.js:**
+  - [ ] 2.2.1 Usunięcie flagi `ignoreBuildErrors: true` w `next.config.ts`.
+  - [ ] 2.2.2 Usunięcie flagi `ignoreDuringBuilds: true` w `next.config.ts`.
+  - [ ] 2.2.3 Weryfikacja: Uruchomienie `npm run build` na czysto – weryfikacja czy proces kompiluje się bez ignorowania błędów.
+- [ ] **2.3 Zustand Persist Migration (Zabezpieczenie danych i ochrona przed białym ekranem):**
+  - [ ] 2.3.1 Utworzenie testu migracji w Vitest (`src/tests/store-migration.test.ts`) symulującego stary format `localStorage`.
+  - [ ] 2.3.2 Dodanie `version: 1` oraz funkcji `migrate()` w `store.ts` (konfiguracja middleware `persist`).
+  - [ ] 2.3.3 Skonfigurowanie `partialize`, aby nie zapisywać stanu UI (np. navigationStack, activeTab) do pamięci trwałej.
+  - [ ] 2.3.4 Dodanie w interfejsie aplikacji dyskretnego monitu dla użytkowników z przypomnieniem o możliwości wyeksportowania danych.
+  - [ ] 2.3.5 Weryfikacja: Uruchomienie testów Vitest oraz weryfikacja manualna odczytu danych.
 
 ### Faza 3: Dekompozycja Monolitu (Branch: `refactor/store-decomposition`)
 Cel: Rozbicie pliku `store.ts` (1275 linii) w sposób bezpieczny. Wstrzymujemy się z testami UI, skupiamy się na logice.
