@@ -64,3 +64,4 @@ android/local.properties
 android/app/build/
 android/app/src/main/assets/public/
 android/app/src/main/assets/capsync.json
+Generator-treningow.code-workspace
