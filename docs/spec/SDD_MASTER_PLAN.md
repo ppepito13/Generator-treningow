@@ -16,7 +16,9 @@ Przyjmujemy nowoczesny **GitHub Flow** zoptymalizowany pod pracę 1 Developer + 
 4. **Automatyzacja CI (Quality Gates):** Otwarcie PR uruchamia GitHub Actions: sprawdza TS, linter i odpala testy Vitest.
 5. **Firebase Preview Channels:** Jeśli CI przejdzie pomyślnie, Firebase automatycznie wygeneruje tymczasowy link (Preview URL). Product Owner wchodzi, klika, upewnia się, że działa, i akceptuje PR.
 6. **Rollback:** Git pamięta wszystko. Usunięcie jakiegokolwiek kodu jest w 100% odwracalne poleceniem `git revert` lub powrotem do starego commitu.
-7. **User Activities:** Jeśli wymagane są jakieś aktywności po stronie człowieka (product ownera), to zostaną one jasno określone w dokumentacji i agentom AI będzie przygotowywał instrukcję krok po kroku jak wykonać daną czynność (np. wygenerowanie secretu, skonfigurowanie github actions)
+7. **User Activities:** Jeśli wymagane są jakieś aktywności po stronie człowieka (product ownera), to zostaną one jasno określone w dokumentacji i agentom AI będzie przygotowywał instrukcję krok po kroku jak wykonać daną czynność (np. wygenerowanie secretu, skonfigurowanie github actions).
+8. **Cykl życia gałęzi i czyszczenie (Branch Lifecycle):** Każda faza lub funkcja powstaje na dedykowanym branchu. Po zakończeniu fazy i zatwierdzeniu przez PO, zmiany są scalane do `main`, a gałąź robocza jest natychmiast usuwana (`git branch -d`). Nie pozostawiamy starych gałęzi roboczych.
+9. **Śledzenie postępu i ciągłość kontekstu (Checkpoints):** Każda faza musi być szczegółowo rozpisana na mikro-kroki z checkboxami (`[ ]` / `[x]`). Agent po zrealizowaniu każdego kroku aktualizuje ten dokument na bieżąco i commituje zmianę. Dzięki temu przy zmianie agenta, wyczerpaniu okna kontekstowego czy wznowieniu prac, kolejny agent natychmiast podejmuje zadanie od ostatniego checkpointu bez domysłów.
 
 ---
 
