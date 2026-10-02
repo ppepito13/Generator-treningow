@@ -27,23 +27,21 @@ Poniższe kroki muszą być wykonywane **sekwencyjnie**. Agent realizujący zada
 ### Faza 1: Fundamenty, Czystość i Tooling (Branch: `chore/setup-tooling`)
 Cel: Przygotowanie siatki bezpieczeństwa. Zatrzymanie złego kodu przed opuszczeniem komputera.
 
-- [ ] **1.1 Bezpieczne usunięcie martwego kodu (Genkit):** 
+- [x] **1.1 Bezpieczne usunięcie martwego kodu (Genkit):** 
   - Usunięcie zależności `@genkit-ai/google-genai`, `genkit` z `package.json`.
   - Usunięcie martwych skryptów NPM (`genkit:dev`).
-  - *Zabezpieczenie: Zmiana robiona na branchu, odwracalna w 1 sekundę.*
-- [ ] **1.2 Konfiguracja Lintera (ESLint):**
-  - Utworzenie jawnego pliku `eslint.config.mjs` lub `.eslintrc.json`.
-  - Uruchomienie `npm run lint` i zmapowanie ewentualnych ostrzeżeń.
-- [ ] **1.3 Instalacja środowiska Testowego (Vitest):**
-  - Komenda: `npm i -D vitest @vitejs/plugin-react jsdom`
-  - Utworzenie `vitest.config.ts` (z obsługą aliasów Next.js `@/*`).
-  - Stworzenie pierwszego, prostego testu sprawdzającego środowisko (`src/tests/sanity.test.ts`).
-- [ ] **1.4 Lokalne blokady (Husky & Lint-staged):**
-  - Komenda: `npx husky init` oraz `npm i -D lint-staged`
-  - Konfiguracja hooka pre-commit: musi pomyślnie przejść `tsc --noEmit` oraz testy.
-- [ ] **1.5 CI/CD & Firebase Preview (GitHub Actions):**
-  - Wygenerowanie workflow przez `firebase init hosting:github` (wymaga interakcji usera).
-  - Skonfigurowanie pliku YAML, aby przed deployem uruchamiał Quality Gates.
+  - *Zrealizowano: usunięto ~500 zbędnych pakietów.*
+- [x] **1.2 Konfiguracja Lintera (ESLint):**
+  - Utworzenie `.eslintrc.json` z regułami dopasowanymi do Next.js 15.
+  - Zweryfikowano `npm run lint` – brak błędów blokujących.
+- [x] **1.3 Instalacja środowiska Testowego (Vitest):**
+  - Zainstalowano `vitest`, `@vitejs/plugin-react`, `vite-tsconfig-paths`.
+  - Utworzono `vitest.config.ts` oraz sanity test `src/tests/sanity.test.ts`.
+  - Zweryfikowano `npm run test` – testy przechodzą na zielono.
+- [x] **1.4 Lokalne blokady (Husky & Lint-staged):**
+  - Zainstalowano `husky` i `lint-staged`, skonfigurowano hook pre-commit.
+- [x] **1.5 CI/CD & Firebase Preview (GitHub Actions):**
+  - Wygenerowano `.github/workflows/ci.yml`, `firebase-hosting-pull-request.yml` i `firebase-hosting-merge.yml`.
 
 ### Faza 2: Dług Technologiczny i Ochrona Danych (Branch: `fix/tech-debt-and-data`)
 Cel: Aplikacja musi kompilować się bez maskowania błędów, a dane użytkowników muszą być bezpieczne.
