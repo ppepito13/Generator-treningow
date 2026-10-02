@@ -1,0 +1,29 @@
+name: CI Quality Gates
+
+on:
+  push:
+    branches: [ main, "chore/**", "feat/**", "fix/**" ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout kodu
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalacja zależności
+        run: npm ci
+
+      - name: Weryfikacja Linterem
+        run: npm run lint
+
+      - name: Testy jednostkowe Vitest
+        run: npm run test
