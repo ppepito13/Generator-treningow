@@ -65,3 +65,8 @@ android/app/build/
 android/app/src/main/assets/public/
 android/app/src/main/assets/capsync.json
 Generator-treningow.code-workspace
+
+# OpenSpec local cache & temporary worksets
+openspec/.worksets/
+openspec/.cache/
+

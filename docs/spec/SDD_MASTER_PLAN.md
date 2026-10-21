@@ -1,24 +1,25 @@
 # Spec-Driven Development (SDD) – Master Plan & Playbook
 
-**Wersja:** 4.0 (Actionable & Zero-Regression)  
-**Data:** 2026-10-02  
-**Kontekst:** Przejście z kodu wygenerowanego (vibe-coding) do pełnoprawnego, stabilnego środowiska Inżynierii Oprogramowania z wykorzystaniem agentów AI.
-**Status:** Aktywne (Single Source of Truth)
+**Wersja:** 5.0 (OpenSpec Engine & Zero-Regression)  
+**Data:** 2026-10-21  
+**Silnik SDD:** Oficjalny framework **OpenSpec (OPSX)** z interaktywnym Dashboardem (`npm run spec:view` / `openspec view`).  
+**Status:** Aktywne (Single Source of Truth zarządza `openspec/`)
 
 ---
 
-## 🏗 Architektura Pracy (Workflow)
+## 🏗 Architektura Pracy (Workflow z OpenSpec)
 
-Przyjmujemy nowoczesny **GitHub Flow** zoptymalizowany pod pracę 1 Developer + Agenci AI:
+Przyjmujemy nowoczesny **GitHub Flow + OpenSpec OPSX** zoptymalizowany pod pracę 1 Developer + Agenci AI:
 1. **`main` to produkcja:** Zmiany na gałęzi `main` automatycznie publikują się na produkcję (Firebase Hosting).
-2. **Feature Branches:** Każda nowa funkcja, naprawa lub faza z tego planu powstaje na osobnej gałęzi (np. `feat/setup-vitest`).
-3. **Pull Requests (PR):** Po zakończeniu zadania tworzymy PR.
-4. **Automatyzacja CI (Quality Gates):** Otwarcie PR uruchamia GitHub Actions: sprawdza TS, linter i odpala testy Vitest.
-5. **Firebase Preview Channels:** Jeśli CI przejdzie pomyślnie, Firebase automatycznie wygeneruje tymczasowy link (Preview URL). Product Owner wchodzi, klika, upewnia się, że działa, i akceptuje PR.
-6. **Rollback:** Git pamięta wszystko. Usunięcie jakiegokolwiek kodu jest w 100% odwracalne poleceniem `git revert` lub powrotem do starego commitu.
-7. **User Activities:** Jeśli wymagane są jakieś aktywności po stronie człowieka (product ownera), to zostaną one jasno określone w dokumentacji i agentom AI będzie przygotowywał instrukcję krok po kroku jak wykonać daną czynność (np. wygenerowanie secretu, skonfigurowanie github actions).
-8. **Cykl życia gałęzi i czyszczenie (Branch Lifecycle):** Każda faza lub funkcja powstaje na dedykowanym branchu. Po zakończeniu fazy i zatwierdzeniu przez PO, zmiany są scalane do `main`, a gałąź robocza jest natychmiast usuwana (`git branch -d`). Nie pozostawiamy starych gałęzi roboczych.
-9. **Śledzenie postępu i ciągłość kontekstu (Checkpoints):** Każda faza musi być szczegółowo rozpisana na mikro-kroki z checkboxami (`[ ]` / `[x]`). Agent po zrealizowaniu każdego kroku aktualizuje ten dokument na bieżąco i commituje zmianę. Dzięki temu przy zmianie agenta, wyczerpaniu okna kontekstowego czy wznowieniu prac, kolejny agent natychmiast podejmuje zadanie od ostatniego checkpointu bez domysłów.
+2. **OpenSpec Dashboard:** Interaktywna konsola `npm run spec:view` (`openspec view`) dostępna w przeglądarce podglądu specyfikacji i zadań.
+3. **Standaryzowane Zmiany (Changes):** Każda faza/funkcja to pakiet w `openspec/changes/<change-name>/` (`proposal.md`, `specs/`, `design.md`, `tasks.md`).
+4. **Feature Branches:** Każda zmiana OpenSpec realizowana jest na dedykowanej gałęzi (np. `fix/tech-debt-and-data`).
+5. **Quality Gates & CI:** Push i PR uruchamiają weryfikację GitHub Actions (`npm run verify`: typecheck, linter, testy Vitest).
+6. **Firebase Preview Channels:** Po pomyślnym CI Firebase generuje tymczasowy link Preview URL do testów na urządzeniu.
+7. **Archiwizacja (`openspec archive`):** Po zatwierdzeniu przez PO zmiana jest scalana do głównej bazy `openspec/specs/`, a gałąź do `main`.
+8. **Język dokumentacji i kodu:**
+   - Specyfikacje, proposals, dialogi z użytkownikiem, opisy ćwiczeń i UI: **język polski (`pl`)**.
+   - Kod źródłowy aplikacji, TypeScript, nazwy zmiennych, funkcji i komentarze w kodzie: **język angielski (`en`)**.
 
 ---
 
