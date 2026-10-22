@@ -1,24 +1,34 @@
 # Tasks
 
-## 1. Naprawa błędów TypeScript
+## 1. Fix TypeScript Errors
 
-- [ ] 1.1 Popraw typowanie w `src/components/EquipmentStudioSubView.tsx` (jawny typ `EquipmentItem[]`) i zweryfikuj brak błędu TS2339
-- [ ] 1.2 Zaktualizuj komponent nawigacji w `src/components/ui/calendar.tsx` pod API `react-day-picker` v9 (`Chevron`)
-- [ ] 1.3 Popraw typowanie w `vitest.config.ts` i zweryfikuj czysty wynik poleceniem `npm run typecheck` (`tsc --noEmit` -> 0 błędów)
+- [ ] 1.1 Fix `EquipmentStudioSubView.tsx` (lines 404, 406): annotate the `useMemo` fallback return as `EquipmentItem[]` (add `opis: undefined` to the fallback object or use explicit return type annotation). Verify fix with `npm run typecheck` — TS2339 gone.
+- [ ] 1.2 Fix `calendar.tsx` for react-day-picker v9 API: replace `IconLeft`/`IconRight` components with `Chevron` using `props.orientation` check; add explicit parameter types to fix TS7031. Verify fix with `npm run typecheck` — TS2353 and TS7031 gone.
+- [ ] 1.3 Fix `vitest.config.ts` (line 6): add `// @ts-ignore` above the `plugins` line to suppress TS2769 (version conflict between project `vite` using rolldown and vitest's bundled vite — not a code error). Verify fix with `npm run typecheck` — TS2769 gone.
 
-## 2. Odmaskowanie kompilacji produkcyjnej
+## 2. Zustand Persist Migration (localStorage Protection)
 
-- [ ] 2.1 Usuń flagi `ignoreBuildErrors: true` oraz `ignoreDuringBuilds: true` z pliku `next.config.ts`
-- [ ] 2.2 Uruchom `npm run build` i zweryfikuj, czy pełny build produkcyjny przechodzi bez flag maskujących
+- [ ] 2.1 Write unit test `src/tests/store-migration.test.ts` in Vitest covering:
+  - Safe migration of v0 state (without `version`) to v1 — all user data fields preserved
+  - v0 state that includes a `circuit` array — after migration `circuit` is absent from the result
+  - All 16 `partialize` fields are present in the serialized output
+  - The 6 excluded ephemeral fields are absent from the serialized output
+- [ ] 2.2 Implement in `src/app/lib/store.ts`:
+  - `version: 1` in the `persist` config
+  - `partialize` filter preserving: `customExercises`, `customRooms`, `customEquipment`, `customIntervalPresets`, `timerAudioSettings`, `sharedUserProfile`, `calculatorResults`, `selectedRoomId`, `participants`, `stationCount`, `difficultyId`, `isStrictDifficulty`, `customRoomMode`, `customRoomCategory`, `customRoomEquipment`, `activeTab`
+  - `migrate` function: handles `version === 0 || version === undefined`, carries over all user data fields, explicitly removes `circuit` if present
+- [ ] 2.3 Run `npm run test` and verify all unit tests pass
 
-## 3. Zustand Persist Migration (Zabezpieczenie localStorage)
+## 3. Unmask Production Build
 
-- [ ] 3.1 Napisz test jednostkowy `src/tests/store-migration.test.ts` w Vitest weryfikujący bezpieczną migrację stanu v0 do v1
-- [ ] 3.2 Zaimplementuj w `src/app/lib/store.ts` konfigurację `version: 1`, funkcję `migrate()` oraz filtr `partialize`
-- [ ] 3.3 Uruchom `npm run test` i zweryfikuj, że wszystkie testy jednostkowe przechodzą na zielono
-- [ ] 3.4 Dodaj w interfejsie użytkownika dyskretny monit o możliwości wyeksportowania własnej bazy danych przed aktualizacją
+- [ ] 3.1 Remove flags `ignoreBuildErrors: true` and `ignoreDuringBuilds: true` from `next.config.ts`
+- [ ] 3.2 Run `npm run build` and verify the full production build passes with no masking flags
+
+## 4. UI backup prompt (optional, low-priority)
+
+- [ ] 4.1 Add a discrete UI prompt informing the user of the option to export their database before an update (export button already exists — add a contextual notice, e.g. on the Settings tab)
 
 ## Workflow follow-up
 
-- Zarchiwizuj zmianę poleceniem `openspec archive phase-2-tech-debt-and-data`.
-- Scal gałąź do `main` i usuń gałąź roboczą.
+- Archive the change with `openspec archive phase-2-tech-debt-and-data`.
+- Merge branch to `main` and delete the working branch.
