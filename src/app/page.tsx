@@ -13,7 +13,7 @@ import { CalculatorsView } from '@/components/CalculatorsView';
 import { GlobalIntervalTimerController } from '@/components/GlobalIntervalTimerController';
 
 export default function Home() {
-  const { activeTab, activeView, popView, generationConflict, resolveConflict } = useAppStore();
+  const { activeTab, activeView: _activeView, popView: _popView, generationConflict, resolveConflict } = useAppStore();
   const [hydrated, setHydrated] = useState(false);
 
   // Oczekujemy na tzw. "Hydratację" (Hydration) komponentu na kliencie.
@@ -32,7 +32,7 @@ export default function Home() {
 
   // Obsługa sprzętowego przycisku "Wstecz" (Capacitor)
   useEffect(() => {
-    let backListener: any;
+    let backListener: { remove: () => void } | undefined;
 
     const setupBackButton = async () => {
       try {
@@ -54,7 +54,7 @@ export default function Home() {
           // 3. Jeśli jesteśmy na HOME - pozwól aplikacji się zamknąć (domyślna akcja Capacitor)
           App.exitApp();
         });
-      } catch (e) {
+      } catch {
         // Ignoruj błędy w przeglądarce (brak pluginu App)
       }
     };

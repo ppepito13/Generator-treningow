@@ -4,8 +4,7 @@ import React, { useState } from 'react';
 import { StopwatchSubView } from './StopwatchSubView';
 import { CountdownSubView } from './CountdownSubView';
 import { IntervalTimerSubView } from './IntervalTimerSubView';
-import { Timer, Hourglass, Repeat, Sparkles } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Timer, Hourglass, Repeat } from 'lucide-react';
 
 export const TimerView = () => {
   const [activeSubTab, setActiveSubTab] = useState<'stopwatch' | 'countdown' | 'interval'>('interval');

@@ -14,11 +14,12 @@ export const MathCalculatorSubView = () => {
   const [isNewNumber, setIsNewNumber] = useState<boolean>(true);
 
   useEffect(() => {
-    if (calculatorResults?.math) {
-      setDisplay(calculatorResults.math.display || '0');
-      setEquation(calculatorResults.math.equation || '');
+    const math = calculatorResults?.math as { display?: string; equation?: string } | undefined;
+    if (math) {
+      setDisplay(math.display || '0');
+      setEquation(math.equation || '');
     }
-  }, []);
+  }, [calculatorResults?.math]);
 
   const saveMathState = (newDisplay: string, newEq: string) => {
     setCalculatorResult('math', { display: newDisplay, equation: newEq });
@@ -97,7 +98,7 @@ export const MathCalculatorSubView = () => {
       setDisplay(resStr);
       setIsNewNumber(true);
       saveMathState(resStr, `${fullExpr} =`);
-    } catch (err) {
+    } catch {
       setDisplay('Błąd');
       setIsNewNumber(true);
     }

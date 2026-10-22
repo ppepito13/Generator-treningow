@@ -27,7 +27,10 @@ export const ExerciseManualSelector = ({ open, onOpenChange, onSelect }: Props) 
   const customExercises = useAppStore((state) => state.customExercises);
   const getAllExercises = useAppStore((state) => state.getAllExercises);
 
-  const allExercises = useMemo(() => getAllExercises(), [customExercises, getAllExercises]);
+  const allExercises = useMemo(() => {
+    void customExercises;
+    return getAllExercises();
+  }, [customExercises, getAllExercises]);
 
   const filteredExercises = useMemo(() => {
     if (!search.trim()) return allExercises;

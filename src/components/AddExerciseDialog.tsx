@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SEGMENTS, Exercise, normalizeExerciseKey } from "@/app/lib/data";
 import { useAppStore } from "@/app/lib/store";
-import { Dumbbell, Plus, Users, User, ChevronDown, ChevronUp, Sparkles, Check, Pencil, Edit3, Key } from "lucide-react";
+import { Plus, Users, User, ChevronDown, ChevronUp, Sparkles, Check, Edit3, Key } from "lucide-react";
 
 interface Props {
   open: boolean;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { IntervalPreset, StepColor, STEP_COLOR_MAP, TimerAudioSettings } from '@/types/timer';
 import { useTimerAudioTTS, useWakeLock } from '@/app/lib/useTimerAudioTTS';
 import { Play, Pause, SkipForward, SkipBack, X, Minimize2, CheckCircle2 } from 'lucide-react';
@@ -34,6 +34,7 @@ interface GymViewModalProps {
   onTogglePlayPause?: () => void;
   onNextStep?: () => void;
   onPrevStep?: () => void;
+  onRestart?: () => void;
 }
 
 export const GymViewModal: React.FC<GymViewModalProps> = ({
@@ -114,7 +115,13 @@ export const GymViewModal: React.FC<GymViewModalProps> = ({
   const [internalIsRunning, setInternalIsRunning] = useState(false);
   const [internalIsFinished, setInternalIsFinished] = useState(false);
 
-  const timerRef = useRef<any>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Stabilna referencja do ustawień audio (chroni przed restartami pętli setInterval przy zmianie głośności)
+  const audioSettingsRef = useRef(audioSettings);
+  useEffect(() => {
+    audioSettingsRef.current = audioSettings;
+  });
 
   const currentIndex = externalState ? externalState.currentIndex : internalIndex;
   const remainingSec = externalState ? externalState.remainingSec : internalRemainingSec;
@@ -125,6 +132,33 @@ export const GymViewModal: React.FC<GymViewModalProps> = ({
 
   const currentItem = queue[currentIndex] || queue[0];
   const colorTheme = STEP_COLOR_MAP[currentItem?.color || 'green'];
+
+  const announceStepStart = useCallback((item: FlattenedQueueItem) => {
+    const settings = audioSettingsRef.current;
+    if (!settings.soundEnabled && !settings.ttsEnabled) return;
+
+    if (settings.soundEnabled) {
+      if (item.color === 'green') {
+        playWorkStartGong(settings.volume);
+      } else {
+        playRestStartGong(settings.volume);
+      }
+    }
+
+    if (settings.ttsEnabled) {
+      let speechText = '';
+      if (settings.ttsOption === 'stepName') {
+        speechText = item.stepName;
+      } else if (settings.ttsOption === 'blockName') {
+        speechText = item.blockName;
+      } else if (settings.ttsOption === 'both') {
+        speechText = `${item.blockName}, ${item.stepName}`;
+      }
+      if (speechText) {
+        setTimeout(() => speakText(speechText, settings.volume), 300);
+      }
+    }
+  }, [playWorkStartGong, playRestStartGong, speakText]);
 
   useEffect(() => {
     if (!externalState) {
@@ -141,38 +175,13 @@ export const GymViewModal: React.FC<GymViewModalProps> = ({
         if (timerRef.current) clearInterval(timerRef.current);
       }
     }
-  }, [isOpen, queue, externalState]);
-
-  const announceStepStart = (item: FlattenedQueueItem) => {
-    if (!audioSettings.soundEnabled && !audioSettings.ttsEnabled) return;
-
-    if (audioSettings.soundEnabled) {
-      if (item.color === 'green') {
-        playWorkStartGong(audioSettings.volume);
-      } else {
-        playRestStartGong(audioSettings.volume);
-      }
-    }
-
-    if (audioSettings.ttsEnabled) {
-      let speechText = '';
-      if (audioSettings.ttsOption === 'stepName') {
-        speechText = item.stepName;
-      } else if (audioSettings.ttsOption === 'blockName') {
-        speechText = item.blockName;
-      } else if (audioSettings.ttsOption === 'both') {
-        speechText = `${item.blockName}, ${item.stepName}`;
-      }
-      if (speechText) {
-        setTimeout(() => speakText(speechText, audioSettings.volume), 300);
-      }
-    }
-  };
+  }, [isOpen, queue, externalState, announceStepStart]);
 
   useEffect(() => {
     if (!externalState && isRunning && !isFinished) {
       timerRef.current = setInterval(() => {
         setInternalRemainingSec((prev) => {
+          const settings = audioSettingsRef.current;
           if (prev <= 1) {
             if (currentIndex < queue.length - 1) {
               const nextIdx = currentIndex + 1;
@@ -181,11 +190,11 @@ export const GymViewModal: React.FC<GymViewModalProps> = ({
               announceStepStart(nextItem);
               return nextItem.durationSeconds;
             } else {
-              clearInterval(timerRef.current);
+              if (timerRef.current) clearInterval(timerRef.current);
               setInternalIsRunning(false);
               setInternalIsFinished(true);
-              if (audioSettings.soundEnabled) playFinishFanfare(audioSettings.volume);
-              if (audioSettings.ttsEnabled) speakText("Trening zakończony! Dobra robota!", audioSettings.volume);
+              if (settings.soundEnabled) playFinishFanfare(settings.volume);
+              if (settings.ttsEnabled) speakText("Trening zakończony! Dobra robota!", settings.volume);
               return 0;
             }
           }
@@ -193,12 +202,12 @@ export const GymViewModal: React.FC<GymViewModalProps> = ({
           const nextSec = prev - 1;
 
           if (nextSec <= 5 && nextSec >= 1) {
-            if (audioSettings.ttsCountdownOption === 'voice' || audioSettings.ttsCountdownOption === 'both') {
+            if (settings.ttsCountdownOption === 'voice' || settings.ttsCountdownOption === 'both') {
               const words: Record<number, string> = { 5: 'Pięć', 4: 'Cztery', 3: 'Trzy', 2: 'Dwa', 1: 'Jeden' };
-              if (audioSettings.ttsEnabled) speakText(words[nextSec] || `${nextSec}`, audioSettings.volume);
+              if (settings.ttsEnabled) speakText(words[nextSec] || `${nextSec}`, settings.volume);
             }
-            if (audioSettings.soundEnabled && (audioSettings.ttsCountdownOption === 'beeps' || audioSettings.ttsCountdownOption === 'both')) {
-              playBeep(880, 100, audioSettings.volume);
+            if (settings.soundEnabled && (settings.ttsCountdownOption === 'beeps' || settings.ttsCountdownOption === 'both')) {
+              playBeep(880, 100, settings.volume);
             }
           }
 
@@ -212,7 +221,7 @@ export const GymViewModal: React.FC<GymViewModalProps> = ({
     return () => {
       if (!externalState && timerRef.current) clearInterval(timerRef.current);
     };
-  }, [externalState, isRunning, currentIndex, isFinished, queue, audioSettings]);
+  }, [externalState, isRunning, currentIndex, isFinished, queue, announceStepStart, playBeep, playFinishFanfare, speakText]);
 
   const handleNextStep = () => {
     if (onNextStep) {

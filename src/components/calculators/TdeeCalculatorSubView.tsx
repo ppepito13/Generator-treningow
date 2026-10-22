@@ -2,9 +2,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { useAppStore } from '@/app/lib/store';
-import { TdeeResult, TdeeMode, PAL_OPTIONS, VALIDATION_LIMITS, getTdeeCommentary } from '@/types/calculators';
-import { Activity, HelpCircle, AlertTriangle, Zap, TrendingDown, MinusCircle, TrendingUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { TdeeResult, TdeeMode, PAL_OPTIONS, getTdeeCommentary } from '@/types/calculators';
+import { Activity, HelpCircle, TrendingDown, MinusCircle, TrendingUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';

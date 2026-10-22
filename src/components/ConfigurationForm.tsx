@@ -6,7 +6,7 @@ import { useAppStore } from '@/app/lib/store';
 import { DIFFICULTY_LEVELS, ALL_ROOMS, KATEGORIE_TRENINGOW, ALL_EXERCISES } from '@/app/lib/data';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Plus, Minus, Zap, Trophy, LayoutGrid, ShieldAlert, ShieldCheck, MapPin, Settings2, Dumbbell, History } from 'lucide-react';
+import { Zap, Trophy, LayoutGrid, ShieldAlert, ShieldCheck, MapPin, Settings2, History } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -30,18 +30,17 @@ export const ConfigurationForm = () => {
     setCustomRoomMode,
     customRoomCategory,
     setCustomRoomCategory,
-    customRoomEquipment,
+    customRoomEquipment: _customRoomEquipment,
     resetCustomRoom
   } = useAppStore();
 
   const getAllRooms = useAppStore(state => state.getAllRooms);
   const getEffectiveRoomConfig = useAppStore(state => state.getEffectiveRoomConfig);
-  const customRooms = useAppStore(state => state.customRooms);
-  const allRooms = useMemo(() => (getAllRooms ? getAllRooms() : ALL_ROOMS), [getAllRooms, customRooms]);
+  const allRooms = useMemo(() => (getAllRooms ? getAllRooms() : ALL_ROOMS), [getAllRooms]);
 
   const currentRoom = useMemo(
     () => (getEffectiveRoomConfig ? getEffectiveRoomConfig() : (allRooms.find(r => r.id_sali === selectedRoomId) || allRooms[0])),
-    [getEffectiveRoomConfig, selectedRoomId, allRooms, customRooms]
+    [getEffectiveRoomConfig, selectedRoomId, allRooms]
   );
   const currentDiff = DIFFICULTY_LEVELS.find(d => d.id === difficultyId);
 

@@ -5,7 +5,7 @@ import React, { useMemo, useCallback } from 'react';
 import { useAppStore } from '@/app/lib/store';
 import { StationCard } from './StationCard';
 import { Button } from '@/components/ui/button';
-import { Share2, ClipboardList, Copy, Check, Send, X } from 'lucide-react';
+import { Share2, Copy, Check, Send, X } from 'lucide-react';
 import { DIFFICULTY_LEVELS } from '@/app/lib/data';
 import { Share } from '@capacitor/share';
 import {
@@ -21,8 +21,6 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
-  useSensor,
-  useSensors,
   DragEndEvent,
 } from '@dnd-kit/core';
 import {
@@ -102,7 +100,7 @@ export const CircuitList = () => {
           text: text,
           dialogTitle: 'Prześlij trening ekipie',
         });
-      } catch (err) {
+      } catch {
         handleCopy();
       }
     } else if (typeof navigator !== 'undefined' && navigator.share) {

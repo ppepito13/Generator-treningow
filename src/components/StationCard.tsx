@@ -2,11 +2,11 @@
 "use client";
 
 import React, { useState, useMemo, memo } from 'react';
-import { Station, Exercise, SEGMENTS, getDifficultyById, ALL_ROOMS } from '@/app/lib/data';
+import { Station, Exercise, SEGMENTS, getDifficultyById } from '@/app/lib/data';
 import { useAppStore, getValidExercisesForZone } from '@/app/lib/store';
 import { ExerciseManualSelector } from './ExerciseManualSelector';
 import { ExerciseDetailDialog } from './ExerciseDetailDialog';
-import { RefreshCw, MoreVertical, MapPin, Dumbbell, Info, Users, User, Check, Trophy, Activity, Settings2, AlertTriangle, GripVertical, Search, ChevronDown, Plus } from 'lucide-react';
+import { RefreshCw, MoreVertical, MapPin, Dumbbell, Info, Users, User, Check, Settings2, AlertTriangle, GripVertical, Search, ChevronDown, Plus } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
@@ -18,18 +18,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuPortal,
-} from "@/components/ui/dropdown-menu";
+
 
 interface Props {
   station: Station;
@@ -53,7 +42,10 @@ export const StationCard = memo(({ station }: Props) => {
   const [customTrybPracy, setCustomTrybPracy] = useState<'Solo' | 'W_Parze'>('Solo');
   const [infoExercise, setInfoExercise] = useState<Exercise | null>(null);
 
-  const currentRoom = useMemo(() => getEffectiveRoomConfig(), [getEffectiveRoomConfig, selectedRoomId]);
+  const currentRoom = useMemo(() => {
+    void selectedRoomId;
+    return getEffectiveRoomConfig();
+  }, [getEffectiveRoomConfig, selectedRoomId]);
   const isSynchronized = useMemo(() => currentRoom.tryb_treningu === 'synchroniczny', [currentRoom.tryb_treningu]);
   const currentDiff = useMemo(() => getDifficultyById(difficultyId), [difficultyId]);
   const isPairMode = participants > circuit.length;
@@ -117,12 +109,7 @@ export const StationCard = memo(({ station }: Props) => {
     }).join(' + ');
   };
 
-  const getMusclesDisplay = (ex: Exercise) => {
-    if (Array.isArray(ex.zaangazowane_miesnie)) {
-      return ex.zaangazowane_miesnie.join(", ");
-    }
-    return ex.zaangazowane_miesnie || "Praca ogólna";
-  };
+
 
   const availableSegmentsA = useMemo(() => SEGMENTS.filter(seg => {
     const levelRange = { min: currentDiff.min_poziom, max: currentDiff.max_poziom };
@@ -403,3 +390,5 @@ export const StationCard = memo(({ station }: Props) => {
     </div>
   );
 });
+
+StationCard.displayName = 'StationCard';

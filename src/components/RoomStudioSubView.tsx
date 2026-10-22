@@ -16,13 +16,9 @@ import {
   LayoutGrid,
   Dumbbell,
   Info,
-  Layers,
   AlertCircle,
   X,
-  SlidersHorizontal,
-  Pencil,
-  RotateCcw,
-  ShieldAlert
+  Pencil
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -59,6 +55,7 @@ export const RoomStudioSubView = () => {
   const [selectedRoomInfo, setSelectedRoomInfo] = useState<RoomConfig | null>(null);
 
   const allRooms = useMemo(() => {
+    void customRooms;
     const raw = typeof getAllRooms === 'function' ? getAllRooms() : ALL_ROOMS;
     return raw.filter((r) => r.id_sali !== 'custom');
   }, [customRooms, getAllRooms]);

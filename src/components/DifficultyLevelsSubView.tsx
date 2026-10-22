@@ -1,8 +1,8 @@
 "use client";
 
 import React from 'react';
-import { DIFFICULTY_LEVELS, DifficultyLevel } from '@/app/lib/data';
-import { BarChart3, Activity, Dumbbell, Cpu, Info, ShieldCheck, Flame, Zap, Layers } from 'lucide-react';
+import { DIFFICULTY_LEVELS } from '@/app/lib/data';
+import { BarChart3, Activity, Dumbbell, Cpu, ShieldCheck, Flame, Zap, Layers } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export const DifficultyLevelsSubView = () => {

@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAppStore } from "@/app/lib/store";
 import { ALL_EQUIPMENT } from "@/app/lib/data";
-import { Dumbbell, CheckSquare, Square, Eraser } from "lucide-react";
+import { Dumbbell, CheckSquare, Eraser } from "lucide-react";
 
 export const EquipmentSelectionDialog = () => {
   const { customRoomEquipment, toggleCustomEquipment, setAllCustomEquipment } = useAppStore();

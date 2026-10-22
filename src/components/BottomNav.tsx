@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useAppStore } from '@/app/lib/store';
+import type { TabType } from '@/app/lib/store';
 import { Wand2, ClipboardCheck, Timer, Calculator, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -66,7 +67,7 @@ export const BottomNav = () => {
             return (
               <button
                 key={tab.id}
-                onClick={() => !tab.disabled && setActiveTab(tab.id as any)}
+                onClick={() => !tab.disabled && setActiveTab(tab.id as TabType)}
                 disabled={tab.disabled}
                 className={cn(
                   "relative flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-200",

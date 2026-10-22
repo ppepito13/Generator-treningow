@@ -50,6 +50,7 @@ export const EquipmentStudioSubView = () => {
   const [editingEquipment, setEditingEquipment] = useState<EquipmentItem | null>(null);
 
   const allEquipment = useMemo<EquipmentItem[]>(() => {
+    void customEquipment;
     if (typeof getAllEquipmentItems === 'function') {
       return getAllEquipmentItems();
     }

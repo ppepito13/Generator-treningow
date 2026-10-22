@@ -5,14 +5,13 @@ import { useAppStore } from '@/app/lib/store';
 import {
   IntervalPreset,
   IntervalBlock,
-  IntervalStep,
   StepColor,
   STEP_COLOR_MAP,
   BUILTIN_INTERVAL_PRESETS,
   TTSReadoutOption,
   TTSCountdownOption,
 } from '@/types/timer';
-import { GymViewModal, FlattenedQueueItem } from './GymViewModal';
+import { FlattenedQueueItem } from './GymViewModal';
 import { useTimerAudioTTS } from '@/app/lib/useTimerAudioTTS';
 import {
   Play,
@@ -22,16 +21,10 @@ import {
   ArrowUp,
   ArrowDown,
   Volume2,
-  Mic,
   Settings,
-  Sparkles,
-  Zap,
   Repeat,
-  Sliders,
-  Check,
   Layers,
   Save,
-  PlusCircle,
   FilePlus,
   ShieldCheck,
   UserCheck

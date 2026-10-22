@@ -18,22 +18,18 @@ import {
   Trophy,
   Users,
   User,
-  Sparkles,
   Info,
   Building2,
   BarChart3,
   Dumbbell,
-  Layers,
   AlertCircle,
-  FileJson,
   X,
   Filter,
   RotateCcw,
   SlidersHorizontal,
   ChevronDown,
   ChevronUp,
-  Pencil,
-  Edit3
+  Pencil
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -68,6 +64,7 @@ export const ExerciseStudioView = () => {
   const getAllRooms = useAppStore((state) => state.getAllRooms);
 
   const roomCount = useMemo(() => {
+    void customRooms;
     const raw = getAllRooms ? getAllRooms() : ALL_ROOMS;
     return raw.filter((r) => r.id_sali !== 'custom').length;
   }, [customRooms, getAllRooms]);
@@ -76,6 +73,7 @@ export const ExerciseStudioView = () => {
   const getAllEquipmentItems = useAppStore((state) => state.getAllEquipmentItems);
 
   const equipmentCount = useMemo(() => {
+    void customEquipment;
     const raw = getAllEquipmentItems ? getAllEquipmentItems() : ALL_EQUIPMENT.map(k => ({ id: k, nazwa: k }));
     return raw.length;
   }, [customEquipment, getAllEquipmentItems]);
@@ -98,7 +96,10 @@ export const ExerciseStudioView = () => {
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [selectedExerciseInfo, setSelectedExerciseInfo] = useState<Exercise | null>(null);
 
-  const allExercises = useMemo(() => getAllExercises(), [customExercises, getAllExercises]);
+  const allExercises = useMemo(() => {
+    void customExercises;
+    return getAllExercises();
+  }, [customExercises, getAllExercises]);
 
   // Lista unikalnego sprzętu z całej bazy posortowana po sformatowanych nazwach po polsku
   const availableEquipmentList = useMemo(() => {
@@ -509,7 +510,7 @@ export const ExerciseStudioView = () => {
                 <label className="text-[10px] font-bold text-white/50 uppercase">Tryb wykonania</label>
                 <select
                   value={filterTrybPracy}
-                  onChange={(e) => setFilterTrybPracy(e.target.value as any)}
+                  onChange={(e) => setFilterTrybPracy(e.target.value as 'all' | 'Solo' | 'W_Parze')}
                   className={`w-full bg-white/5 border rounded-xl h-10 px-3 text-xs font-bold text-white focus:outline-none focus:border-cyan-500 ${
                     filterTrybPracy !== 'all' ? 'border-cyan-500/50 bg-cyan-500/10 text-cyan-300' : 'border-white/10'
                   }`}

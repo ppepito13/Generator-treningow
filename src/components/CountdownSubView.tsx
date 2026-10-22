@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTimerAudioTTS } from '@/app/lib/useTimerAudioTTS';
-import { Play, Pause, RotateCcw, Plus, Minus, Hourglass, BellRing, Sparkles } from 'lucide-react';
+import { Play, Pause, RotateCcw, Plus, Hourglass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +19,7 @@ export const CountdownSubView = () => {
   const [remainingSec, setRemainingSec] = useState(300);
   const [isRunning, setIsRunning] = useState(false);
 
-  const timerRef = useRef<any>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Aktualizacja początkowej wartości gdy użytkownik zmienia input (tylko gdy minutnik jest zatrzymany)
   const handleInputChange = (min: number, sec: number) => {
@@ -75,7 +75,7 @@ export const CountdownSubView = () => {
       timerRef.current = setInterval(() => {
         setRemainingSec((prev) => {
           if (prev <= 1) {
-            clearInterval(timerRef.current);
+            if (timerRef.current) clearInterval(timerRef.current);
             setIsRunning(false);
             playFinishFanfare();
             toast({

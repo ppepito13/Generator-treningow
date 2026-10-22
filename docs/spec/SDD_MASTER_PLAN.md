@@ -67,17 +67,23 @@ Cel: Aplikacja musi kompilować się bez maskowania błędów, a dane użytkowni
 ### Faza 2.5: Higiena Kodu i Czyszczenie Ostrzeżeń ESLint (Branch: `chore/lint-cleanup-and-android-compat`)
 Cel: Eliminacja 41 ostrzeżeń ESLint ujawnionych po odmaskowaniu lintera, z bezwzględnym zachowaniem kompatybilności z aplikacją mobilną (Android / Capacitor).
 
-- [ ] **2.5.1 Audyt i czyszczenie nieużywanych importów i zmiennych (Grupa A):**
-  - Usunięcie martwych importów ikon (`lucide-react`) oraz nieużywanych definicji w komponentach Studio, Timer i StationCard.
-  - Weryfikacja: Upewnienie się, że żaden import/kod związany z integracją natywną (np. `@capacitor/app`, obsługa przycisku Wstecz, storage Androida) nie został usunięty.
-- [ ] **2.5.2 Typowanie zdarzeń i eliminacja `any` (Grupa B):**
-  - Zamiana luźnych typów `any` w handlerach i modalach na precyzyjne typy TypeScript.
-- [ ] **2.5.3 Bezpieczny przegląd `react-hooks/exhaustive-deps` (Grupa C - Zegar i Audio):**
-  - Analiza zależności w `GlobalIntervalTimerController.tsx` oraz `GymViewModal.tsx` pod kątem działania timera w tle i odtwarzania dźwięków TTS w środowisku mobilnym (Android WebView).
-  - Poprawa brakujących lub nadmiarowych zależności bez ryzyka nieskończonych re-renderów czy zrywania odliczania na telefonie.
-- [ ] **2.5.4 Weryfikacja końcowa:**
-  - `npm run verify` (typecheck + lint + test) musi zakończyć się wynikiem: 0 błędów, 0 ostrzeżeń.
-  - Sprawdzenie `npx cap sync` i integralności statycznego exportu pod Android Studio.
+- [x] **2.5.1 Czyszczenie martwego kodu i nieużywanych importów (Grupa A):**
+  - Usunięcie nieużywanych importów ikon (`lucide-react`) oraz niepotrzebnych definicji w komponentach Studio, Timer i StationCard.
+  - Dodanie `displayName` w `StationCard.tsx`.
+  - Wyciszenie zmiennej `_circuit` w migracji stanu `store.ts`.
+  - Weryfikacja: nienaruszalność importów `@capacitor/*` oraz obsługi przycisku sprzętowego Wstecz.
+- [x] **2.5.2 Optymalizacja fontów pod tryb Offline w Androidzie:**
+  - Zastąpienie zewnętrznego tagu `<link href="fonts.googleapis.com">` w `src/app/layout.tsx` wbudowanym mechanizmem `next/font/google` (`Inter`).
+  - Likwidacja ostrzeżenia `@next/next/no-page-custom-font` oraz zagwarantowanie dostępności fontu na telefonie w trybie samolotowym/offline.
+- [x] **2.5.3 Bezpieczny refaktoring hooków Timera i Audio (Grupa C):**
+  - Zastosowanie `useCallback` i stabilnych referencji `useRef` dla `timerAudioSettings` w `GlobalIntervalTimerController.tsx` oraz `GymViewModal.tsx`.
+  - Usunięcie ostrzeżeń `react-hooks/exhaustive-deps` bez wprowadzania restartów `setInterval` ani nieskończonych re-renderów w WebView.
+  - Usunięcie nadmiarowych zależności w selektorach `useMemo` w widokach Studio i sal.
+- [x] **2.5.4 Eliminacja typów `any` w komponentach i handlerach:**
+  - Doprecyzowanie typów zdarzeń i obiektów w `GlobalIntervalTimerController`, `GymViewModal`, `ExerciseStudioView` oraz `store.ts`.
+- [x] **2.5.5 Weryfikacja końcowa:**
+  - `npm run verify` (`typecheck` + `lint` + `test`) kończy się wynikiem: **0 błędów i 0 ostrzeżeń (czysty linter)**.
+  - Wykonanie `npm run build` potwierdzające integralność plików i eksportu statycznego `out/` dla Android Studio.
 
 ### Faza 3: Dekompozycja Monolitu (Branch: `refactor/store-decomposition`)
 Cel: Rozbicie pliku `store.ts` (1275 linii) w sposób bezpieczny. Wstrzymujemy się z testami UI, skupiamy się na logice.

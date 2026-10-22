@@ -23,12 +23,21 @@ import { UserProfileData } from '@/types/calculators';
 
 export const MAX_DIFFICULTY_LOOSENING = 1;
 
+export interface GenerationConflictContextData {
+  action?: 'reroll' | 'changeZone';
+  stationId?: string;
+  paramType?: 'A' | 'B';
+  segmentId?: number;
+  newZoneId?: string;
+  [key: string]: unknown;
+}
+
 export interface GenerationConflictState {
   type: 'generate' | 'reroll';
   requestedStations: number;
   availableStations: number;
   canLoosenDifficulty: boolean;
-  contextData?: any;
+  contextData?: GenerationConflictContextData;
 }
 
 export type ViewType = 'HOME' | 'CIRCUIT' | 'BMI' | 'TIMER' | 'SETTINGS';
@@ -53,7 +62,7 @@ interface AppState {
   removeCustomExercise: (id: string) => void;
   clearAllCustomExercises: () => void;
   exportCustomExercises: () => string;
-  importCustomExercises: (importedData: any) => { success: boolean; count: number; error?: string };
+  importCustomExercises: (importedData: unknown) => { success: boolean; count: number; error?: string };
 
   // Zarządzanie Własną i Modyfikowaną Bazą Sal
   customRooms: RoomConfig[];
@@ -62,7 +71,7 @@ interface AppState {
   removeCustomRoom: (id: string) => void;
   clearAllCustomRooms: () => void;
   exportCustomRooms: () => string;
-  importCustomRooms: (importedData: any) => { success: boolean; count: number; error?: string };
+  importCustomRooms: (importedData: unknown) => { success: boolean; count: number; error?: string };
 
   // Zarządzanie Własną i Modyfikowaną Bazą Sprzętu
   customEquipment: EquipmentItem[];
@@ -71,7 +80,7 @@ interface AppState {
   removeCustomEquipment: (id: string) => void;
   clearAllCustomEquipment: () => void;
   exportCustomEquipment: () => string;
-  importCustomEquipment: (importedData: any) => { success: boolean; count: number; error?: string };
+  importCustomEquipment: (importedData: unknown) => { success: boolean; count: number; error?: string };
 
   // Zarządzanie Presety Zegara i Audio
   customIntervalPresets: IntervalPreset[];
@@ -91,8 +100,8 @@ interface AppState {
     isGymViewOpen: boolean;
     isGymViewMinimized: boolean;
   } | null;
-  setActiveIntervalExecution: (exec: any) => void;
-  updateActiveIntervalExecution: (update: any) => void;
+  setActiveIntervalExecution: (exec: AppState['activeIntervalExecution']) => void;
+  updateActiveIntervalExecution: (update: Partial<NonNullable<AppState['activeIntervalExecution']>>) => void;
   minimizeGymView: () => void;
   maximizeGymView: () => void;
   closeActiveIntervalExecution: () => void;
@@ -101,8 +110,8 @@ interface AppState {
   sharedUserProfile: UserProfileData;
   updateSharedProfile: (profile: Partial<UserProfileData>) => void;
   clearSharedProfile: () => void;
-  calculatorResults: Record<string, any>;
-  setCalculatorResult: (calcKey: string, result: any) => void;
+  calculatorResults: Record<string, unknown>;
+  setCalculatorResult: (calcKey: string, result: unknown) => void;
 
   circuit: Station[];
   isGenerated: boolean;
@@ -552,8 +561,9 @@ export const useAppStore = create<AppState>()(
 
           set({ customExercises: Array.from(existingMap.values()) });
           return { success: true, count: importedCount };
-        } catch (e: any) {
-          return { success: false, count: 0, error: e?.message || 'Błąd odczytu pliku JSON.' };
+        } catch (e: unknown) {
+          const message = e instanceof Error ? e.message : 'Błąd odczytu pliku JSON.';
+          return { success: false, count: 0, error: message };
         }
       },
 
@@ -622,15 +632,18 @@ export const useAppStore = create<AppState>()(
 
       importCustomRooms: (importedData) => {
         try {
-          let rooms: RoomConfig[];
+          let rooms: unknown;
           if (typeof importedData === 'string') {
             rooms = JSON.parse(importedData);
           } else {
             rooms = importedData;
           }
 
-          if (rooms && typeof rooms === 'object' && 'sale' in rooms && Array.isArray((rooms as any).sale)) {
-            rooms = (rooms as any).sale;
+          if (rooms && typeof rooms === 'object' && 'sale' in rooms) {
+            const saleField = (rooms as { sale?: unknown }).sale;
+            if (Array.isArray(saleField)) {
+              rooms = saleField;
+            }
           }
 
           if (!Array.isArray(rooms)) {
@@ -641,9 +654,9 @@ export const useAppStore = create<AppState>()(
           (get().customRooms || []).forEach(r => existingMap.set(r.id_sali, r));
 
           let importedCount = 0;
-          rooms.forEach(raw => {
+          (rooms as Partial<RoomConfig>[]).forEach(raw => {
             if (raw.nazwa_sali && raw.id_sali !== 'custom') {
-              const formatted = createDefaultRoom(raw);
+              const formatted = createDefaultRoom({ ...raw, nazwa_sali: raw.nazwa_sali });
               existingMap.set(formatted.id_sali, formatted);
               importedCount++;
             }
@@ -652,8 +665,9 @@ export const useAppStore = create<AppState>()(
           const updated = Array.from(existingMap.values());
           set({ customRooms: updated });
           return { success: true, count: importedCount };
-        } catch (err: any) {
-          return { success: false, count: 0, error: err?.message || "Niepoprawny format pliku JSON." };
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : "Niepoprawny format pliku JSON.";
+          return { success: false, count: 0, error: message };
         }
       },
 
@@ -708,15 +722,16 @@ export const useAppStore = create<AppState>()(
 
       importCustomEquipment: (importedData) => {
         try {
-          let items: any[];
+          let items: unknown[];
           if (typeof importedData === 'string') {
             items = JSON.parse(importedData);
           } else {
-            items = importedData;
+            items = importedData as unknown[];
           }
 
-          if (items && typeof items === 'object' && 'sprzet' in items && Array.isArray((items as any).sprzet)) {
-            items = (items as any).sprzet;
+          const parsed = items as unknown as Record<string, unknown>;
+          if (parsed && typeof parsed === 'object' && 'sprzet' in parsed && Array.isArray(parsed.sprzet)) {
+            items = parsed.sprzet as unknown[];
           }
 
           if (!Array.isArray(items)) {
@@ -727,28 +742,32 @@ export const useAppStore = create<AppState>()(
           (get().customEquipment || []).forEach(e => existingMap.set(e.id, e));
 
           let importedCount = 0;
-          items.forEach(raw => {
+          items.forEach((raw: unknown) => {
             if (typeof raw === 'string' && raw.trim()) {
               const formatted = createDefaultEquipment({ id: raw.trim(), nazwa: formatEquipmentName(raw.trim()) });
               existingMap.set(formatted.id, formatted);
               importedCount++;
-            } else if (raw && typeof raw === 'object' && (raw.nazwa || raw.id)) {
-              const formatted = createDefaultEquipment({
-                id: raw.id,
-                nazwa: raw.nazwa || formatEquipmentName(raw.id || ''),
-                opis: raw.opis,
-                isOverridden: raw.isOverridden
-              });
-              existingMap.set(formatted.id, formatted);
-              importedCount++;
+            } else if (raw && typeof raw === 'object') {
+              const itemObj = raw as { nazwa?: string; id?: string; opis?: string; isOverridden?: boolean };
+              if (itemObj.nazwa || itemObj.id) {
+                const formatted = createDefaultEquipment({
+                  id: itemObj.id,
+                  nazwa: itemObj.nazwa || formatEquipmentName(itemObj.id || ''),
+                  opis: itemObj.opis,
+                  isOverridden: itemObj.isOverridden
+                });
+                existingMap.set(formatted.id, formatted);
+                importedCount++;
+              }
             }
           });
 
           const updated = Array.from(existingMap.values());
           set({ customEquipment: updated });
           return { success: true, count: importedCount };
-        } catch (err: any) {
-          return { success: false, count: 0, error: err?.message || "Niepoprawny format pliku JSON." };
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : "Niepoprawny format pliku JSON.";
+          return { success: false, count: 0, error: message };
         }
       },
 
@@ -912,9 +931,8 @@ export const useAppStore = create<AppState>()(
       resolveConflict: (resolutionData) => {
         const { action } = resolutionData;
         const state = get();
-        const { participants, difficultyId, stationCount, isStrictDifficulty, selectedRoomId } = state;
+        const { participants, difficultyId, stationCount, isStrictDifficulty } = state;
         const mainDiff = getDifficultyById(difficultyId);
-        const currentRoom = get().getEffectiveRoomConfig();
 
         const executeGeneration = (loosen: boolean, ignore: boolean) => {
             const { customRoomCategory, selectedRoomId } = state;
@@ -932,18 +950,26 @@ export const useAppStore = create<AppState>()(
         }
 
         if (state.generationConflict?.type === 'reroll') {
-           const { action: rerollAction, stationId, paramType, segmentId, newZoneId } = state.generationConflict.contextData;
-           set({ generationConflict: null }); // clears state first
+          const { action: rerollAction, stationId, paramType, segmentId, newZoneId } = state.generationConflict.contextData || {};
+          set({ generationConflict: null }); // clears state first
 
-           if (action === 'loosen') {
-             if (rerollAction === 'reroll') get().rerollExercise(stationId, paramType, segmentId, true, false);
-             if (rerollAction === 'changeZone') get().changeStationZone(stationId, newZoneId, true, false);
-           }
-           if (action === 'duplicate') {
-             if (rerollAction === 'reroll') get().rerollExercise(stationId, paramType, segmentId, false, true);
-             if (rerollAction === 'changeZone') get().changeStationZone(stationId, newZoneId, false, true);
-           }
-           return;
+          if (action === 'loosen') {
+            if (rerollAction === 'reroll' && stationId && paramType && segmentId !== undefined) {
+              get().rerollExercise(stationId, paramType, segmentId, true, false);
+            }
+            if (rerollAction === 'changeZone' && stationId && newZoneId) {
+              get().changeStationZone(stationId, newZoneId, true, false);
+            }
+          }
+          if (action === 'duplicate') {
+            if (rerollAction === 'reroll' && stationId && paramType && segmentId !== undefined) {
+              get().rerollExercise(stationId, paramType, segmentId, false, true);
+            }
+            if (rerollAction === 'changeZone' && stationId && newZoneId) {
+              get().changeStationZone(stationId, newZoneId, false, true);
+            }
+          }
+          return;
         }
 
         // Logic for generate
@@ -1295,9 +1321,9 @@ export const partializeStoreState = (state: AppState) => ({
   activeTab: state.activeTab,
 });
 
-export const migrateStoreState = (persistedState: any, version: number) => {
+export const migrateStoreState = (persistedState: unknown, version: number) => {
   if (version === 0 || version === undefined) {
-    const { circuit, ...rest } = persistedState || {};
+    const { circuit: _circuit, ...rest } = (persistedState as Record<string, unknown>) || {};
     return rest;
   }
   return persistedState;

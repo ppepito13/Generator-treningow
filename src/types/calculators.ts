@@ -139,7 +139,7 @@ export function getRfmCommentary(category: RfmCategory, value: number, gender: G
   }
 }
 
-export function getBmrCommentary(value: number, formulaUsed: BmrFormulaType, gender: Gender, bodyFat: number | null): string {
+export function getBmrCommentary(value: number, formulaUsed: BmrFormulaType, gender: Gender, _bodyFat: number | null): string {
   if (formulaUsed === 'katch_mcardle') {
     return `Wzór Katch-McArdle wyliczył Twój spoczynkowy metabolizm BMR na ${value} kcal/dobę na podstawie beztłuszczowej masy ciała (LBM). Ponieważ wzór ten bazuje bezpośrednio na ilości czystej tkanki mięśniowej, daje identyczny, bardzo precyzyjny wynik niezależnie od płci!`;
   }

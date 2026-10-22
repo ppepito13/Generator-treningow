@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { RoomConfig, ALL_EQUIPMENT, createDefaultRoom, Zone } from "@/app/lib/data";
+import { RoomConfig, ALL_EQUIPMENT } from "@/app/lib/data";
 import { useAppStore } from "@/app/lib/store";
 import { formatEquipmentName } from "./ExerciseStudioView";
-import { Building2, Plus, Users, LayoutGrid, Check, Pencil, Edit3, Dumbbell, Sparkles, ChevronDown, ChevronUp, Minus } from "lucide-react";
+import { Plus, Users, LayoutGrid, Check, Edit3, Dumbbell, ChevronDown, ChevronUp, Minus } from "lucide-react";
 
 interface Props {
   open: boolean;

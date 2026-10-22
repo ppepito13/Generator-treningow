@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from 'react';
-import { TimerAudioSettings, TTSReadoutOption, TTSCountdownOption } from '@/types/timer';
 
 export const useTimerAudioTTS = () => {
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -10,7 +9,7 @@ export const useTimerAudioTTS = () => {
   const getAudioContext = useCallback(() => {
     if (typeof window === 'undefined') return null;
     if (!audioCtxRef.current) {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioCtx = window.AudioContext || (window as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
         audioCtxRef.current = new AudioCtx();
       }
@@ -37,7 +36,7 @@ export const useTimerAudioTTS = () => {
         osc.start(0);
         osc.stop(ctx.currentTime + 0.01);
       }
-    } catch (e) {}
+    } catch {}
   }, [getAudioContext]);
 
   // 1. Ciepły, przyjemny dzwonek odliczania 3, 2, 1 (Soft Marimba / Warm Wood Chime)
@@ -64,7 +63,7 @@ export const useTimerAudioTTS = () => {
 
       osc.start(now);
       osc.stop(now + durationMs / 1000);
-    } catch (e) {}
+    } catch {}
   }, [getAudioContext]);
 
   // 2. Sygnał START PRACY (Szlachetny, podwójny dzwonek C6/E6 - 1046Hz & 1318Hz)
@@ -92,7 +91,7 @@ export const useTimerAudioTTS = () => {
         osc.start(now);
         osc.stop(now + 0.5);
       });
-    } catch (e) {}
+    } catch {}
   }, [getAudioContext]);
 
   // 3. Sygnał START PRZERWY / ZMIANY (Relaksujący, ciepły dzwon niższy E4 -> A3)
@@ -118,7 +117,7 @@ export const useTimerAudioTTS = () => {
       gain.connect(ctx.destination);
       osc.start(now);
       osc.stop(now + 0.45);
-    } catch (e) {}
+    } catch {}
   }, [getAudioContext]);
 
   // 4. Sygnał ZAKOŃCZENIA TRENINGU (Triumfalny, czysty akord majorowy)
@@ -146,7 +145,7 @@ export const useTimerAudioTTS = () => {
         osc.start(now + index * 0.08);
         osc.stop(now + index * 0.08 + 0.6);
       });
-    } catch (e) {}
+    } catch {}
   }, [getAudioContext]);
 
   // 5. Syntezator Mowy PL (Web SpeechSynthesis API)
@@ -159,7 +158,7 @@ export const useTimerAudioTTS = () => {
       utterance.volume = Math.max(0, Math.min(1, volume));
       utterance.rate = 1.05;
       window.speechSynthesis.speak(utterance);
-    } catch (e) {}
+    } catch {}
   }, []);
 
   return {
@@ -175,14 +174,14 @@ export const useTimerAudioTTS = () => {
 
 // Hook zarządzający blokadą uśpienia ekranu (Screen Wake Lock API)
 export const useWakeLock = (isActive: boolean) => {
-  const wakeLockRef = useRef<any>(null);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   useEffect(() => {
     const requestWakeLock = async () => {
       if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
         try {
-          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
-        } catch (err) {}
+          wakeLockRef.current = await (navigator as Navigator & { wakeLock: { request: (type: string) => Promise<WakeLockSentinel> } }).wakeLock.request('screen');
+        } catch {}
       }
     };
 
@@ -191,7 +190,7 @@ export const useWakeLock = (isActive: boolean) => {
         try {
           await wakeLockRef.current.release();
           wakeLockRef.current = null;
-        } catch (e) {}
+        } catch {}
       }
     };
 

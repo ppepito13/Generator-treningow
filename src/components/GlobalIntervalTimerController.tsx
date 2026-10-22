@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { useAppStore } from '@/app/lib/store';
 import { useTimerAudioTTS } from '@/app/lib/useTimerAudioTTS';
 import { GymViewModal, FlattenedQueueItem } from './GymViewModal';
@@ -15,54 +15,73 @@ export const GlobalIntervalTimerController = () => {
   const timerAudioSettings = useAppStore((state) => state.timerAudioSettings);
 
   const { playBeep, playWorkStartGong, playRestStartGong, playFinishFanfare, speakText } = useTimerAudioTTS();
-  const timerRef = useRef<any>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastAnnouncedStepIdRef = useRef<string | null>(null);
 
-  // Zapowiedź kroku
-  const announceStep = (item: FlattenedQueueItem) => {
-    if (!timerAudioSettings.soundEnabled && !timerAudioSettings.ttsEnabled) return;
+  // Stabilne referencje do ustawień audio oraz stanu egzekucji (zapobiegają restartom setInterval)
+  const audioSettingsRef = useRef(timerAudioSettings);
+  useEffect(() => {
+    audioSettingsRef.current = timerAudioSettings;
+  });
 
-    if (timerAudioSettings.soundEnabled) {
+  const activeExecutionRef = useRef(activeIntervalExecution);
+  useEffect(() => {
+    activeExecutionRef.current = activeIntervalExecution;
+  });
+
+  // Zapowiedź kroku ze stabilnymi zależnościami
+  const announceStep = useCallback((item: FlattenedQueueItem) => {
+    const settings = audioSettingsRef.current;
+    if (!settings.soundEnabled && !settings.ttsEnabled) return;
+
+    if (settings.soundEnabled) {
       if (item.color === 'green') {
-        playWorkStartGong(timerAudioSettings.volume);
+        playWorkStartGong(settings.volume);
       } else {
-        playRestStartGong(timerAudioSettings.volume);
+        playRestStartGong(settings.volume);
       }
     }
 
-    if (timerAudioSettings.ttsEnabled) {
+    if (settings.ttsEnabled) {
       let speechText = '';
-      if (timerAudioSettings.ttsOption === 'stepName') {
+      if (settings.ttsOption === 'stepName') {
         speechText = item.stepName;
-      } else if (timerAudioSettings.ttsOption === 'blockName') {
+      } else if (settings.ttsOption === 'blockName') {
         speechText = item.blockName;
-      } else if (timerAudioSettings.ttsOption === 'both') {
+      } else if (settings.ttsOption === 'both') {
         speechText = `${item.blockName}, ${item.stepName}`;
       }
       if (speechText) {
-        setTimeout(() => speakText(speechText, timerAudioSettings.volume), 300);
+        setTimeout(() => speakText(speechText, settings.volume), 300);
       }
     }
-  };
+  }, [playWorkStartGong, playRestStartGong, speakText]);
+
+  const isRunning = activeIntervalExecution?.isRunning;
+  const isFinished = activeIntervalExecution?.isFinished;
+  const currentStep = activeIntervalExecution ? activeIntervalExecution.queue[activeIntervalExecution.currentIndex] : null;
 
   // Automatyczne odtworzenie zapowiedzi dla pierwszego kroku przy uruchomieniu
   useEffect(() => {
-    if (activeIntervalExecution && activeIntervalExecution.isRunning && !activeIntervalExecution.isFinished) {
-      const currentItem = activeIntervalExecution.queue[activeIntervalExecution.currentIndex];
-      if (currentItem && lastAnnouncedStepIdRef.current !== currentItem.id) {
-        lastAnnouncedStepIdRef.current = currentItem.id;
-        announceStep(currentItem);
+    if (isRunning && !isFinished && currentStep) {
+      if (lastAnnouncedStepIdRef.current !== currentStep.id) {
+        lastAnnouncedStepIdRef.current = currentStep.id;
+        announceStep(currentStep);
       }
-    } else if (!activeIntervalExecution) {
+    } else if (!isRunning) {
       lastAnnouncedStepIdRef.current = null;
     }
-  }, [activeIntervalExecution?.currentIndex, activeIntervalExecution?.isRunning, activeIntervalExecution?.isFinished]);
+  }, [isRunning, isFinished, currentStep, announceStep]);
 
-  // Główna pętla odliczania w tle
+  // Główna pętla odliczania w tle (działa nieprzerwanie, korzystając z activeExecutionRef)
   useEffect(() => {
-    if (activeIntervalExecution && activeIntervalExecution.isRunning && !activeIntervalExecution.isFinished) {
+    if (isRunning && !isFinished) {
       timerRef.current = setInterval(() => {
-        const { queue, currentIndex, remainingSec } = activeIntervalExecution;
+        const currentExec = activeExecutionRef.current;
+        if (!currentExec || !currentExec.isRunning || currentExec.isFinished) return;
+
+        const { queue, currentIndex, remainingSec } = currentExec;
+        const settings = audioSettingsRef.current;
 
         if (remainingSec <= 1) {
           if (currentIndex < queue.length - 1) {
@@ -73,14 +92,14 @@ export const GlobalIntervalTimerController = () => {
               remainingSec: nextItem.durationSeconds,
             });
           } else {
-            clearInterval(timerRef.current);
+            if (timerRef.current) clearInterval(timerRef.current);
             updateActiveIntervalExecution({
               isRunning: false,
               isFinished: true,
               remainingSec: 0,
             });
-            if (timerAudioSettings.soundEnabled) playFinishFanfare(timerAudioSettings.volume);
-            if (timerAudioSettings.ttsEnabled) speakText("Trening zakończony! Dobra robota!", timerAudioSettings.volume);
+            if (settings.soundEnabled) playFinishFanfare(settings.volume);
+            if (settings.ttsEnabled) speakText("Trening zakończony! Dobra robota!", settings.volume);
           }
           return;
         }
@@ -89,12 +108,12 @@ export const GlobalIntervalTimerController = () => {
         updateActiveIntervalExecution({ remainingSec: nextSec });
 
         if (nextSec <= 5 && nextSec >= 1) {
-          if (timerAudioSettings.ttsCountdownOption === 'voice' || timerAudioSettings.ttsCountdownOption === 'both') {
+          if (settings.ttsCountdownOption === 'voice' || settings.ttsCountdownOption === 'both') {
             const words: Record<number, string> = { 5: 'Pięć', 4: 'Cztery', 3: 'Trzy', 2: 'Dwa', 1: 'Jeden' };
-            if (timerAudioSettings.ttsEnabled) speakText(words[nextSec] || `${nextSec}`, timerAudioSettings.volume);
+            if (settings.ttsEnabled) speakText(words[nextSec] || `${nextSec}`, settings.volume);
           }
-          if (timerAudioSettings.soundEnabled && (timerAudioSettings.ttsCountdownOption === 'beeps' || timerAudioSettings.ttsCountdownOption === 'both')) {
-            playBeep(523.25, 120, timerAudioSettings.volume); // Miękki, przyjemny dzwonek C5
+          if (settings.soundEnabled && (settings.ttsCountdownOption === 'beeps' || settings.ttsCountdownOption === 'both')) {
+            playBeep(523.25, 120, settings.volume); // Miękki, przyjemny dzwonek C5
           }
         }
       }, 1000);
@@ -105,7 +124,7 @@ export const GlobalIntervalTimerController = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [activeIntervalExecution?.isRunning, activeIntervalExecution?.currentIndex, activeIntervalExecution?.remainingSec, activeIntervalExecution?.isFinished]);
+  }, [isRunning, isFinished, updateActiveIntervalExecution, playBeep, playFinishFanfare, speakText]);
 
   if (!activeIntervalExecution) return null;
 
