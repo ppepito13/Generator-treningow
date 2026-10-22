@@ -5,25 +5,28 @@ context: |
   All artifacts (proposals, specs, design, tasks) and user-facing copy must be written in Polish (pl).
   Keep OpenSpec structural headings and SHALL/MUST keywords in English.
   Application source code, TypeScript types, functions, variables, and code comments MUST be in English.
+  TOKEN ECONOMY & ATOMIC TASKS:
+  - All tasks MUST be granular and atomic (1 task = 1 file / 1 small change).
+  - Explicit file paths must be included in each task description.
+  - Avoid large monolithic steps. Break work down so any agent can pick up a single task with zero previous context.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always state what is out of scope
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - Keep proposals focused on small, single-purpose increments
+    - Strictly define boundaries to prevent scope creep
+  tasks:
+    - Break tasks down into micro-tasks (atomic, self-contained units)
+    - Always include explicit file path in task description (e.g., `[src/path/file.ts] description`)
+    - Never bundle multiple unrelated components/files into a single task item
+    - Ensure a single task can be executed and verified within 1-2 tool calls
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+operations:
+  apply:
+    guidance:
+      - Work strictly on one task at a time
+      - Immediately mark the checkbox `[x]` upon finishing each individual task
+      - Do not read or analyze unreferenced files; minimize context window usage
+      - Verify locally with targeted commands before moving to the next task
+  archive:
+    guidance:
+      - Summarize the archive outcome concisely without reprinting large files

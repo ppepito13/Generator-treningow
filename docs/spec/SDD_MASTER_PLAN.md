@@ -20,6 +20,11 @@ Przyjmujemy nowoczesny **GitHub Flow + OpenSpec OPSX** zoptymalizowany pod prac�
 8. **Język dokumentacji i kodu:**
    - Specyfikacje, proposals, dialogi z użytkownikiem, opisy ćwiczeń i UI: **język polski (`pl`)**.
    - Kod źródłowy aplikacji, TypeScript, nazwy zmiennych, funkcji i komentarze w kodzie: **język angielski (`en`)**.
+9. **Ekonomia Tokenów i Atomowe Mikro-Zadania (Token Budget First):**
+   - Zakaz tworzenia wielkich, zbiorczych zadań. Duże fazy są szatkowane na małe, niezależne pakiety (np. Faza 3 dzielona na Faza 3.1, 3.2 itd.).
+   - W `tasks.md` każde zadanie musi być atomowe (1 zadanie = 1 konkretny plik / 1 funkcja / 1 test) z jawną ścieżką do pliku w opisie.
+   - W fazie `opsx-apply` agent skupia się wyłącznie na bieżącym zadaniu, nie czyta całego repozytorium i natychmiast oznacza checkbox `[x]`.
+   - Umożliwia to natychmiastowe przerywanie i wznawianie prac na innym modelu/koncie bez utraty postępu i bez zbędnego zużycia tokenów.
 
 ---
 
