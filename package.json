@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "verify": "npm run typecheck && npm run lint && npm run test",
     "spec:view": "openspec view",
+    "spec:ui": "npx openspecui@latest",
     "prepare": "husky"
   },
   "dependencies": {
