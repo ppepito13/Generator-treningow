@@ -1268,7 +1268,37 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'kinetic-circuits-storage',
+      version: 1,
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => partializeStoreState(state),
+      migrate: (persistedState, version) => migrateStoreState(persistedState, version),
     }
   )
 );
+
+export const partializeStoreState = (state: AppState) => ({
+  customExercises: state.customExercises,
+  customRooms: state.customRooms,
+  customEquipment: state.customEquipment,
+  customIntervalPresets: state.customIntervalPresets,
+  timerAudioSettings: state.timerAudioSettings,
+  sharedUserProfile: state.sharedUserProfile,
+  calculatorResults: state.calculatorResults,
+  selectedRoomId: state.selectedRoomId,
+  participants: state.participants,
+  stationCount: state.stationCount,
+  difficultyId: state.difficultyId,
+  isStrictDifficulty: state.isStrictDifficulty,
+  customRoomMode: state.customRoomMode,
+  customRoomCategory: state.customRoomCategory,
+  customRoomEquipment: state.customRoomEquipment,
+  activeTab: state.activeTab,
+});
+
+export const migrateStoreState = (persistedState: any, version: number) => {
+  if (version === 0 || version === undefined) {
+    const { circuit, ...rest } = persistedState || {};
+    return rest;
+  }
+  return persistedState;
+};

@@ -49,20 +49,35 @@ Cel: Przygotowanie siatki bezpieczeństwa. Zatrzymanie złego kodu przed opuszcz
 ### Faza 2: Dług Technologiczny i Ochrona Danych (Branch: `fix/tech-debt-and-data`)
 Cel: Aplikacja musi kompilować się bez maskowania błędów, a dane użytkowników muszą być bezpieczne.
 
-- [ ] **2.1 Naprawa błędów TypeScript (Czysty typecheck):**
-  - [ ] 2.1.1 `EquipmentStudioSubView.tsx`: Dodanie opcjonalnego pola `opis?: string` do inline typu wyposażenia.
-  - [ ] 2.1.2 `calendar.tsx`: Dostosowanie komponentów `IconLeft` i `IconRight` pod API `react-day-picker` v9.
-  - [ ] 2.1.3 Weryfikacja: Uruchomienie `npm run typecheck` (`tsc --noEmit`) – wynik: 0 błędów.
-- [ ] **2.2 Odmaskowanie kompilacji Next.js:**
-  - [ ] 2.2.1 Usunięcie flagi `ignoreBuildErrors: true` w `next.config.ts`.
-  - [ ] 2.2.2 Usunięcie flagi `ignoreDuringBuilds: true` w `next.config.ts`.
-  - [ ] 2.2.3 Weryfikacja: Uruchomienie `npm run build` na czysto – weryfikacja czy proces kompiluje się bez ignorowania błędów.
-- [ ] **2.3 Zustand Persist Migration (Zabezpieczenie danych i ochrona przed białym ekranem):**
-  - [ ] 2.3.1 Utworzenie testu migracji w Vitest (`src/tests/store-migration.test.ts`) symulującego stary format `localStorage`.
-  - [ ] 2.3.2 Dodanie `version: 1` oraz funkcji `migrate()` w `store.ts` (konfiguracja middleware `persist`).
-  - [ ] 2.3.3 Skonfigurowanie `partialize`, aby nie zapisywać stanu UI (np. navigationStack, activeTab) do pamięci trwałej.
-  - [ ] 2.3.4 Dodanie w interfejsie aplikacji dyskretnego monitu dla użytkowników z przypomnieniem o możliwości wyeksportowania danych.
-  - [ ] 2.3.5 Weryfikacja: Uruchomienie testów Vitest oraz weryfikacja manualna odczytu danych.
+- [x] **2.1 Naprawa błędów TypeScript (Czysty typecheck):**
+  - [x] 2.1.1 `EquipmentStudioSubView.tsx`: Dodanie opcjonalnego pola `opis?: string` do inline typu wyposażenia (`useMemo<EquipmentItem[]>`).
+  - [x] 2.1.2 `calendar.tsx`: Dostosowanie komponentu do API `react-day-picker` v9 (`Chevron` z obsługą `orientation`).
+  - [x] 2.1.3 Weryfikacja: Uruchomienie `npm run typecheck` (`tsc --noEmit`) – wynik: 0 błędów.
+- [x] **2.2 Odmaskowanie kompilacji Next.js:**
+  - [x] 2.2.1 Usunięcie flagi `ignoreBuildErrors: true` w `next.config.ts`.
+  - [x] 2.2.2 Usunięcie flagi `ignoreDuringBuilds: true` w `next.config.ts`.
+  - [x] 2.2.3 Weryfikacja: Uruchomienie `npm run build` na czysto – kompilacja produkcyjna bez błędów.
+- [x] **2.3 Zustand Persist Migration (Zabezpieczenie danych i ochrona przed białym ekranem):**
+  - [x] 2.3.1 Utworzenie testu migracji w Vitest (`src/tests/store-migration.test.ts`) symulującego format v0 i v1 oraz test partialize (5 testów pass).
+  - [x] 2.3.2 Dodanie `version: 1` oraz funkcji `migrate()` w `store.ts` (oczyszczanie `circuit`).
+  - [x] 2.3.3 Skonfigurowanie `partialize` na 16 polach stanu biznesowego, wykluczając stany ulotne (`circuit`, `activeView`, itp.).
+  - [x] 2.3.4 Dodanie w interfejsie aplikacji dyskretnego monitu z przypomnieniem o możliwości wyeksportowania danych JSON.
+  - [x] 2.3.5 Weryfikacja: Uruchomienie testów Vitest oraz builda produkcyjnego.
+
+### Faza 2.5: Higiena Kodu i Czyszczenie Ostrzeżeń ESLint (Branch: `chore/lint-cleanup-and-android-compat`)
+Cel: Eliminacja 41 ostrzeżeń ESLint ujawnionych po odmaskowaniu lintera, z bezwzględnym zachowaniem kompatybilności z aplikacją mobilną (Android / Capacitor).
+
+- [ ] **2.5.1 Audyt i czyszczenie nieużywanych importów i zmiennych (Grupa A):**
+  - Usunięcie martwych importów ikon (`lucide-react`) oraz nieużywanych definicji w komponentach Studio, Timer i StationCard.
+  - Weryfikacja: Upewnienie się, że żaden import/kod związany z integracją natywną (np. `@capacitor/app`, obsługa przycisku Wstecz, storage Androida) nie został usunięty.
+- [ ] **2.5.2 Typowanie zdarzeń i eliminacja `any` (Grupa B):**
+  - Zamiana luźnych typów `any` w handlerach i modalach na precyzyjne typy TypeScript.
+- [ ] **2.5.3 Bezpieczny przegląd `react-hooks/exhaustive-deps` (Grupa C - Zegar i Audio):**
+  - Analiza zależności w `GlobalIntervalTimerController.tsx` oraz `GymViewModal.tsx` pod kątem działania timera w tle i odtwarzania dźwięków TTS w środowisku mobilnym (Android WebView).
+  - Poprawa brakujących lub nadmiarowych zależności bez ryzyka nieskończonych re-renderów czy zrywania odliczania na telefonie.
+- [ ] **2.5.4 Weryfikacja końcowa:**
+  - `npm run verify` (typecheck + lint + test) musi zakończyć się wynikiem: 0 błędów, 0 ostrzeżeń.
+  - Sprawdzenie `npx cap sync` i integralności statycznego exportu pod Android Studio.
 
 ### Faza 3: Dekompozycja Monolitu (Branch: `refactor/store-decomposition`)
 Cel: Rozbicie pliku `store.ts` (1275 linii) w sposób bezpieczny. Wstrzymujemy się z testami UI, skupiamy się na logice.

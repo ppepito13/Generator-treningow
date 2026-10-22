@@ -21,4 +21,12 @@ System SHALL wersjonować strukturę stanu magazynu `localStorage` (wersja `>= 1
 
 #### Scenario: Separacja stanu UI od danych trwałych
 - **WHEN** aplikacja zapisuje stan do magazynu lokalnego
-- **THEN** system wyklucza z serializacji stan nawigacji i modali (`partialize`), zapobiegając zapętleniu UI
+- **THEN** system wyklucza z serializacji stan nawigacji i modali (`activeView`, `navigationStack`, `circuit`, `isGenerated`, `generationConflict`, `activeIntervalExecution`) przez `partialize`, zapobiegając zapętleniu UI
+
+#### Scenario: Stan v0 zawiera dane obwodu (circuit)
+- **WHEN** użytkownik posiada w `localStorage` stan v0 zawierający niepustą tablicę `circuit`
+- **THEN** po migracji do v1 pole `circuit` jest nieobecne w zapisanym stanie i aplikacja inicjalizuje się z pustym obwodem (żadne ćwiczenia z poprzedniej sesji nie są wyświetlane)
+
+#### Scenario: localStorage jest niedostępne
+- **WHEN** przeglądarka blokuje dostęp do `localStorage` (np. Safari w trybie prywatnym, przekroczony limit przestrzeni)
+- **THEN** aplikacja inicjalizuje się z domyślnymi wartościami w pamięci RAM bez wywołania awarii, a użytkownik może normalnie korzystać z aplikacji w bieżącej sesji (dane nie są utrwalane między przeładowaniami)

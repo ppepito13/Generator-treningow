@@ -49,7 +49,7 @@ export const EquipmentStudioSubView = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<EquipmentItem | null>(null);
 
-  const allEquipment = useMemo(() => {
+  const allEquipment = useMemo<EquipmentItem[]>(() => {
     if (typeof getAllEquipmentItems === 'function') {
       return getAllEquipmentItems();
     }
@@ -57,6 +57,7 @@ export const EquipmentStudioSubView = () => {
       id: key,
       nazwa: formatEquipmentName(key),
       isCustom: false,
+      opis: undefined,
     }));
   }, [customEquipment, getAllEquipmentItems]);
 

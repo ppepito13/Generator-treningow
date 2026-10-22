@@ -323,6 +323,14 @@ export const ExerciseStudioView = () => {
           </div>
         </div>
 
+        {/* Informacja o kopii zapasowej przed aktualizacją */}
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-cyan-500/5 border border-cyan-500/15 text-[11px] text-cyan-300/80">
+          <Info className="h-4 w-4 shrink-0 text-cyan-400" />
+          <span>
+            Wskazówka: Twoje dane są bezpiecznie zapisywane lokalnie. Przed aktualizacją aplikacji lub czyszczeniem pamięci przeglądarki możesz pobrać kopię zapasową (JSON) za pomocą przycisku eksportu.
+          </span>
+        </div>
+
         {/* Wewnętrzne zakładki Centrum Zasobów */}
         <div className="flex gap-2 border-t border-white/5 pt-4 overflow-x-auto scrollbar-none">
           <button
