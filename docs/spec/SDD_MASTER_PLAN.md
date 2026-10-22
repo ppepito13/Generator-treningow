@@ -91,30 +91,34 @@ Cel: Eliminacja 41 ostrzeżeń ESLint ujawnionych po odmaskowaniu lintera, z bez
   - Wykonanie `npm run build` potwierdzające integralność plików i eksportu statycznego `out/` dla Android Studio.
 
 ### Faza 3: Dekompozycja Algorytmów Generatora i Balans Treningowy
-Cel: Rozbicie monolitycznego pliku `store.ts` (1330 linii) na czystą domenę `src/domain/generator/` z zachowaniem atomowości zadań (Token Budget First) oraz wprowadzenie algorytmu dywersyfikacji partii mięśniowych z kaskadowym fallbackiem w dół.
+Cel: Rozbicie monolitycznego pliku `store.ts` (1330 linii) na czystą domenę `src/domain/generator/` z zachowaniem atomowości zadań (Token Budget First), wprowadzenie algorytmu dywersyfikacji partii mięśniowych z kaskadowym fallbackiem w dół oraz obsługa stacji oddechowych, par i rerolli.
 
-#### Faza 3.1: Ekstrakcja Reguł Sprzętu i Filtrów (Change: `phase-3-1-generator-rules`, Branch: `refactor/generator-domain-rules`)
-Cel: Wydzielenie czystych funkcji pomocniczych i filtrów ze `store.ts` do warstwy domeny bez modyfikacji stanu aplikacji.
-- [ ] **3.1.1 [src/domain/generator/types.ts]:** Definicja interfejsów domenowych parametrów losowania i kontekstu generatora.
+#### Faza 3.1: Ekstrakcja Reguł Domenowych i Doboru Stref (Change: `phase-3-1-generator-rules`, Branch: `refactor/generator-domain-rules`)
+Cel: Wydzielenie czystych funkcji pomocniczych, weryfikacji sprzętu, filtrowania ćwiczeń i alokacji stref ze `store.ts` do warstwy domeny bez modyfikacji stanu aplikacji.
+- [ ] **3.1.1 [src/domain/generator/types.ts]:** Definicja interfejsów domenowych parametrów losowania, kontekstu sali, stref i stacji.
 - [ ] **3.1.2 [src/domain/generator/equipmentRules.ts]:** Ekstrakcja czystych funkcji weryfikacji sprzętu (`ensureEquipment`, `getEquipmentString`, `canExerciseBeShared`).
 - [ ] **3.1.3 [src/tests/domain/equipmentRules.test.ts]:** Testy jednostkowe Vitest dla reguł sprzętowych sali i stacji.
-- [ ] **3.1.4 [src/domain/generator/exerciseFilter.ts]:** Ekstrakcja `getValidExercisesForZone` jako czystej funkcji przyjmującej listę ćwiczeń jako argument (Dependency Injection – eliminacja `useAppStore.getState()`).
+- [ ] **3.1.4 [src/domain/generator/exerciseFilter.ts]:** Ekstrakcja `getValidExercisesForZone` jako czystej funkcji z Dependency Injection (wstrzykiwana baza ćwiczeń, obsługa reguły pojedynczej flagi `hasFlagAlready`).
 - [ ] **3.1.5 [src/tests/domain/exerciseFilter.test.ts]:** Testy jednostkowe Vitest dla filtrowania stref, poziomów i ograniczeń.
-- [ ] **3.1.6 [src/domain/generator/index.ts]:** Publiczny barrel export oraz kompatybilny re-eksport w `src/app/lib/store.ts` dla zachowania ciągłości kodu UI.
+- [ ] **3.1.6 [src/domain/generator/zoneSelector.ts]:** Ekstrakcja doboru stref i limitów pojemności (klatka RIG na pozycji 2, forcedZones, dynamiczne limity stref elastycznych `floorLimit`).
+- [ ] **3.1.7 [src/tests/domain/zoneSelector.test.ts]:** Testy jednostkowe Vitest algorytmu przydziału i sortowania stref sali.
+- [ ] **3.1.8 [src/domain/generator/index.ts]:** Publiczny barrel export oraz kompatybilny re-eksport w `src/app/lib/store.ts` dla zachowania ciągłości kodu UI.
 
-#### Faza 3.2: Balans Mięśniowy i Kaskadowy Fallback (Change: `phase-3-2-generator-strategies`, Branch: `feat/generator-balancing-strategies`)
-Cel: Nowy algorytm wyboru ćwiczeń zapobiegający powtarzaniu tych samych partii mięśniowych oraz strategie losowania obwodu i treningu synchronicznego.
-- [ ] **3.2.1 [src/domain/generator/muscleBalancing.ts]:** Algorytm selekcji zrównoważonej (`segment_id` i `glowne_partie`) preferujący naprzemienność grup mięśniowych (np. PULL po PUSH).
-- [ ] **3.2.2 [src/domain/generator/cascadeFallback.ts]:** Trzypoziomowa kaskada fallbacku przy małej puli ćwiczeń: (1) bezpieczne obniżenie trudności o 1 poziom w dół, (2) dopuszczenie powtórzenia partii, (3) duplikat ćwiczenia w ostateczności.
-- [ ] **3.2.3 [src/domain/generator/circuitStrategy.ts]:** Implementacja `generateCircuitStrategy` jako czystej funkcji opartej o balans mięśniowy i kaskadę.
-- [ ] **3.2.4 [src/domain/generator/synchronizedStrategy.ts]:** Implementacja `generateSynchronizedStrategy` z balansem segmentów dla treningu synchronicznego.
-- [ ] **3.2.5 [src/tests/domain/generatorStrategies.test.ts]:** Testy Vitest sprawdzające naprzemienność partii oraz zachowanie fallbacków przy restrykcyjnych strefach.
+#### Faza 3.2: Balans Mięśniowy, Kaskada i Strategie Losowania (Change: `phase-3-2-generator-strategies`, Branch: `feat/generator-balancing-strategies`)
+Cel: Nowy algorytm wyboru ćwiczeń zapobiegający powtarzaniu tych samych partii mięśniowych, obsługa stacji oddechowych i par oraz czyste strategie losowania obwodu, treningu synchronicznego i rerolli.
+- [ ] **3.2.1 [src/domain/generator/muscleBalancing.ts]:** Heurystyka selekcji zrównoważonej (`segment_id` i `glowne_partie`) preferująca naprzemienność grup mięśniowych (np. PULL po PUSH).
+- [ ] **3.2.2 [src/domain/generator/cascadeFallback.ts]:** Kaskadowy fallback przy małej puli ćwiczeń: (1) bezpieczne obniżenie trudności o 1 poziom w dół (z poszanowaniem `isStrictDifficulty`), (2) dopuszczenie powtórzenia partii, (3) duplikat ćwiczenia w ostateczności.
+- [ ] **3.2.3 [src/domain/generator/pairStationStrategy.ts]:** Logika doboru `exerciseB` dla stacji podwójnych (zgodność partii mięśniowej, tryb `W_Parze`, współdzielenie sprzętu).
+- [ ] **3.2.4 [src/domain/generator/circuitStrategy.ts]:** Czysta strategia `generateCircuitStrategy` uwzględniająca stacje oddechowe co 3 stacje (`(idx + 1) % 3 === 0`), balans mięśniowy oraz wstrzykiwane źródło losowości (`randomFn`).
+- [ ] **3.2.5 [src/domain/generator/synchronizedStrategy.ts]:** Czysta strategia `generateSynchronizedStrategy` z balansem segmentów dla treningu grupowego.
+- [ ] **3.2.6 [src/domain/generator/rerollStrategy.ts]:** Ekstrakcja czystej logiki rerollu i zmiany strefy pojedynczej stacji z zachowaniem balansu i stacji oddechowych.
+- [ ] **3.2.7 [src/tests/domain/generatorStrategies.test.ts]:** Testy Vitest sprawdzające naprzemienność partii, stacje oddechowe, stacje w parach, determinizm losowości oraz kaskadę fallbacków.
 
 #### Faza 3.3: Integracja ze Store i Czyszczenie Monolitu (Change: `phase-3-3-store-integration`, Branch: `refactor/store-generator-integration`)
 Cel: Podpięcie gotowych algorytmów domenowych do Zustand Store oraz odchudzenie monolitu.
-- [ ] **3.3.1 [src/app/lib/store.ts]:** Zastąpienie wewnętrznych algorytmów losowania i konfliktów importami z `src/domain/generator/`.
+- [ ] **3.3.1 [src/app/lib/store.ts]:** Zastąpienie wewnętrznych algorytmów losowania, rerolli i konfliktów importami z `src/domain/generator/`.
 - [ ] **3.3.2 [src/components/StationCard.tsx]:** Przełączenie importu `getValidExercisesForZone` bezpośrednio na moduł domenowy.
-- [ ] **3.3.3 [Weryfikacja jakości]:** Uruchomienie `npm run verify` (0 błędów, 0 ostrzeżeń) oraz builda produkcyjnego Next.js z eksportem `out/`.
+- [ ] **3.3.3 [Weryfikacja jakości]:** Uruchomienie `npm run verify` (0 błędów, 0 ostrzeżeń) oraz builda produkcyjnego Next.js z eksportem `out/` pod Android Studio.
 
 ### Faza 4: Pierwszy Projekt SDD (Branch: `feat/todo-31-deduplication`)
 Cel: Zastosowanie pełnego SDD do nowego feature'a.
