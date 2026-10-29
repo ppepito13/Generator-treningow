@@ -3,6 +3,22 @@
 Wszystkie istotne zmiany i wydania aplikacji będą dokumentowane w tym pliku.
 Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+### Dodano
+- **Studio Zarządzania Bazą**: Moduły podglądu, wyszukiwania, edycji oraz eksportu bazy ćwiczeń, sprzętu, sal i konfiguracji poziomów trudności.
+- **Zegar Treningowy**: Zaawansowany moduł czasomierza z obsługą treningu interwałowego, stopera i minutnika.
+- **Kalkulatory Treningowe**: Kalkulator standardowy oraz moduły obliczeniowe BMI/RFM i zapotrzebowania kalorycznego BMR/TDEE.
+- **Infrastruktura Testowa i Jakość**: Wdrożenie frameworka Vitest z testami jednostkowymi i integracyjnymi, pre-commit hook Husky oraz pełną bramką `npm run verify`.
+- **Integralność Danych i Testy UI**: Automatyczna walidacja spójności bazy JSON ćwiczeń/sal oraz testy renderowania komponentów interfejsu w środowisku jsdom.
+
+### Zmieniono
+- **Architektura Generatora**: Rozbicie monolitycznego pliku store na czystą architekturę domenową (`src/domain/generator/`) z heurystyką balansu mięśniowego (naprzemienność PUSH/PULL) i kaskadowym doborem trudności.
+- **Bezpieczeństwo Danych (Zustand Persist v1)**: Wprowadzenie migracji stanu i selektywnego zapisu (`partialize`), chroniącego przed utratą danych użytkownika i białym ekranem.
+- **Fonty Offline dla Androida**: Zastąpienie zewnętrznego CDN Google Fonts wbudowanym mechanizmem `next/font/google` dla 100% działania offline w aplikacji mobilnej Capacitor.
+
+### Naprawiono
+- **Dług Technologiczny**: Usunięcie zdeprecjonowanych bibliotek, odmaskowanie kompilacji Next.js oraz usunięcie 100% ostrzeżeń i błędów ESLint.
+
 ## [1.3.0] - 2026-04-30
 ### Dodano
 - **Hub Nawigacyjny (Bottom Nav)**: Całkowicie nowa struktura nawigacji oparta na dolnym pasku (Bottom Navigation) w stylu glassmorphism. Pozwala na natychmiastowe przełączanie między Generatorem, wygenerowanym Zestawem oraz przyszłymi modułami (Zegar, Kalkulatory).

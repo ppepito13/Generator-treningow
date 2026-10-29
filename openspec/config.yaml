@@ -16,6 +16,10 @@ context: |
   - Explicit file paths must be included in each task description.
   - Avoid large monolithic steps. Break work down so any agent can pick up a single task with zero previous context.
 
+  RELEASE TRACKING:
+  - Every task, bugfix or feature must have a numbered entry in todo.md.
+  - Before archiving any change, todo.md must be updated and CHANGELOG.md must be updated in ## [Unreleased].
+
 rules:
   proposal:
     - Keep proposals focused on small, single-purpose increments
