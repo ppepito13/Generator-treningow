@@ -1,4 +1,4 @@
-import type { Exercise, Zone, RoomConfig } from '@/app/lib/data';
+import type { Exercise, Zone, RoomConfig, Station, DifficultyLevel } from '@/app/lib/data';
 
 /** Difficulty range used for filtering exercises by level. */
 export interface DifficultyRange {
@@ -27,4 +27,81 @@ export interface ZoneSelectionParams {
   allZones: Zone[];
   stationCount: number;
   isPairMode: boolean;
+}
+
+/** Pluggable pseudo-random generator producing floats in [0, 1). Defaults to Math.random. */
+export type RandomFn = () => number;
+
+/** Successful generation outcome containing the created stations. */
+export interface GenerationSuccess {
+  success: true;
+  stations: Station[];
+}
+
+/** Conflict metadata returned when a circuit or station cannot be formed. */
+export interface GenerationConflictData {
+  type: 'generate' | 'reroll';
+  requestedStations: number;
+  availableStations: number;
+  canLoosenDifficulty: boolean;
+  contextData?: {
+    action?: 'reroll' | 'changeZone';
+    stationId?: string;
+    paramType?: 'A' | 'B';
+    segmentId?: number;
+    newZoneId?: string;
+  };
+}
+
+/** Failed generation outcome due to pool exhaustion or constraints. */
+export interface GenerationFailure {
+  success: false;
+  conflict: GenerationConflictData;
+}
+
+/** Unified result of a generator strategy. */
+export type GenerationResult = GenerationSuccess | GenerationFailure;
+
+/** Parameters for the pure circuit strategy. */
+export interface CircuitStrategyParams {
+  currentRoom: RoomConfig;
+  mainDiff: DifficultyLevel;
+  participants: number;
+  stationCount: number;
+  isStrictDifficulty: boolean;
+  loosenDifficultyFlag?: boolean;
+  ignoreUsedFlag?: boolean;
+  category?: string;
+  allExercisesSource?: Exercise[];
+  randomFn?: RandomFn;
+}
+
+/** Parameters for the pure synchronized training strategy. */
+export interface SynchronizedStrategyParams {
+  currentRoom: RoomConfig;
+  mainDiff: DifficultyLevel;
+  participants: number;
+  stationCount: number;
+  isStrictDifficulty: boolean;
+  loosenDifficultyFlag?: boolean;
+  ignoreUsedFlag?: boolean;
+  category?: string;
+  allExercisesSource?: Exercise[];
+  randomFn?: RandomFn;
+}
+
+/** Parameters for rerolling an exercise on an existing station. */
+export interface RerollStrategyParams {
+  circuit: Station[];
+  stationId: string;
+  type: 'A' | 'B';
+  segmentId?: number;
+  loosen?: boolean;
+  ignoreUsed?: boolean;
+  currentRoom: RoomConfig;
+  difficultyId: string;
+  isStrictDifficulty: boolean;
+  category?: string;
+  allExercisesSource?: Exercise[];
+  randomFn?: RandomFn;
 }

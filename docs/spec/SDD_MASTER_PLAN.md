@@ -106,13 +106,13 @@ Cel: Wydzielenie czystych funkcji pomocniczych, weryfikacji sprzętu, filtrowani
 
 #### Faza 3.2: Balans Mięśniowy, Kaskada i Strategie Losowania (Change: `phase-3-2-generator-strategies`, Branch: `feat/generator-balancing-strategies`)
 Cel: Nowy algorytm wyboru ćwiczeń zapobiegający powtarzaniu tych samych partii mięśniowych, obsługa stacji oddechowych i par oraz czyste strategie losowania obwodu, treningu synchronicznego i rerolli.
-- [ ] **3.2.1 [src/domain/generator/muscleBalancing.ts]:** Heurystyka selekcji zrównoważonej (`segment_id` i `glowne_partie`) preferująca naprzemienność grup mięśniowych (np. PULL po PUSH).
-- [ ] **3.2.2 [src/domain/generator/cascadeFallback.ts]:** Kaskadowy fallback przy małej puli ćwiczeń: (1) bezpieczne obniżenie trudności o 1 poziom w dół (z poszanowaniem `isStrictDifficulty`), (2) dopuszczenie powtórzenia partii, (3) duplikat ćwiczenia w ostateczności.
-- [ ] **3.2.3 [src/domain/generator/pairStationStrategy.ts]:** Logika doboru `exerciseB` dla stacji podwójnych (zgodność partii mięśniowej, tryb `W_Parze`, współdzielenie sprzętu).
-- [ ] **3.2.4 [src/domain/generator/circuitStrategy.ts]:** Czysta strategia `generateCircuitStrategy` uwzględniająca stacje oddechowe co 3 stacje (`(idx + 1) % 3 === 0`), balans mięśniowy oraz wstrzykiwane źródło losowości (`randomFn`).
-- [ ] **3.2.5 [src/domain/generator/synchronizedStrategy.ts]:** Czysta strategia `generateSynchronizedStrategy` z balansem segmentów dla treningu grupowego.
-- [ ] **3.2.6 [src/domain/generator/rerollStrategy.ts]:** Ekstrakcja czystej logiki rerollu i zmiany strefy pojedynczej stacji z zachowaniem balansu i stacji oddechowych.
-- [ ] **3.2.7 [src/tests/domain/generatorStrategies.test.ts]:** Testy Vitest sprawdzające naprzemienność partii, stacje oddechowe, stacje w parach, determinizm losowości oraz kaskadę fallbacków.
+- [x] **3.2.1 [src/domain/generator/muscleBalancing.ts]:** Heurystyka selekcji zrównoważonej (`segment_id` i `glowne_partie`) preferująca naprzemienność grup mięśniowych (np. PULL po PUSH).
+- [x] **3.2.2 [src/domain/generator/cascadeFallback.ts]:** Kaskadowy fallback przy małej puli ćwiczeń: (1) bezpieczne obniżenie trudności o 1 poziom w dół (z poszanowaniem `isStrictDifficulty`), (2) dopuszczenie powtórzenia partii, (3) duplikat ćwiczenia w ostateczności.
+- [x] **3.2.3 [src/domain/generator/pairStationStrategy.ts]:** Logika doboru `exerciseB` dla stacji podwójnych (zgodność partii mięśniowej, tryb `W_Parze`, współdzielenie sprzętu).
+- [x] **3.2.4 [src/domain/generator/circuitStrategy.ts]:** Czysta strategia `generateCircuitStrategy` uwzględniająca stacje oddechowe co 3 stacje (`(idx + 1) % 3 === 0`), balans mięśniowy oraz wstrzykiwane źródło losowości (`randomFn`).
+- [x] **3.2.5 [src/domain/generator/synchronizedStrategy.ts]:** Czysta strategia `generateSynchronizedStrategy` z balansem segmentów dla treningu grupowego.
+- [x] **3.2.6 [src/domain/generator/rerollStrategy.ts]:** Ekstrakcja czystej logiki rerollu i zmiany strefy pojedynczej stacji z zachowaniem balansu i stacji oddechowych.
+- [x] **3.2.7 [src/tests/domain/generatorStrategies.test.ts]:** Testy Vitest sprawdzające naprzemienność partii, stacje oddechowe, stacje w parach, determinizm losowości oraz kaskadę fallbacków.
 
 #### Faza 3.3: Integracja ze Store i Czyszczenie Monolitu (Change: `phase-3-3-store-integration`, Branch: `refactor/store-generator-integration`)
 Cel: Podpięcie gotowych algorytmów domenowych do Zustand Store oraz odchudzenie monolitu.
