@@ -4,6 +4,7 @@ import type { CircuitStrategyParams, GenerationResult, DifficultyRange } from '.
 import { selectRoomZonesForCircuit } from './zoneSelector';
 import { applyCascadeFallback, getLoosenedRange } from './cascadeFallback';
 import { resolvePairStationExercise } from './pairStationStrategy';
+import { normalizeExerciseBaseName } from './muscleBalancing';
 
 const BREATHER_SEGMENTS = new Set([4, 7, 9]); // CORE, NEURO, MOBILITY
 
@@ -14,7 +15,8 @@ const BREATHER_SEGMENTS = new Set([4, 7, 9]); // CORE, NEURO, MOBILITY
  * - Zone selection according to gym capacity and rig ordering
  * - Breather stations every 3rd station ((idx + 1) % 3 === 0)
  * - Strict vs standard difficulty behavior on breathers
- * - Movement segment and muscle balancing between adjacent stations
+ * - Movement segment and muscle balancing between adjacent stations and loopback (last -> first)
+ * - Global base exercise name deduplication (usedBaseNames)
  * - Safe pair resolution with virtual inventory tracking
  * - Deterministic random injection (randomFn)
  */
@@ -43,6 +45,7 @@ export const generateCircuitStrategy = (params: CircuitStrategyParams): Generati
 
   const generated: Station[] = [];
   const usedIds = ignoreUsedFlag ? new Set<string>() : new Set<string>();
+  const usedBaseNames = ignoreUsedFlag ? new Set<string>() : new Set<string>();
   let hasFlagAlready = false;
   let previousExercise: Exercise | undefined = undefined;
   let previousSegmentId: number | undefined = undefined;
@@ -68,6 +71,17 @@ export const generateCircuitStrategy = (params: CircuitStrategyParams): Generati
       currentRange = getLoosenedRange(currentRange);
     }
 
+    // Two-sided neighbor exclusion:
+    // Left neighbor = previousSegmentId.
+    // If this is the last station in a multi-station circuit, right neighbor in the loop is station 0.
+    const excludedSegmentIds = new Set<number>();
+    if (previousSegmentId !== undefined) {
+      excludedSegmentIds.add(previousSegmentId);
+    }
+    if (idx === selectedZones.length - 1 && generated.length > 0) {
+      excludedSegmentIds.add(generated[0].exerciseA.segment_id);
+    }
+
     const fallbackResult = applyCascadeFallback({
       zone,
       baseRange: { min: mainDiff.min_poziom, max: mainDiff.max_poziom },
@@ -82,6 +96,8 @@ export const generateCircuitStrategy = (params: CircuitStrategyParams): Generati
       isStrictDifficulty,
       previousExercise,
       previousSegmentId,
+      excludedSegmentIds,
+      usedBaseNames,
     });
 
     let pool = fallbackResult.pool;
@@ -109,6 +125,7 @@ export const generateCircuitStrategy = (params: CircuitStrategyParams): Generati
 
     const exA = pool[Math.floor(randomFn() * pool.length)];
     usedIds.add(exA.id_cwiczenia);
+    usedBaseNames.add(normalizeExerciseBaseName(exA.nazwa));
     if (exA.nazwa.toLowerCase().includes('flaga')) {
       hasFlagAlready = true;
     }
@@ -128,6 +145,7 @@ export const generateCircuitStrategy = (params: CircuitStrategyParams): Generati
 
       if (exB && exB.id_cwiczenia !== exA.id_cwiczenia) {
         usedIds.add(exB.id_cwiczenia);
+        usedBaseNames.add(normalizeExerciseBaseName(exB.nazwa));
         if (exB.nazwa.toLowerCase().includes('flaga')) {
           hasFlagAlready = true;
         }

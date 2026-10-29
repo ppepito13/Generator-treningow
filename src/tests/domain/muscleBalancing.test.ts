@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { filterBySegmentBalancing, hasOverlappingMuscles } from '@/domain/generator/muscleBalancing';
+import {
+  filterBySegmentBalancing,
+  hasOverlappingMuscles,
+  normalizeExerciseBaseName,
+} from '@/domain/generator/muscleBalancing';
 import type { Exercise } from '@/app/lib/data';
 
 const makeEx = (overrides: Partial<Exercise>): Exercise => ({
@@ -20,6 +24,23 @@ const makeEx = (overrides: Partial<Exercise>): Exercise => ({
 });
 
 describe('muscleBalancing', () => {
+  describe('normalizeExerciseBaseName', () => {
+    it('removes parenthetical notes and trims lowercase', () => {
+      expect(normalizeExerciseBaseName('Podciąganie klasyczne (Nachwyt)')).toBe('podciąganie klasyczne');
+      expect(normalizeExerciseBaseName('Podciąganie klasyczne (Podchwyt)')).toBe('podciąganie klasyczne');
+      expect(normalizeExerciseBaseName('Deska boczna (na przedramieniu)')).toBe('deska boczna');
+    });
+
+    it('collapses multiple spaces and cleans edges', () => {
+      expect(normalizeExerciseBaseName('   Pompki   na   podwyższeniu   (Skrzynia)   ')).toBe('pompki na podwyższeniu');
+    });
+
+    it('leaves standard names intact', () => {
+      expect(normalizeExerciseBaseName('Pompki klasyczne')).toBe('pompki klasyczne');
+      expect(normalizeExerciseBaseName('Przysiady')).toBe('przysiady');
+    });
+  });
+
   describe('hasOverlappingMuscles', () => {
     it('detects common muscle groups', () => {
       const a = makeEx({ glowne_partie: ['Klatka piersiowa', 'Triceps'] });
@@ -71,6 +92,32 @@ describe('muscleBalancing', () => {
       expect(result.map(e => e.id_cwiczenia)).toEqual(['c1']);
     });
 
+    it('filters out both neighbors when excludedSegmentIds are passed', () => {
+      const candidates = [
+        makeEx({ id_cwiczenia: 'c-pull', segment_id: 1, segment_nazwa: 'PULL' }),
+        makeEx({ id_cwiczenia: 'c-push', segment_id: 2, segment_nazwa: 'PUSH' }),
+        makeEx({ id_cwiczenia: 'c-legs', segment_id: 3, segment_nazwa: 'LEGS' }),
+        makeEx({ id_cwiczenia: 'c-core', segment_id: 4, segment_nazwa: 'CORE' }),
+      ];
+
+      // Exclude left neighbor PULL (1) and right neighbor PUSH (2)
+      const result = filterBySegmentBalancing(candidates, {
+        excludedSegmentIds: new Set([1, 2]),
+      });
+      expect(result.map(e => e.id_cwiczenia)).toEqual(['c-legs', 'c-core']);
+    });
+
+    it('filters out candidates sharing a normalized base name with usedBaseNames', () => {
+      const candidates = [
+        makeEx({ id_cwiczenia: 'c1', nazwa: 'Podciąganie klasyczne (Podchwyt)', segment_id: 1 }),
+        makeEx({ id_cwiczenia: 'c2', nazwa: 'Podciąganie australijskie', segment_id: 1 }),
+      ];
+
+      const usedBaseNames = new Set(['podciąganie klasyczne']);
+      const result = filterBySegmentBalancing(candidates, { usedBaseNames });
+      expect(result.map(e => e.id_cwiczenia)).toEqual(['c2']);
+    });
+
     it('applies partner safeguard when previous exercise was a partner exercise', () => {
       const prevPartner = makeEx({
         id_cwiczenia: 'partner-1',
@@ -114,16 +161,27 @@ describe('muscleBalancing', () => {
       expect(result.map(e => e.id_cwiczenia)).toEqual(['c-legs']);
     });
 
-    it('returns original candidates as soft fallback if strict balancing leaves 0 options', () => {
+    it('returns original candidates as soft fallback if strict balancing leaves 0 options (default softFallback = true)', () => {
       const candidates = [
         makeEx({ id_cwiczenia: 'c1', segment_id: 1 }),
         makeEx({ id_cwiczenia: 'c2', segment_id: 1 }),
       ];
 
-      // Previous was also segment 1. Since only segment 1 candidates exist, soft fallback returns them.
       const result = filterBySegmentBalancing(candidates, undefined, 1);
       expect(result).toEqual(candidates);
     });
+
+    it('returns empty array when softFallback is false and no candidate passes balancing', () => {
+      const candidates = [
+        makeEx({ id_cwiczenia: 'c1', segment_id: 1 }),
+        makeEx({ id_cwiczenia: 'c2', segment_id: 1 }),
+      ];
+
+      const result = filterBySegmentBalancing(candidates, {
+        previousSegmentId: 1,
+        softFallback: false,
+      });
+      expect(result).toEqual([]);
+    });
   });
 });
-
