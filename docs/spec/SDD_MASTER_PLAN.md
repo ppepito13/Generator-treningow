@@ -116,9 +116,9 @@ Cel: Nowy algorytm wyboru ćwiczeń zapobiegający powtarzaniu tych samych parti
 
 #### Faza 3.3: Integracja ze Store i Czyszczenie Monolitu (Change: `phase-3-3-store-integration`, Branch: `refactor/store-generator-integration`)
 Cel: Podpięcie gotowych algorytmów domenowych do Zustand Store oraz odchudzenie monolitu.
-- [ ] **3.3.1 [src/app/lib/store.ts]:** Zastąpienie wewnętrznych algorytmów losowania, rerolli i konfliktów importami z `src/domain/generator/`.
-- [ ] **3.3.2 [src/components/StationCard.tsx]:** Przełączenie importu `getValidExercisesForZone` bezpośrednio na moduł domenowy.
-- [ ] **3.3.3 [Weryfikacja jakości]:** Uruchomienie `npm run verify` (0 błędów, 0 ostrzeżeń) oraz builda produkcyjnego Next.js z eksportem `out/` pod Android Studio.
+- [x] **3.3.1 [src/app/lib/store.ts]:** Zastąpienie wewnętrznych algorytmów losowania, rerolli i konfliktów importami z `src/domain/generator/`.
+- [x] **3.3.2 [src/components/StationCard.tsx]:** Przełączenie importu `getValidExercisesForZone` bezpośrednio na moduł domenowy.
+- [x] **3.3.3 [Weryfikacja jakości]:** Uruchomienie `npm run verify` (0 błędów, 0 ostrzeżeń) oraz builda produkcyjnego Next.js z eksportem `out/` pod Android Studio.
 
 ### Faza 4: Pierwszy Projekt SDD (Branch: `feat/todo-31-deduplication`)
 Cel: Zastosowanie pełnego SDD do nowego feature'a.

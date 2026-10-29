@@ -3,7 +3,8 @@
 
 import React, { useState, useMemo, memo } from 'react';
 import { Station, Exercise, SEGMENTS, getDifficultyById } from '@/app/lib/data';
-import { useAppStore, getValidExercisesForZone } from '@/app/lib/store';
+import { useAppStore } from '@/app/lib/store';
+import { getValidExercisesForZone } from '@/domain/generator';
 import { ExerciseManualSelector } from './ExerciseManualSelector';
 import { ExerciseDetailDialog } from './ExerciseDetailDialog';
 import { RefreshCw, MoreVertical, MapPin, Dumbbell, Info, Users, User, Check, Settings2, AlertTriangle, GripVertical, Search, ChevronDown, Plus } from 'lucide-react';
@@ -33,6 +34,7 @@ export const StationCard = memo(({ station }: Props) => {
   const circuit = useAppStore(state => state.circuit);
   const selectedRoomId = useAppStore(state => state.selectedRoomId);
   const getEffectiveRoomConfig = useAppStore(state => state.getEffectiveRoomConfig);
+  const getAllExercises = useAppStore(state => state.getAllExercises);
 
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [activeSelectType, setActiveSelectType] = useState<'A' | 'B'>('A');
@@ -113,9 +115,9 @@ export const StationCard = memo(({ station }: Props) => {
 
   const availableSegmentsA = useMemo(() => SEGMENTS.filter(seg => {
     const levelRange = { min: currentDiff.min_poziom, max: currentDiff.max_poziom };
-    const pool = getValidExercisesForZone(station.zone, levelRange, new Set(), station.isPair, currentRoom, seg.id, true);
+    const pool = getValidExercisesForZone(station.zone, levelRange, new Set(), station.isPair, currentRoom, seg.id, true, false, 'all', 1, getAllExercises());
     return pool.length > 0;
-  }), [currentDiff, station.zone, station.isPair, currentRoom]);
+  }), [currentDiff, station.zone, station.isPair, currentRoom, getAllExercises]);
 
   // Dynamiczna kalkulacja pojemności strefy
   const getZoneCapacity = useMemo(() => (zoneId: string) => {

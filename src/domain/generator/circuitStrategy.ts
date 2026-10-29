@@ -102,6 +102,7 @@ export const generateCircuitStrategy = (params: CircuitStrategyParams): Generati
           requestedStations: stationCount,
           availableStations: generated.length,
           canLoosenDifficulty: !isStrictDifficulty,
+          partialStations: [...generated],
         },
       };
     }

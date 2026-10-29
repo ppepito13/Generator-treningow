@@ -121,6 +121,7 @@ export const generateSynchronizedStrategy = (
           requestedStations: stationCount,
           availableStations: generated.length,
           canLoosenDifficulty: !isStrictDifficulty,
+          partialStations: [...generated],
         },
       };
     }

@@ -44,6 +44,7 @@ export interface GenerationConflictData {
   requestedStations: number;
   availableStations: number;
   canLoosenDifficulty: boolean;
+  partialStations?: Station[];
   contextData?: {
     action?: 'reroll' | 'changeZone';
     stationId?: string;

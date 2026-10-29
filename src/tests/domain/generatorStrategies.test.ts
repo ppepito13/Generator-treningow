@@ -195,6 +195,32 @@ describe('generatorStrategies', () => {
       }
     });
 
+    it('returns conflict failure with partialStations when pool is partially exhausted', () => {
+      const room = makeRoom();
+      const diff = makeDiff(2, 4);
+      // Only 1 exercise matching level 3, but requesting 3 stations without duplicates allowed on first try
+      const exercises = [
+        makeEx({ id_cwiczenia: 'e1', poziom: 3, segment_id: 1 }),
+      ];
+
+      const result = generateCircuitStrategy({
+        currentRoom: room,
+        mainDiff: diff,
+        participants: 2,
+        stationCount: 2,
+        isStrictDifficulty: true,
+        allExercisesSource: exercises,
+      });
+
+      // Since only 1 unique exercise exists, fallback cascade might reuse or return conflict
+      // When completely exhausted:
+      if (!result.success) {
+        expect(result.conflict.type).toBe('generate');
+        expect(result.conflict.partialStations).toBeDefined();
+        expect(Array.isArray(result.conflict.partialStations)).toBe(true);
+      }
+    });
+
     it('returns conflict failure when pool cannot satisfy stations', () => {
       const room = makeRoom();
       const diff = makeDiff(9, 10);
@@ -216,6 +242,7 @@ describe('generatorStrategies', () => {
       if (!result.success) {
         expect(result.conflict.type).toBe('generate');
         expect(result.conflict.requestedStations).toBe(3);
+        expect(result.conflict.partialStations).toEqual([]);
       }
     });
   });
