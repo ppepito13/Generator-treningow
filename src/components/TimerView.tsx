@@ -10,7 +10,7 @@ export const TimerView = () => {
   const [activeSubTab, setActiveSubTab] = useState<'stopwatch' | 'countdown' | 'interval'>('interval');
 
   return (
-    <div className="min-h-screen pb-28 pt-4 px-4 max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen app-safe-top app-safe-bottom app-container-wide px-4 sm:px-6 space-y-6">
       {/* NAGŁÓWEK MODUŁU ZEGAR */}
       <div className="glass-card p-6 rounded-[2rem] border border-white/10 space-y-4">
         <div className="flex items-center gap-3">

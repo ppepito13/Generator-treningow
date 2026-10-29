@@ -73,7 +73,7 @@ export const ConfigurationForm = () => {
           WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)'
         }}
       />
-      <div className="flex flex-col gap-8 w-full max-w-md mx-auto pt-[calc(max(env(safe-area-inset-top,0px),48px)+24px)] pb-[calc(env(safe-area-inset-bottom,0px)+64px)] px-6">
+      <div className="flex flex-col gap-8 app-container-narrow app-safe-top app-safe-bottom px-4 sm:px-6">
       <div className="text-center space-y-4">
         <h1 className="text-3xl font-bold tracking-tighter text-primary font-headline cyan-glow inline-block px-4 py-2 rounded-xl">
           Generator Treningów<br />SW

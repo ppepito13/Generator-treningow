@@ -12,6 +12,7 @@ Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/e
 - **Integralność Danych i Testy UI**: Automatyczna walidacja spójności bazy JSON ćwiczeń/sal oraz testy renderowania komponentów interfejsu w środowisku jsdom.
 
 ### Zmieniono
+- **Standaryzacja Układu i Marginesów Bezpiecznych**: Wprowadzono globalne klasy dla marginesów systemowych Androida (.app-safe-top, .app-safe-bottom) oraz ujednolicono szerokości kontenerów (.app-container-narrow, .app-container-wide) we wszystkich 5 modułach, eliminując ucinanie nagłówków pod notchem oraz optymalizując wyświetlanie na tabletach i desktopie.
 - **Architektura Generatora**: Rozbicie monolitycznego pliku store na czystą architekturę domenową (`src/domain/generator/`) z heurystyką balansu mięśniowego (naprzemienność PUSH/PULL) i kaskadowym doborem trudności.
 - **Bezpieczeństwo Danych (Zustand Persist v1)**: Wprowadzenie migracji stanu i selektywnego zapisu (`partialize`), chroniącego przed utratą danych użytkownika i białym ekranem.
 - **Fonty Offline dla Androida**: Zastąpienie zewnętrznego CDN Google Fonts wbudowanym mechanizmem `next/font/google` dla 100% działania offline w aplikacji mobilnej Capacitor.
