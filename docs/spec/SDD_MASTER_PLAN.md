@@ -95,14 +95,14 @@ Cel: Rozbicie monolitycznego pliku `store.ts` (1330 linii) na czystą domenę `s
 
 #### Faza 3.1: Ekstrakcja Reguł Domenowych i Doboru Stref (Change: `phase-3-1-generator-rules`, Branch: `refactor/generator-domain-rules`)
 Cel: Wydzielenie czystych funkcji pomocniczych, weryfikacji sprzętu, filtrowania ćwiczeń i alokacji stref ze `store.ts` do warstwy domeny bez modyfikacji stanu aplikacji.
-- [ ] **3.1.1 [src/domain/generator/types.ts]:** Definicja interfejsów domenowych parametrów losowania, kontekstu sali, stref i stacji.
-- [ ] **3.1.2 [src/domain/generator/equipmentRules.ts]:** Ekstrakcja czystych funkcji weryfikacji sprzętu (`ensureEquipment`, `getEquipmentString`, `canExerciseBeShared`).
-- [ ] **3.1.3 [src/tests/domain/equipmentRules.test.ts]:** Testy jednostkowe Vitest dla reguł sprzętowych sali i stacji.
-- [ ] **3.1.4 [src/domain/generator/exerciseFilter.ts]:** Ekstrakcja `getValidExercisesForZone` jako czystej funkcji z Dependency Injection (wstrzykiwana baza ćwiczeń, obsługa reguły pojedynczej flagi `hasFlagAlready`).
-- [ ] **3.1.5 [src/tests/domain/exerciseFilter.test.ts]:** Testy jednostkowe Vitest dla filtrowania stref, poziomów i ograniczeń.
-- [ ] **3.1.6 [src/domain/generator/zoneSelector.ts]:** Ekstrakcja doboru stref i limitów pojemności (klatka RIG na pozycji 2, forcedZones, dynamiczne limity stref elastycznych `floorLimit`).
-- [ ] **3.1.7 [src/tests/domain/zoneSelector.test.ts]:** Testy jednostkowe Vitest algorytmu przydziału i sortowania stref sali.
-- [ ] **3.1.8 [src/domain/generator/index.ts]:** Publiczny barrel export oraz kompatybilny re-eksport w `src/app/lib/store.ts` dla zachowania ciągłości kodu UI.
+- [x] **3.1.1 [src/domain/generator/types.ts]:** Definicja interfejsów domenowych parametrów losowania, kontekstu sali, stref i stacji.
+- [x] **3.1.2 [src/domain/generator/equipmentRules.ts]:** Ekstrakcja czystych funkcji weryfikacji sprzętu (`ensureEquipment`, `getEquipmentString`, `canExerciseBeShared`).
+- [x] **3.1.3 [src/tests/domain/equipmentRules.test.ts]:** Testy jednostkowe Vitest dla reguł sprzętowych sali i stacji.
+- [x] **3.1.4 [src/domain/generator/exerciseFilter.ts]:** Ekstrakcja `getValidExercisesForZone` jako czystej funkcji z Dependency Injection (wstrzykiwana baza ćwiczeń, obsługa reguły pojedynczej flagi `hasFlagAlready`).
+- [x] **3.1.5 [src/tests/domain/exerciseFilter.test.ts]:** Testy jednostkowe Vitest dla filtrowania stref, poziomów i ograniczeń.
+- [x] **3.1.6 [src/domain/generator/zoneSelector.ts]:** Ekstrakcja doboru stref i limitów pojemności (klatka RIG na pozycji 2, forcedZones, dynamiczne limity stref elastycznych `floorLimit`).
+- [x] **3.1.7 [src/tests/domain/zoneSelector.test.ts]:** Testy jednostkowe Vitest algorytmu przydziału i sortowania stref sali.
+- [x] **3.1.8 [src/domain/generator/index.ts]:** Publiczny barrel export oraz kompatybilny re-eksport w `src/app/lib/store.ts` dla zachowania ciągłości kodu UI.
 
 #### Faza 3.2: Balans Mięśniowy, Kaskada i Strategie Losowania (Change: `phase-3-2-generator-strategies`, Branch: `feat/generator-balancing-strategies`)
 Cel: Nowy algorytm wyboru ćwiczeń zapobiegający powtarzaniu tych samych partii mięśniowych, obsługa stacji oddechowych i par oraz czyste strategie losowania obwodu, treningu synchronicznego i rerolli.

@@ -20,6 +20,12 @@ import {
 import { IntervalPreset, TimerAudioSettings } from '@/types/timer';
 import { FlattenedQueueItem } from '@/components/GymViewModal';
 import { UserProfileData } from '@/types/calculators';
+import {
+  ensureEquipment,
+  getEquipmentString,
+  canExerciseBeShared,
+  getValidExercisesForZone as _getValidExercisesForZone,
+} from '@/domain/generator';
 
 export const MAX_DIFFICULTY_LOOSENING = 1;
 
@@ -149,44 +155,6 @@ interface AppState {
   reset: () => void;
 }
 
-const getEquipmentString = (ex: Pick<Exercise, "wymagania_sprzetowe">): string => {
-  if (!ex.wymagania_sprzetowe || ex.wymagania_sprzetowe.length === 0) return '';
-  const items = new Set<string>();
-  ex.wymagania_sprzetowe.forEach(rule => {
-    if (Array.isArray(rule)) {
-      rule.forEach(alt => Object.keys(alt).forEach(k => items.add(k)));
-    } else {
-      Object.keys(rule).forEach(k => items.add(k));
-    }
-  });
-  return Array.from(items).join(', ').toLowerCase();
-};
-
-const canExerciseBeShared = (ex: Exercise, currentRoom: RoomConfig): boolean => {
-  return ensureEquipment(ex, currentRoom, 2);
-};
-
-const ensureEquipment = (ex: Exercise, currentRoom: RoomConfig, participants: number): boolean => {
-  if (!ex.wymagania_sprzetowe || ex.wymagania_sprzetowe.length === 0) return true;
-
-  const checkSingle = (req: Record<string, number>) => {
-    return Object.entries(req).every(([itemKey, qtyPerPerson]) => {
-      // Dzięki zrównaniu słownictwa (m.in migrateDB.js) możemy szukać exact-match klucza.
-      const gymHas = currentRoom.inwentarz[itemKey] || 0;
-      const needed = participants * qtyPerPerson;
-      return gymHas >= needed;
-    });
-  };
-
-  // Silnik Hybrydowy: Główna tablica to zasady AND. Wewnątrz (Array) to zasady OR.
-  return ex.wymagania_sprzetowe.every(rule => {
-    if (Array.isArray(rule)) {
-      return rule.some(alt => checkSingle(alt));
-    } else {
-      return checkSingle(rule);
-    }
-  });
-};
 
 export const getValidExercisesForZone = (
   zone: Zone,
@@ -201,88 +169,9 @@ export const getValidExercisesForZone = (
   participantsCount: number = 1,
   allExercisesSource?: Exercise[]
 ): Exercise[] => {
-  const source = allExercisesSource || (useAppStore.getState ? useAppStore.getState().getAllExercises() : ALL_EXERCISES);
-
-  let pool = source.filter(ex =>
-    (ex.poziom === 0 || (ex.poziom >= diffRange.min && ex.poziom <= diffRange.max)) &&
-    (ignoreUsed ? true : !usedIds.has(ex.id_cwiczenia))
-  );
-
-  if (category !== 'all') {
-    pool = pool.filter(ex => 
-      ex.kategorie_treningu?.some(cat => cat.toLowerCase() === 'all' || cat.toLowerCase() === category.toLowerCase())
-    );
-  }
-
-  if (segmentId !== undefined) {
-    pool = pool.filter(ex => ex.segment_id === segmentId);
-  }
-
-  if (!isThisStationPair) {
-    pool = pool.filter(ex => ex.segment_id !== 8 && ex.tryb_pracy !== 'W_Parze');
-  }
-
-  // Filtr reguł sali: zakazane tryby pracy (np. Astoria nie dopuszcza ćwiczeń W_Parze)
-  if (currentRoom.zakazane_tryby_pracy && currentRoom.zakazane_tryby_pracy.length > 0) {
-    pool = pool.filter(ex => !currentRoom.zakazane_tryby_pracy!.includes(ex.tryb_pracy));
-  }
-
-  if (hasFlagAlready) {
-    pool = pool.filter(ex => !ex.nazwa.toLowerCase().includes('flaga'));
-  }
-
-  const zoneEquip = zone.przypisany_sprzet || [];
-
-  if (zone.zakazane_kategorie_sprzetu && zone.zakazane_kategorie_sprzetu.length > 0) {
-    pool = pool.filter(ex => {
-      const eq = getEquipmentString(ex).toLowerCase();
-      return !zone.zakazane_kategorie_sprzetu!.some(term => eq.includes(term.toLowerCase()));
-    });
-  }
-
-  if (zone.ograniczenia && zone.ograniczenia.length > 0) {
-    if (zone.ograniczenia.includes("odrzuc_segment_dynamika")) pool = pool.filter(ex => ex.segment_id !== 6);
-    if (zone.ograniczenia.includes("odrzuc_kategorie_moc")) pool = pool.filter(ex => !ex.kategorie_treningu.includes('Moc'));
-    if (zone.ograniczenia.includes("zakaz_drazkow_i_drabinek")) pool = pool.filter(ex => ex.segment_id !== 1);
-    if (zone.ograniczenia.includes("zakaz_obrotu_drazek_wysoki")) {
-      pool = pool.filter(ex => {
-        const isRot = ex.tagi_specjalne?.includes('Pełen Obrót');
-        const eqStr = getEquipmentString(ex).toLowerCase();
-        // Ban rotation ONLY if it requires a high bar ('drazek')
-        if (isRot && eqStr.includes('drazek')) {
-          return false;
-        }
-        return true;
-      });
-    }
-  }
-
-  if (zone.typ === 'elastyczny') {
-    pool = pool.filter(ex => !ex.kategorie_treningu.includes('Wyciąg'));
-  }
-
-  if (zone.typ !== 'klatka_rig') {
-    pool = pool.filter(ex => !(ex.segment_id === 1 && getEquipmentString(ex).includes('drazek')));
-  }
-
-  if (zoneEquip.length > 0) {
-    pool = pool.filter(ex => {
-      const equip = getEquipmentString(ex).toLowerCase();
-      const name = ex.nazwa.toLowerCase();
-      return zoneEquip.some(item => equip.includes(item.toLowerCase()) || name.includes(item.toLowerCase()));
-    });
-  }
-
-  // OSTATECZNA tarcza ochronna – weryfikacja fizycznego sprzętu na Sali.
-  // Dla obwodu participantsCount = 1 (stacja solo) lub 2 (para), dla GRP = cała grupa.
-  pool = pool.filter(ex => ensureEquipment(ex, currentRoom, participantsCount));
-
-  // FALLBACK jeśli wyczyściliśmy ćwiczenia z użytych: zezwalamy na potworzenia!
-  if (pool.length === 0 && !ignoreUsed) {
-    return getValidExercisesForZone(zone, diffRange, new Set(), isThisStationPair, currentRoom, segmentId, true, hasFlagAlready);
-  }
-
-  return pool;
+  // Delegate to pure domain function; inject exercise source from Zustand store when not provided.
+  const source = allExercisesSource ?? (useAppStore.getState ? useAppStore.getState().getAllExercises() : ALL_EXERCISES);
+  return _getValidExercisesForZone(zone, diffRange, usedIds, isThisStationPair, currentRoom, segmentId, ignoreUsed, hasFlagAlready, category, participantsCount, source);
 };
 
 const generateCircuitStrategy = (
@@ -1328,3 +1217,6 @@ export const migrateStoreState = (persistedState: unknown, version: number) => {
   }
   return persistedState;
 };
+
+// Re-export domain generator helpers for backward compatibility with existing imports.
+export { ensureEquipment, getEquipmentString, canExerciseBeShared };
