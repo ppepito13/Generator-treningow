@@ -22,14 +22,18 @@ W tym repozytorium **ŻADEN agent AI nie ma prawa napisać ani zmienić ani jedn
 3. **Izolowana implementacja (`/opsx-apply`):**
    - Kodowanie wyłącznie zadań z `tasks.md`, realizacja krok po kroku, natychmiastowe oznaczanie `[x]` i lokalna weryfikacja.
 
-4. **Domknięcie cyklu, bramka jakości i Pull Request:**
+4. **Domknięcie cyklu, bramka jakości, Pull Request i pełne sprzątanie:**
    - Weryfikacja `npm run verify` (**0 błędów TypeScript, 0 błędów ESLint, 100% testów Vitest zielonych**) oraz `npm run build`.
-   - Aktualizacja `todo.md` oraz `CHANGELOG.md` w sekcji `[Unreleased]`.
+   - Aktualizacja lokalnego `todo.md` oraz `CHANGELOG.md` w sekcji `[Unreleased]`.
    - Archiwizacja `/opsx-archive` -> aktualizacja głównych specyfikacji -> commit na dedykowanej gałęzi -> push gałęzi do `origin`.
    - **Obowiązkowy bezpośredni link do Pull Requesta:** Agent **MUSI** w wiadomości końcowej podać bezpośredni, klikalny link Markdown:
      `👉 [Kliknij tutaj, aby utworzyć Pull Request na GitHubie](https://github.com/ppepito13/Generator-treningow/pull/new/<nazwa-gałęzi>)`
      pozwalający użytkownikowi zweryfikować zdalne CI GitHub Actions i scalić PR jednym kliknięciem.
-   - Po potwierdzeniu zmergowania przez użytkownika: wykonanie `git pull origin main` i usunięcie gałęzi lokalnej.
+   - **Obowiązkowe pełne sprzątanie po zmergowaniu:** Po potwierdzeniu zmergowania PR przez użytkownika, agent ma obowiązek wykonać:
+     1. `git pull origin main` (pobranie zmian do lokalnego `main`),
+     2. `git branch -D <nazwa-gałęzi>` (usunięcie lokalnej gałęzi roboczej),
+     3. `git push origin --delete <nazwa-gałęzi>` (usunięcie tymczasowej gałęzi ze zdalnego GitHuba, jeśli jeszcze tam wisi),
+     4. `git fetch --prune` (wyczyszczenie referencji śledzących).
 
 ---
 
@@ -65,8 +69,8 @@ Użytkownik regularnie przełącza silniki/konta lub wznawia pracę po czyszczen
 
 ## 📝 Obowiązkowe Śledzenie w TODO i CHANGELOG
 W tym projekcie niedopuszczalne jest gubienie kontekstu biznesowego. Każdy agent musi bezwzględnie przestrzegać poniższego schematu śledzenia:
-1. **Rejestracja w `todo.md`:** Każda nowa funkcja, poprawka lub usprawnienie musi mieć swoje numerowane zadanie na liście otwartych zadań w `todo.md`.
-2. **Aktualizacja przed archiwizacją:** Zanim zmiana zostanie zarchiwizowana (`/opsx-archive`) i zacomitowana:
+1. **Rejestracja w `todo.md`:** Każda nowa funkcja, poprawka lub usprawnienie musi mieć swoje numerowane zadanie na liście otwartych zadań w `todo.md`. Plik `todo.md` jest plikiem lokalnym użytkownika (znajduje się w `.gitignore`) – agent aktualizuje go bezpośrednio na dysku, bez tworzenia osobnych gałęzi czy commitów w Git.
+2. **Aktualizacja przed archiwizacją:** Zanim zmiana w repozytorium zostanie zarchiwizowana (`/opsx-archive`) i zacomitowana:
    - Zadanie w `todo.md` musi zostać oznaczone jako `[x]` (w sekcji `## ✅ Zakończone` ➔ `### [Unreleased]`).
    - Do pliku `CHANGELOG.md` w sekcji `## [Unreleased]` należy dodać zwięzły, zrozumiały dla użytkownika opis biznesowy w odpowiedniej kategorii (`### Dodano`, `### Zmieniono` lub `### Naprawiono`) zgodnie ze standardem *Keep a Changelog*.
 
