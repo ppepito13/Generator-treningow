@@ -22,10 +22,14 @@ W tym repozytorium **ŻADEN agent AI nie ma prawa napisać ani zmienić ani jedn
 3. **Izolowana implementacja (`/opsx-apply`):**
    - Kodowanie wyłącznie zadań z `tasks.md`, realizacja krok po kroku, natychmiastowe oznaczanie `[x]` i lokalna weryfikacja.
 
-4. **Domknięcie cyklu i bramka jakości:**
-   - Weryfikacja `npm run verify` (**0 błędów TypeScript, 0 błędów ESLint, 100% testów Vitest zielonych**).
+4. **Domknięcie cyklu, bramka jakości i Pull Request:**
+   - Weryfikacja `npm run verify` (**0 błędów TypeScript, 0 błędów ESLint, 100% testów Vitest zielonych**) oraz `npm run build`.
    - Aktualizacja `todo.md` oraz `CHANGELOG.md` w sekcji `[Unreleased]`.
-   - Archiwizacja `/opsx-archive` -> aktualizacja głównych specyfikacji -> commit -> merge do `main` -> push.
+   - Archiwizacja `/opsx-archive` -> aktualizacja głównych specyfikacji -> commit na dedykowanej gałęzi -> push gałęzi do `origin`.
+   - **Obowiązkowy bezpośredni link do Pull Requesta:** Agent **MUSI** w wiadomości końcowej podać bezpośredni, klikalny link Markdown:
+     `👉 [Kliknij tutaj, aby utworzyć Pull Request na GitHubie](https://github.com/ppepito13/Generator-treningow/pull/new/<nazwa-gałęzi>)`
+     pozwalający użytkownikowi zweryfikować zdalne CI GitHub Actions i scalić PR jednym kliknięciem.
+   - Po potwierdzeniu zmergowania przez użytkownika: wykonanie `git pull origin main` i usunięcie gałęzi lokalnej.
 
 ---
 
