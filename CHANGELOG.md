@@ -5,6 +5,7 @@ Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 ### Dodano
+- **Dwukierunkowy Balans Sąsiedztwa i Deduplikacja Nazw (Base Name)**: Wdrożenie wielopoziomowej kaskady doboru ćwiczeń eliminującej powtórzenia tego samego wzorca ruchowego na sąsiadujących stacjach (w tym na styku pętli obwodu stacja ostatnia - pierwsza oraz przy automatycznym re-rollu) oraz zapobieganie występowaniu wielu wariantów tego samego ćwiczenia w jednym treningu (usedBaseNames) z zachowaniem pełnej swobody manualnej trenera.
 - **Ujednolicone Nagłówki i Siatki Responsywne (ModuleHeader)**: Wdrożenie ustandaryzowanego komponentu nagłówka modułów (ModuleHeader) w widokach Zegara, Kalkulatorów i Studia oraz responsywnych siatek 2/3-kolumnowych w Zestawie (rectSortingStrategy w DnD) i Studio Ćwiczeń, optymalizujących wykorzystanie przestrzeni na większych ekranach.
 - **Studio Zarządzania Bazą**: Moduły podglądu, wyszukiwania, edycji oraz eksportu bazy ćwiczeń, sprzętu, sal i konfiguracji poziomów trudności.
 - **Zegar Treningowy**: Zaawansowany moduł czasomierza z obsługą treningu interwałowego, stopera i minutnika.

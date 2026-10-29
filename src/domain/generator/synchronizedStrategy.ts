@@ -2,7 +2,7 @@ import { ALL_EXERCISES } from '@/app/lib/data';
 import type { Exercise, Station, Zone } from '@/app/lib/data';
 import type { SynchronizedStrategyParams, GenerationResult, DifficultyRange } from './types';
 import { getValidExercisesForZone } from './exerciseFilter';
-import { filterBySegmentBalancing } from './muscleBalancing';
+import { filterBySegmentBalancing, normalizeExerciseBaseName } from './muscleBalancing';
 import { getLoosenedRange } from './cascadeFallback';
 
 /**
@@ -12,6 +12,7 @@ import { getLoosenedRange } from './cascadeFallback';
  * Enforces:
  * - Equipment availability for all `participants` concurrently
  * - Movement segment and muscle balancing between consecutive stations/rounds
+ * - Base name deduplication across rounds
  * - Difficulty range constraints and safe fallback
  * - Return of pure GenerationResult (success or failure)
  * - Deterministic random injection (randomFn)
@@ -34,6 +35,7 @@ export const generateSynchronizedStrategy = (
 
   const generated: Station[] = [];
   const usedIds = new Set<string>();
+  const usedBaseNames = new Set<string>();
 
   const mainZone: Zone = currentRoom.strefy[0] || {
     id: 'FBW_Virtual',
@@ -72,8 +74,13 @@ export const generateSynchronizedStrategy = (
       allExercisesSource
     );
 
-    // Apply segment balancing
-    let balanced = filterBySegmentBalancing(pool, previousExercise, previousSegmentId);
+    // Apply segment balancing & base name deduplication
+    let balanced = filterBySegmentBalancing(pool, {
+      previousExercise,
+      previousSegmentId,
+      usedBaseNames,
+      softFallback: false,
+    });
 
     // 2. Fallback: if loosened query failed, try reverting to baseRange
     if (balanced.length === 0 && activeRange !== baseRange) {
@@ -90,15 +97,29 @@ export const generateSynchronizedStrategy = (
         participants,
         allExercisesSource
       );
-      balanced = filterBySegmentBalancing(pool, previousExercise, previousSegmentId);
+      balanced = filterBySegmentBalancing(pool, {
+        previousExercise,
+        previousSegmentId,
+        usedBaseNames,
+        softFallback: false,
+      });
     }
 
-    // 3. Fallback: allow repeating used exercises if completely exhausted
+    // 3. Fallback: relax base name deduplication if exhausted
+    if (balanced.length === 0) {
+      balanced = filterBySegmentBalancing(pool, {
+        previousExercise,
+        previousSegmentId,
+        softFallback: false,
+      });
+    }
+
+    // 4. Fallback: allow repeating used exercises if completely exhausted
     if (balanced.length === 0 && !ignoreUsedFlag) {
       pool = getValidExercisesForZone(
         mainZone,
         baseRange,
-        new Set<string>(),
+        usedIds,
         false,
         currentRoom,
         undefined,
@@ -108,7 +129,11 @@ export const generateSynchronizedStrategy = (
         participants,
         allExercisesSource
       );
-      balanced = filterBySegmentBalancing(pool, previousExercise, previousSegmentId);
+      balanced = filterBySegmentBalancing(pool, {
+        previousExercise,
+        previousSegmentId,
+        softFallback: false,
+      });
     }
 
     const finalPool = balanced.length > 0 ? balanced : pool;
@@ -128,6 +153,7 @@ export const generateSynchronizedStrategy = (
 
     const exA = finalPool[Math.floor(randomFn() * finalPool.length)];
     usedIds.add(exA.id_cwiczenia);
+    usedBaseNames.add(normalizeExerciseBaseName(exA.nazwa));
 
     generated.push({
       id: `sync-${idx}-${Date.now()}-${randomFn().toString(36).substring(2, 7)}`,
@@ -145,4 +171,3 @@ export const generateSynchronizedStrategy = (
     stations: generated,
   };
 };
-

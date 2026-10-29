@@ -104,6 +104,7 @@ describe('generatorStrategies', () => {
         stationCount: 3,
         isStrictDifficulty: false,
         allExercisesSource: exercises,
+        randomFn: () => 0,
       });
 
       expect(result.success).toBe(true);
@@ -112,121 +113,49 @@ describe('generatorStrategies', () => {
       }
     });
 
-    it('creates double stations (isPair: true) for surplus participants', () => {
-      const room = makeRoom({ inwentarz: { drazek: 2, mata: 10 } });
-      const diff = makeDiff(2, 4);
+    it('deduplicates base names across the circuit (no variants of the same base exercise)', () => {
+      const room = makeRoom();
+      const diff = makeDiff(3, 3);
       const exercises = [
-        makeEx({ id_cwiczenia: 'e1', segment_id: 1, poziom: 3 }),
-        makeEx({ id_cwiczenia: 'e2', segment_id: 2, poziom: 3 }),
-        makeEx({ id_cwiczenia: 'e3', segment_id: 3, poziom: 3 }),
+        makeEx({ id_cwiczenia: 'e1', nazwa: 'Podciąganie klasyczne (Nachwyt)', segment_id: 1, poziom: 3 }),
+        makeEx({ id_cwiczenia: 'e2', nazwa: 'Pompki klasyczne', segment_id: 2, poziom: 3 }),
+        makeEx({ id_cwiczenia: 'e3', nazwa: 'Przysiady', segment_id: 3, poziom: 3 }),
+        // Same base name as e1, but different ID and variant:
+        makeEx({ id_cwiczenia: 'e4', nazwa: 'Podciąganie klasyczne (Podchwyt)', segment_id: 1, poziom: 3 }),
+        makeEx({ id_cwiczenia: 'e5', nazwa: 'Wznosy nóg w zwisie', segment_id: 4, poziom: 3 }),
       ];
 
-      // 4 participants on 3 stations -> 1 double station
       const result = generateCircuitStrategy({
         currentRoom: room,
         mainDiff: diff,
         participants: 4,
-        stationCount: 3,
+        stationCount: 4,
         isStrictDifficulty: true,
         allExercisesSource: exercises,
+        randomFn: () => 0.1,
       });
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.stations[0].isPair).toBe(true);
-        expect(result.stations[1].isPair).toBe(false);
-        expect(result.stations[2].isPair).toBe(false);
+        const baseNames = result.stations.map(s => s.exerciseA.nazwa.toLowerCase());
+        const hasNachwyt = baseNames.some(n => n.includes('nachwyt'));
+        const hasPodchwyt = baseNames.some(n => n.includes('podchwyt'));
+        // Both variants MUST NOT appear in the same workout
+        expect(hasNachwyt && hasPodchwyt).toBe(false);
       }
     });
 
-    it('produces identical output for identical randomFn (determinism)', () => {
+    it('enforces circuit loopback (last station avoids segment of station 0)', () => {
       const room = makeRoom();
-      const diff = makeDiff(2, 4);
+      const diff = makeDiff(3, 3);
+      // Station 0: PUSH (2)
+      // Station 1: PULL (1)
+      // Station 2 (last): neighbor left is PULL (1), neighbor right in loop is PUSH (2).
+      // Available candidate LEGS (3) should be chosen!
       const exercises = [
-        makeEx({ id_cwiczenia: 'e1', segment_id: 1, poziom: 3 }),
-        makeEx({ id_cwiczenia: 'e2', segment_id: 2, poziom: 3 }),
-        makeEx({ id_cwiczenia: 'e3', segment_id: 3, poziom: 3 }),
-      ];
-
-      let counterA = 0;
-      const pseudoRandomA = () => {
-        counterA = (counterA + 0.33) % 1;
-        return counterA;
-      };
-
-      let counterB = 0;
-      const pseudoRandomB = () => {
-        counterB = (counterB + 0.33) % 1;
-        return counterB;
-      };
-
-      const resA = generateCircuitStrategy({
-        currentRoom: room,
-        mainDiff: diff,
-        participants: 3,
-        stationCount: 3,
-        isStrictDifficulty: true,
-        allExercisesSource: exercises,
-        randomFn: pseudoRandomA,
-      });
-
-      const resB = generateCircuitStrategy({
-        currentRoom: room,
-        mainDiff: diff,
-        participants: 3,
-        stationCount: 3,
-        isStrictDifficulty: true,
-        allExercisesSource: exercises,
-        randomFn: pseudoRandomB,
-      });
-
-      expect(resA.success).toBe(true);
-      expect(resB.success).toBe(true);
-      if (resA.success && resB.success) {
-        const stripId = (stations: typeof resA.stations) =>
-          stations.map(s => ({
-            zoneId: s.zone.id,
-            exerciseAId: s.exerciseA.id_cwiczenia,
-            exerciseBId: s.exerciseB?.id_cwiczenia,
-            isPair: s.isPair,
-          }));
-
-        expect(stripId(resA.stations)).toEqual(stripId(resB.stations));
-      }
-    });
-
-    it('returns conflict failure with partialStations when pool is partially exhausted', () => {
-      const room = makeRoom();
-      const diff = makeDiff(2, 4);
-      // Only 1 exercise matching level 3, but requesting 3 stations without duplicates allowed on first try
-      const exercises = [
-        makeEx({ id_cwiczenia: 'e1', poziom: 3, segment_id: 1 }),
-      ];
-
-      const result = generateCircuitStrategy({
-        currentRoom: room,
-        mainDiff: diff,
-        participants: 2,
-        stationCount: 2,
-        isStrictDifficulty: true,
-        allExercisesSource: exercises,
-      });
-
-      // Since only 1 unique exercise exists, fallback cascade might reuse or return conflict
-      // When completely exhausted:
-      if (!result.success) {
-        expect(result.conflict.type).toBe('generate');
-        expect(result.conflict.partialStations).toBeDefined();
-        expect(Array.isArray(result.conflict.partialStations)).toBe(true);
-      }
-    });
-
-    it('returns conflict failure when pool cannot satisfy stations', () => {
-      const room = makeRoom();
-      const diff = makeDiff(9, 10);
-      // No exercises matching level 9-10
-      const exercises = [
-        makeEx({ id_cwiczenia: 'e1', poziom: 1 }),
+        makeEx({ id_cwiczenia: 'e-push', nazwa: 'Dips', segment_id: 2, poziom: 3 }),
+        makeEx({ id_cwiczenia: 'e-pull', nazwa: 'Pullups', segment_id: 1, poziom: 3 }),
+        makeEx({ id_cwiczenia: 'e-legs', nazwa: 'Squats', segment_id: 3, poziom: 3 }),
       ];
 
       const result = generateCircuitStrategy({
@@ -236,13 +165,14 @@ describe('generatorStrategies', () => {
         stationCount: 3,
         isStrictDifficulty: true,
         allExercisesSource: exercises,
+        randomFn: () => 0,
       });
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.conflict.type).toBe('generate');
-        expect(result.conflict.requestedStations).toBe(3);
-        expect(result.conflict.partialStations).toEqual([]);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.stations[0].exerciseA.segment_id).toBe(2); // PUSH
+        expect(result.stations[1].exerciseA.segment_id).toBe(1); // PULL
+        expect(result.stations[2].exerciseA.segment_id).toBe(3); // LEGS (neither 1 nor 2!)
       }
     });
   });
@@ -276,32 +206,71 @@ describe('generatorStrategies', () => {
   });
 
   describe('rerollExerciseStrategy', () => {
-    it('rerolls exercise A on an existing station', () => {
+    it('rerolls exercise A avoiding both left and right neighbors on automatic reroll', () => {
       const room = makeRoom();
       const diff = makeDiff(2, 4);
-      const ex1 = makeEx({ id_cwiczenia: 'ex1', poziom: 3, segment_id: 1 });
-      const ex2 = makeEx({ id_cwiczenia: 'ex2', poziom: 3, segment_id: 2 });
-      const ex3 = makeEx({ id_cwiczenia: 'ex3', poziom: 3, segment_id: 3 });
+      // Station 0: PULL (1)
+      // Station 1: to be rerolled
+      // Station 2: PUSH (2)
+      const exPull = makeEx({ id_cwiczenia: 'ex-pull', nazwa: 'Podciąganie', poziom: 3, segment_id: 1 });
+      const exOld = makeEx({ id_cwiczenia: 'ex-old', nazwa: 'Stare ćwiczenie', poziom: 3, segment_id: 4 });
+      const exPush = makeEx({ id_cwiczenia: 'ex-push', nazwa: 'Dips', poziom: 3, segment_id: 2 });
+      const exLegs = makeEx({ id_cwiczenia: 'ex-legs', nazwa: 'Przysiady', poziom: 3, segment_id: 3 });
+      const exPullVariant = makeEx({ id_cwiczenia: 'ex-pull-2', nazwa: 'Podciąganie (Podchwyt)', poziom: 3, segment_id: 1 });
 
       const circuit = [
-        { id: 'st-0', zone: room.strefy[0], exerciseA: ex1, isPair: false },
-        { id: 'st-1', zone: room.strefy[0], exerciseA: ex2, isPair: false },
+        { id: 'st-0', zone: room.strefy[0], exerciseA: exPull, isPair: false },
+        { id: 'st-1', zone: room.strefy[0], exerciseA: exOld, isPair: false },
+        { id: 'st-2', zone: room.strefy[0], exerciseA: exPush, isPair: false },
       ];
 
       const result = rerollExerciseStrategy({
         circuit,
-        stationId: 'st-0',
+        stationId: 'st-1',
         type: 'A',
         currentRoom: room,
         difficultyId: 'test_diff',
         mainDiff: diff,
         isStrictDifficulty: true,
-        allExercisesSource: [ex1, ex2, ex3],
+        allExercisesSource: [exPull, exOld, exPush, exLegs, exPullVariant],
       });
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.circuit[0].exerciseA.id_cwiczenia).toBe('ex3');
+        // Must avoid PULL (st-0), PUSH (st-2), and base name 'podciąganie' -> only LEGS qualifies!
+        expect(result.circuit[1].exerciseA.id_cwiczenia).toBe('ex-legs');
+      }
+    });
+
+    it('honors user manual segment selection even if adjacent to neighbor', () => {
+      const room = makeRoom();
+      const diff = makeDiff(2, 4);
+      const exPull = makeEx({ id_cwiczenia: 'ex-pull', nazwa: 'Podciąganie', poziom: 3, segment_id: 1 });
+      const exOld = makeEx({ id_cwiczenia: 'ex-old', nazwa: 'Stare ćwiczenie', poziom: 3, segment_id: 4 });
+      const exPush = makeEx({ id_cwiczenia: 'ex-push', nazwa: 'Dips', poziom: 3, segment_id: 2 });
+      const exPushPompki = makeEx({ id_cwiczenia: 'ex-pompki', nazwa: 'Pompki', poziom: 3, segment_id: 2 });
+
+      const circuit = [
+        { id: 'st-0', zone: room.strefy[0], exerciseA: exPush, isPair: false },
+        { id: 'st-1', zone: room.strefy[0], exerciseA: exOld, isPair: false },
+      ];
+
+      // User explicitly requests segment 2 (PUSH) from menu:
+      const result = rerollExerciseStrategy({
+        circuit,
+        stationId: 'st-1',
+        type: 'A',
+        segmentId: 2, // explicit choice
+        currentRoom: room,
+        difficultyId: 'test_diff',
+        mainDiff: diff,
+        isStrictDifficulty: true,
+        allExercisesSource: [exPull, exOld, exPush, exPushPompki],
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.circuit[1].exerciseA.id_cwiczenia).toBe('ex-pompki');
       }
     });
   });

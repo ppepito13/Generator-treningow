@@ -20,6 +20,8 @@ export interface CascadeFilterParams {
   isStrictDifficulty: boolean;
   previousExercise?: Exercise;
   previousSegmentId?: number;
+  excludedSegmentIds?: number[] | Set<number>;
+  usedBaseNames?: Set<string>;
 }
 
 export interface CascadeFallbackResult {
@@ -42,12 +44,15 @@ export const getLoosenedRange = (range: DifficultyRange): DifficultyRange => ({
  * for a station cannot be found under initial strict constraints.
  *
  * Cascade Steps:
- * 1. Standard candidate query with active range and segment balancing.
- * 2. If empty and !isStrictDifficulty: loosen difficulty range by 1 level.
- * 3. If empty: relax muscle balancing constraint (allow repeating previous segment).
- * 4. If empty: allow repeating exercises used on other stations (ignoreUsed = true).
- * 5. If empty and !isStrictDifficulty: combine loosened difficulty + ignoreUsed.
- * 6. Pool exhausted -> returns empty pool for conflict handling.
+ * 1. Base query with active range, full neighbor balancing (excludedSegmentIds), and unique base names.
+ * 2. If empty and !isStrictDifficulty: loosen difficulty range by 1 level to avoid supersets / muscle overload,
+ *    still strictly enforcing two-sided neighbor exclusion and base name deduplication.
+ * 3. If empty: relax two-sided neighbor balancing to only the immediate predecessor (previousSegmentId).
+ * 4. If empty: relax base name deduplication (allow different variants of the same base exercise).
+ * 5. If empty: relax muscle balancing entirely on basePool (allow repeating previous segment).
+ * 6. If empty: allow repeating exercises used on other stations (ignoreUsed = true).
+ * 7. If empty and !isStrictDifficulty: combine loosened difficulty + ignoreUsed.
+ * 8. Pool exhausted -> returns empty pool for conflict handling.
  */
 export const applyCascadeFallback = (params: CascadeFilterParams): CascadeFallbackResult => {
   const {
@@ -64,9 +69,11 @@ export const applyCascadeFallback = (params: CascadeFilterParams): CascadeFallba
     isStrictDifficulty,
     previousExercise,
     previousSegmentId,
+    excludedSegmentIds,
+    usedBaseNames,
   } = params;
 
-  // Step 1: Base query with current range
+  // Step 1: Base query with current range and strict two-sided balancing & base name deduplication
   const basePool = getValidExercisesForZone(
     zone,
     currentRange,
@@ -81,7 +88,14 @@ export const applyCascadeFallback = (params: CascadeFilterParams): CascadeFallba
     allExercisesSource
   );
 
-  const balancedBase = filterBySegmentBalancing(basePool, previousExercise, previousSegmentId);
+  const balancedBase = filterBySegmentBalancing(basePool, {
+    previousExercise,
+    previousSegmentId,
+    excludedSegmentIds,
+    usedBaseNames,
+    softFallback: false,
+  });
+
   if (balancedBase.length > 0) {
     return {
       pool: balancedBase,
@@ -91,10 +105,11 @@ export const applyCascadeFallback = (params: CascadeFilterParams): CascadeFallba
     };
   }
 
-  // Step 2: Loosen difficulty (if permitted by strict mode)
+  // Step 2: Loosen difficulty by 1 level while strictly preserving neighbor & base name protection
+  let loosenedPool: Exercise[] = [];
   if (!isStrictDifficulty) {
     const loosenedRange = getLoosenedRange(currentRange);
-    const loosenedPool = getValidExercisesForZone(
+    loosenedPool = getValidExercisesForZone(
       zone,
       loosenedRange,
       usedIds,
@@ -107,7 +122,15 @@ export const applyCascadeFallback = (params: CascadeFilterParams): CascadeFallba
       participantsCount,
       allExercisesSource
     );
-    const balancedLoosened = filterBySegmentBalancing(loosenedPool, previousExercise, previousSegmentId);
+
+    const balancedLoosened = filterBySegmentBalancing(loosenedPool, {
+      previousExercise,
+      previousSegmentId,
+      excludedSegmentIds,
+      usedBaseNames,
+      softFallback: false,
+    });
+
     if (balancedLoosened.length > 0) {
       return {
         pool: balancedLoosened,
@@ -118,7 +141,62 @@ export const applyCascadeFallback = (params: CascadeFilterParams): CascadeFallba
     }
   }
 
-  // Step 3: Relax muscle balancing (if basePool had exercises before segment balancing)
+  // Step 3: Partially relax neighbor balancing (only exclude immediate predecessor, not both neighbors)
+  if (excludedSegmentIds) {
+    const partiallyBalancedBase = filterBySegmentBalancing(basePool, {
+      previousExercise,
+      previousSegmentId,
+      usedBaseNames,
+      softFallback: false,
+    });
+
+    if (partiallyBalancedBase.length > 0) {
+      return {
+        pool: partiallyBalancedBase,
+        loosenedDifficulty: false,
+        ignoredUsed: false,
+        relaxedBalancing: true,
+      };
+    }
+
+    if (!isStrictDifficulty && loosenedPool.length > 0) {
+      const partiallyBalancedLoosened = filterBySegmentBalancing(loosenedPool, {
+        previousExercise,
+        previousSegmentId,
+        usedBaseNames,
+        softFallback: false,
+      });
+
+      if (partiallyBalancedLoosened.length > 0) {
+        return {
+          pool: partiallyBalancedLoosened,
+          loosenedDifficulty: true,
+          ignoredUsed: false,
+          relaxedBalancing: true,
+        };
+      }
+    }
+  }
+
+  // Step 4: Relax base name deduplication (allow different variant of the same base name, still avoiding predecessor)
+  if (usedBaseNames && usedBaseNames.size > 0) {
+    const nameRelaxedBase = filterBySegmentBalancing(basePool, {
+      previousExercise,
+      previousSegmentId,
+      softFallback: false,
+    });
+
+    if (nameRelaxedBase.length > 0) {
+      return {
+        pool: nameRelaxedBase,
+        loosenedDifficulty: false,
+        ignoredUsed: false,
+        relaxedBalancing: true,
+      };
+    }
+  }
+
+  // Step 5: Relax muscle balancing entirely (if basePool had exercises before segment balancing)
   if (basePool.length > 0) {
     return {
       pool: basePool,
@@ -128,7 +206,7 @@ export const applyCascadeFallback = (params: CascadeFilterParams): CascadeFallba
     };
   }
 
-  // Step 4: Allow duplicate exercises (ignoreUsed = true)
+  // Step 6: Allow duplicate exercises from other stations (ignoreUsed = true)
   const reusedPool = getValidExercisesForZone(
     zone,
     currentRange,
@@ -144,7 +222,11 @@ export const applyCascadeFallback = (params: CascadeFilterParams): CascadeFallba
   );
 
   if (reusedPool.length > 0) {
-    const balancedReused = filterBySegmentBalancing(reusedPool, previousExercise, previousSegmentId);
+    const balancedReused = filterBySegmentBalancing(reusedPool, {
+      previousExercise,
+      previousSegmentId,
+      softFallback: false,
+    });
     return {
       pool: balancedReused.length > 0 ? balancedReused : reusedPool,
       loosenedDifficulty: false,
@@ -153,7 +235,7 @@ export const applyCascadeFallback = (params: CascadeFilterParams): CascadeFallba
     };
   }
 
-  // Step 5: Combine duplicate exercises + loosened difficulty (if not strict)
+  // Step 7: Combine duplicate exercises + loosened difficulty (if not strict)
   if (!isStrictDifficulty) {
     const loosenedRange = getLoosenedRange(currentRange);
     const reusedLoosenedPool = getValidExercisesForZone(
@@ -179,7 +261,7 @@ export const applyCascadeFallback = (params: CascadeFilterParams): CascadeFallba
     }
   }
 
-  // Step 6: Fully exhausted
+  // Step 8: Fully exhausted
   return {
     pool: [],
     loosenedDifficulty: false,
@@ -187,4 +269,3 @@ export const applyCascadeFallback = (params: CascadeFilterParams): CascadeFallba
     relaxedBalancing: false,
   };
 };
-

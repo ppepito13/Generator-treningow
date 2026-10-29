@@ -3,7 +3,8 @@ import type { Exercise, Station } from '@/app/lib/data';
 import type { DifficultyRange, GenerationConflictData, RerollStrategyParams } from './types';
 import { getValidExercisesForZone } from './exerciseFilter';
 import { resolvePairStationExercise } from './pairStationStrategy';
-import { getLoosenedRange } from './cascadeFallback';
+import { applyCascadeFallback, getLoosenedRange } from './cascadeFallback';
+import { normalizeExerciseBaseName } from './muscleBalancing';
 
 export interface RerollSuccess {
   success: true;
@@ -22,6 +23,9 @@ export type RerollResult = RerollSuccess | RerollFailure;
  *
  * Preserves:
  * - Breather status for every 3rd station
+ * - Two-sided neighbor segment exclusion (prev and next in circuit loop) on automatic reroll
+ * - Base exercise name deduplication against other stations in the circuit
+ * - Unrestricted segment choice when user explicitly selects a segment from the menu
  * - Flag uniqueness across the circuit
  * - Pair synchronization and twin exercise constraints
  * - Returns updated circuit or GenerationConflictData for UI modals
@@ -61,10 +65,15 @@ export const rerollExerciseStrategy = (
 
   // Collect IDs used on other stations
   const usedOnOtherStations = new Set<string>();
+  const usedBaseNamesOnOtherStations = new Set<string>();
   circuit.forEach(s => {
     if (s.id !== stationId) {
       usedOnOtherStations.add(s.exerciseA.id_cwiczenia);
-      if (s.exerciseB) usedOnOtherStations.add(s.exerciseB.id_cwiczenia);
+      usedBaseNamesOnOtherStations.add(normalizeExerciseBaseName(s.exerciseA.nazwa));
+      if (s.exerciseB) {
+        usedOnOtherStations.add(s.exerciseB.id_cwiczenia);
+        usedBaseNamesOnOtherStations.add(normalizeExerciseBaseName(s.exerciseB.nazwa));
+      }
     }
   });
 
@@ -80,6 +89,24 @@ export const rerollExerciseStrategy = (
       (s.exerciseA.nazwa.toLowerCase().includes('flaga') ||
         (s.exerciseB && s.exerciseB.nazwa.toLowerCase().includes('flaga')))
   );
+
+  // Two-sided neighbor determination with circuit loopback
+  const excludedSegmentIds = new Set<number>();
+  let prevStationExercise: Exercise | undefined = undefined;
+  if (circuit.length > 1) {
+    const prevIndex = (stationIndex - 1 + circuit.length) % circuit.length;
+    const nextIndex = (stationIndex + 1) % circuit.length;
+    const prevStation = circuit[prevIndex];
+    const nextStation = circuit[nextIndex];
+
+    if (prevStation && prevStation.id !== stationId) {
+      excludedSegmentIds.add(prevStation.exerciseA.segment_id);
+      prevStationExercise = prevStation.exerciseA;
+    }
+    if (nextStation && nextStation.id !== stationId) {
+      excludedSegmentIds.add(nextStation.exerciseA.segment_id);
+    }
+  }
 
   const isCurrentlyBreather = !isStrictDifficulty && (stationIndex + 1) % 3 === 0;
   let currentRange: DifficultyRange = {
@@ -100,54 +127,30 @@ export const rerollExerciseStrategy = (
   }
 
   if (type === 'A') {
-    // Primary query for Exercise A
-    let pool = getValidExercisesForZone(
-      station.zone,
-      searchRange,
-      fullUsedIds,
-      station.isPair,
+    // When segmentId is undefined (user clicked "Losuj dowolne z bazy"):
+    // apply two-sided neighbor exclusion and base name deduplication.
+    // When segmentId is provided by user ("Wybierz segment..."):
+    // honor the user's manual choice without neighbor segment exclusion.
+    const fallbackResult = applyCascadeFallback({
+      zone: station.zone,
+      baseRange: { min: mainDiff.min_poziom, max: mainDiff.max_poziom },
+      currentRange: searchRange,
+      usedIds: ignoreUsed ? currentAtStationIds : fullUsedIds,
+      isThisStationPair: station.isPair,
       currentRoom,
       segmentId,
-      ignoreUsed,
       hasFlagAlready,
       category,
-      1,
-      allExercisesSource
-    );
+      participantsCount: 1,
+      allExercisesSource,
+      isStrictDifficulty,
+      previousExercise: prevStationExercise,
+      previousSegmentId: prevStationExercise?.segment_id,
+      excludedSegmentIds: segmentId === undefined ? excludedSegmentIds : undefined,
+      usedBaseNames: usedBaseNamesOnOtherStations,
+    });
 
-    // Fallback 1: Allow duplicates from other stations, but exclude current
-    if (pool.length === 0) {
-      pool = getValidExercisesForZone(
-        station.zone,
-        searchRange,
-        currentAtStationIds,
-        station.isPair,
-        currentRoom,
-        segmentId,
-        true,
-        hasFlagAlready,
-        category,
-        1,
-        allExercisesSource
-      );
-    }
-
-    // Fallback 2: Revert to base range if searchRange was loosened/shifted
-    if (pool.length === 0 && searchRange !== currentRange) {
-      pool = getValidExercisesForZone(
-        station.zone,
-        currentRange,
-        currentAtStationIds,
-        station.isPair,
-        currentRoom,
-        segmentId,
-        true,
-        hasFlagAlready,
-        category,
-        1,
-        allExercisesSource
-      );
-    }
+    const pool = fallbackResult.pool;
 
     if (pool.length === 0) {
       const dryLoosenRange = getLoosenedRange(currentRange);
