@@ -24,6 +24,7 @@ W tym repozytorium **ŻADEN agent AI nie ma prawa napisać ani zmienić ani jedn
 
 4. **Domknięcie cyklu i bramka jakości:**
    - Weryfikacja `npm run verify` (**0 błędów TypeScript, 0 błędów ESLint, 100% testów Vitest zielonych**).
+   - Aktualizacja `todo.md` oraz `CHANGELOG.md` w sekcji `[Unreleased]`.
    - Archiwizacja `/opsx-archive` -> aktualizacja głównych specyfikacji -> commit -> merge do `main` -> push.
 
 ---
@@ -55,6 +56,15 @@ Użytkownik regularnie przełącza silniki/konta lub wznawia pracę po czyszczen
 - Jeśli faza w `SDD_MASTER_PLAN.md` jest duża (np. Faza 3: Dekompozycja store), **nie twórz jednej olbrzymiej zmiany**.
 - Podziel ją na mikro-fazy / osobne changes (np. `phase-3-1-generator-types`, `phase-3-2-circuit-strategy`, `phase-3-3-sync-strategy`).
 - Lepiej zrealizować 3 małe zmiany z 3-4 precyzyjnymi zadaniami każda, niż jedną z 15 zadaniami, która wyczerpie okno kontekstowe w połowie.
+
+---
+
+## 📝 Obowiązkowe Śledzenie w TODO i CHANGELOG
+W tym projekcie niedopuszczalne jest gubienie kontekstu biznesowego. Każdy agent musi bezwzględnie przestrzegać poniższego schematu śledzenia:
+1. **Rejestracja w `todo.md`:** Każda nowa funkcja, poprawka lub usprawnienie musi mieć swoje numerowane zadanie na liście otwartych zadań w `todo.md`.
+2. **Aktualizacja przed archiwizacją:** Zanim zmiana zostanie zarchiwizowana (`/opsx-archive`) i zacomitowana:
+   - Zadanie w `todo.md` musi zostać oznaczone jako `[x]` (w sekcji `## ✅ Zakończone` ➔ `### [Unreleased]`).
+   - Do pliku `CHANGELOG.md` w sekcji `## [Unreleased]` należy dodać zwięzły, zrozumiały dla użytkownika opis biznesowy w odpowiedniej kategorii (`### Dodano`, `### Zmieniono` lub `### Naprawiono`) zgodnie ze standardem *Keep a Changelog*.
 
 ---
 

@@ -22,8 +22,5 @@ jobs:
       - name: Instalacja zależności
         run: npm ci
 
-      - name: Weryfikacja Linterem
-        run: npm run lint
-
-      - name: Testy jednostkowe Vitest
-        run: npm run test
+      - name: Pełna bramka weryfikacji jakości (Typecheck, Lint, Testy)
+        run: npm run verify
