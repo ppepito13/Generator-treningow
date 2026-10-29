@@ -5,6 +5,7 @@ Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 ### Dodano
+- **Ujednolicone Nagłówki i Siatki Responsywne (ModuleHeader)**: Wdrożenie ustandaryzowanego komponentu nagłówka modułów (ModuleHeader) w widokach Zegara, Kalkulatorów i Studia oraz responsywnych siatek 2/3-kolumnowych w Zestawie (rectSortingStrategy w DnD) i Studio Ćwiczeń, optymalizujących wykorzystanie przestrzeni na większych ekranach.
 - **Studio Zarządzania Bazą**: Moduły podglądu, wyszukiwania, edycji oraz eksportu bazy ćwiczeń, sprzętu, sal i konfiguracji poziomów trudności.
 - **Zegar Treningowy**: Zaawansowany moduł czasomierza z obsługą treningu interwałowego, stopera i minutnika.
 - **Kalkulatory Treningowe**: Kalkulator standardowy oraz moduły obliczeniowe BMI/RFM i zapotrzebowania kalorycznego BMR/TDEE.

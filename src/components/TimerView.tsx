@@ -5,6 +5,7 @@ import { StopwatchSubView } from './StopwatchSubView';
 import { CountdownSubView } from './CountdownSubView';
 import { IntervalTimerSubView } from './IntervalTimerSubView';
 import { Timer, Hourglass, Repeat } from 'lucide-react';
+import { ModuleHeader } from '@/components/ui/ModuleHeader';
 
 export const TimerView = () => {
   const [activeSubTab, setActiveSubTab] = useState<'stopwatch' | 'countdown' | 'interval'>('interval');
@@ -12,19 +13,14 @@ export const TimerView = () => {
   return (
     <div className="min-h-screen app-safe-top app-safe-bottom app-container-wide px-4 sm:px-6 space-y-6">
       {/* NAGŁÓWEK MODUŁU ZEGAR */}
-      <div className="glass-card p-6 rounded-[2rem] border border-white/10 space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-            <Timer className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black uppercase tracking-tight text-white">Centrum Czasowe i Zegary Treningowe</h1>
-            <p className="text-xs text-white/50">Stoper, minutnik oraz zaawansowany zegar interwałowy (Gym View & TTS)</p>
-          </div>
-        </div>
-
+      <ModuleHeader
+        icon={Timer}
+        title="Centrum Czasowe i Zegary Treningowe"
+        subtitle="Stoper, minutnik oraz zaawansowany zegar interwałowy (Gym View & TTS)"
+        iconBadgeClass="bg-cyan-500/10 border-cyan-500/20 text-cyan-400"
+      >
         {/* WEWNĘTRZNE ZAKŁADKI MODUŁU ZEGAR */}
-        <div className="flex gap-2 border-t border-white/5 pt-4 overflow-x-auto scrollbar-none">
+        <div className="flex gap-2 overflow-x-auto scrollbar-none">
           <button
             onClick={() => setActiveSubTab('interval')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
@@ -61,7 +57,7 @@ export const TimerView = () => {
             <span>Stoper</span>
           </button>
         </div>
-      </div>
+      </ModuleHeader>
 
       {/* RENDEROWANIE AKTYWNEGO SUB-MODUŁU */}
       {activeSubTab === 'interval' && <IntervalTimerSubView />}
