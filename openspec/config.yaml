@@ -5,6 +5,12 @@ context: |
   All artifacts (proposals, specs, design, tasks) and user-facing copy must be written in Polish (pl).
   Keep OpenSpec structural headings and SHALL/MUST keywords in English.
   Application source code, TypeScript types, functions, variables, and code comments MUST be in English.
+
+  ZERO CODE WITHOUT OPENSPEC & MANDATORY EXPLORE:
+  - No AI agent may write or modify production code without an active OpenSpec change.
+  - Before authoring any proposal, specs, design, or tasks, an extensive openspec-explore phase MUST be conducted and approved by the user.
+  - Explore must verify existing code, eliminate duplicates, audit potential conflicts, loops, and equipment bottlenecks.
+
   TOKEN ECONOMY & ATOMIC TASKS:
   - All tasks MUST be granular and atomic (1 task = 1 file / 1 small change).
   - Explicit file paths must be included in each task description.
@@ -14,6 +20,7 @@ rules:
   proposal:
     - Keep proposals focused on small, single-purpose increments
     - Strictly define boundaries to prevent scope creep
+    - Require pre-exploration results before creating proposal
   tasks:
     - Break tasks down into micro-tasks (atomic, self-contained units)
     - Always include explicit file path in task description (e.g., `[src/path/file.ts] description`)

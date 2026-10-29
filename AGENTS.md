@@ -4,6 +4,30 @@ Dokument ten definiuje **bezwzględne reguły pracy dla wszystkich agentów AI**
 
 ---
 
+## 🛑 ŻELAZNA ZASADA PROCESU: Zero Kodu Bez OpenSpec & Obowiązkowe `openspec-explore`
+
+W tym repozytorium **ŻADEN agent AI nie ma prawa napisać ani zmienić ani jednej linijki kodu produkcyjnego** (nawet 1-linijkowej poprawki typu hotfix czy drobnicy) bez przejścia pełnego cyklu SDD (Spec-Driven Development):
+
+1. **Obowiązkowy etap wstępny: `openspec-explore` (Deep Thinking & Pre-flight Check):**
+   - Zanim powstanie propozycja zmiany (`/opsx-propose`) i jakiekolwiek pliki specyfikacji, agent **MUSI** przeprowadzić dogłębną eksplorację w trybie `openspec-explore`.
+   - **Cele eksploracji:**
+     * **Audyt bazy i kodu:** Przeszukanie repozytorium pod kątem istniejących mechanizmów, by **wykluczyć jakąkolwiek duplikację** (np. reguł filtrowania, losowania, inwentarza).
+     * **Analiza konfliktów i pułapek:** Wykrycie sprzecznych warunków, "pętli śmierci" (np. fallbacków zapętlających się w nieskończoność lub wykluczających 100% puli) oraz wąskich gardeł sprzętowych.
+     * **Wykrycie braków i przypadków brzegowych (edge cases):** Zadanie użytkownikowi kluczowych pytań architektonicznych i domenowych przed podjęciem decyzji implementacyjnych.
+   - **Warunek przejścia:** Dopiero po jednoznacznej akceptacji ustaleń z eksploracji przez Użytkownika wolno przejść do etapu `/opsx-propose`.
+
+2. **Czysta zmiana OpenSpec (`/opsx-propose`):**
+   - Utworzenie zmiany ze ściśle atomowymi mikro-zadaniami (1 zadanie = 1 plik / 1 funkcja / 1 test z jawną ścieżką).
+
+3. **Izolowana implementacja (`/opsx-apply`):**
+   - Kodowanie wyłącznie zadań z `tasks.md`, realizacja krok po kroku, natychmiastowe oznaczanie `[x]` i lokalna weryfikacja.
+
+4. **Domknięcie cyklu i bramka jakości:**
+   - Weryfikacja `npm run verify` (**0 błędów TypeScript, 0 błędów ESLint, 100% testów Vitest zielonych**).
+   - Archiwizacja `/opsx-archive` -> aktualizacja głównych specyfikacji -> commit -> merge do `main` -> push.
+
+---
+
 ## ⚡ GŁÓWNA ZASADA: Ekonomia Tokenów i Atomowe Mikro-Zadania (Token Budget First)
 
 Użytkownik regularnie przełącza silniki/konta lub wznawia pracę po czyszczeniu kontekstu. Aby uniknąć przepalania limitów tokenów na ponowne analizowanie repozytorium i niepotrzebne czytanie dziesiątek plików, **każdy agent musi bezwzględnie stosować poniższe reguły**:
@@ -12,7 +36,7 @@ Użytkownik regularnie przełącza silniki/konta lub wznawia pracę po czyszczen
 - **Zakaz tworzenia wielkich, zbiorczych zadań** (np. *"Wyczyść importy we wszystkich plikach"*, *"Przepisz cały store"*).
 - Każde zadanie w `tasks.md` musi być **atomową jednostką pracy**, którą model może wykonać w **1–2 krokach/edycjach**.
 - **1 zadanie = 1 konkretny plik / 1 wyizolowana funkcja / 1 test**.
-- Każde zadanie w `tasks.md` **MUDI zawierać jawną ścieżkę do pliku** w formacie:
+- Każde zadanie w `tasks.md` **MUSI zawierać jawną ścieżkę do pliku** w formacie:
   `- [ ] X.Y [ścieżka/do/pliku.ts] Konkretny, zwięzły opis co należy zmienić`
 
 ### 2. Izolacja kontekstu i zakaz nadmiarowego skanowania
