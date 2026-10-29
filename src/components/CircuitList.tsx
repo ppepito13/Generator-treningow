@@ -26,7 +26,7 @@ import {
 import {
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
 } from '@dnd-kit/sortable';
 
 export const CircuitList = () => {
@@ -124,10 +124,9 @@ export const CircuitList = () => {
   const circuitIds = useMemo(() => circuit.map((s) => s.id), [circuit]);
 
   return (
-    <div className="flex flex-col h-full max-w-2xl mx-auto">
-      <div
-        className="sticky top-0 z-20 bg-background/80 backdrop-blur-md px-6 pb-4 pt-[max(env(safe-area-inset-top,0px),48px)] flex items-center justify-between border-b border-white/5"
-      >
+    <div className="flex flex-col min-h-screen app-safe-bottom">
+      <div className="sticky top-0 z-20 w-full bg-background/80 backdrop-blur-md border-b border-white/5">
+        <div className="app-container-wide max-w-6xl flex items-center justify-between px-4 sm:px-6 pb-4 pt-[max(env(safe-area-inset-top,0px),48px)]">
         <Button 
           variant="ghost" 
           size="icon" 
@@ -192,19 +191,22 @@ export const CircuitList = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
-      <div className="px-6 pt-6 space-y-6 overflow-y-auto pb-6">
+      <div className="app-container-wide max-w-6xl w-full px-4 sm:px-6 pt-6 overflow-y-auto pb-6">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={circuitIds} strategy={verticalListSortingStrategy}>
-            {circuit.map((station) => (
-              <StationCard key={station.id} station={station} />
-            ))}
+          <SortableContext items={circuitIds} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {circuit.map((station) => (
+                <StationCard key={station.id} station={station} />
+              ))}
+            </div>
           </SortableContext>
         </DndContext>
       </div>
 
-      <div className="px-6 mt-8 pb-[calc(env(safe-area-inset-bottom,0px)+48px)]">
+      <div className="app-container-wide max-w-6xl w-full px-4 sm:px-6 mt-4">
         <div className="p-6 rounded-3xl bg-secondary/10 border border-secondary/20 text-center space-y-2">
           <p className="text-secondary font-bold text-sm">Gotowy na trening?</p>
           <p className="text-xs text-muted-foreground">

@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useAppStore } from '@/app/lib/store';
 import { Exercise, ALL_EXERCISES, SEGMENTS, DIFFICULTY_LEVELS, ALL_ROOMS, ALL_EQUIPMENT } from '@/app/lib/data';
+import { ModuleHeader } from '@/components/ui/ModuleHeader';
 import { AddExerciseDialog } from './AddExerciseDialog';
 import { ExerciseDetailDialog } from './ExerciseDetailDialog';
 import { RoomStudioSubView } from './RoomStudioSubView';
@@ -311,19 +312,13 @@ export const ExerciseStudioView = () => {
   }, [filterPoziomGroup]);
 
   return (
-    <div className="min-h-screen pb-28 pt-4 px-4 max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen app-safe-top app-safe-bottom app-container-wide max-w-6xl px-4 sm:px-6 space-y-6">
       {/* Nagłówek Centrum Zasobów */}
-      <div className="glass-card p-6 rounded-[2rem] border border-white/10 space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-            <Database className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black uppercase tracking-tight text-white">Centrum Zasobów i Konfiguracji</h1>
-            <p className="text-xs text-white/50">Kompleksowe zarządzanie ćwiczeniami, salami oraz inwentarzem treningowym</p>
-          </div>
-        </div>
-
+      <ModuleHeader
+        icon={Database}
+        title="Centrum Zasobów i Konfiguracji"
+        subtitle="Kompleksowe zarządzanie ćwiczeniami, salami oraz inwentarzem treningowym"
+      >
         {/* Informacja o kopii zapasowej przed aktualizacją */}
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-cyan-500/5 border border-cyan-500/15 text-[11px] text-cyan-300/80">
           <Info className="h-4 w-4 shrink-0 text-cyan-400" />
@@ -382,7 +377,7 @@ export const ExerciseStudioView = () => {
             <span>Lista sprzętu ({equipmentCount})</span>
           </button>
         </div>
-      </div>
+      </ModuleHeader>
 
       {activeSubTab === 'rooms' && <RoomStudioSubView />}
       {activeSubTab === 'levels' && <DifficultyLevelsSubView />}
@@ -737,7 +732,7 @@ export const ExerciseStudioView = () => {
       </div>
 
       {/* Lista przefiltrowanych ćwiczeń */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredExercises.length > 0 ? (
           filteredExercises.map((ex) => (
             <div
