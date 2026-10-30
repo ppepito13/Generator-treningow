@@ -35,6 +35,52 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+
+interface ColorPickerProps {
+  color: StepColor;
+  onChange: (c: StepColor) => void;
+}
+
+const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="w-7 h-7 rounded-full border-2 border-white/20 flex items-center justify-center transition-transform hover:scale-110 active:scale-95 shrink-0 shadow-md"
+          style={{ backgroundColor: STEP_COLOR_MAP[color]?.hex || '#10b981' }}
+          title={`Kolor: ${STEP_COLOR_MAP[color]?.name || color}`}
+        >
+          <span className="sr-only">Wybierz kolor</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="bottom" align="end" className="w-auto p-2 glass-card border-white/15 rounded-xl z-50">
+        <div className="flex items-center gap-1.5">
+          {(Object.keys(STEP_COLOR_MAP) as StepColor[]).map((cKey) => {
+            const isSelected = color === cKey;
+            return (
+              <button
+                key={cKey}
+                type="button"
+                onClick={() => onChange(cKey)}
+                className={cn(
+                  "w-7 h-7 rounded-full border-2 transition-all hover:scale-110",
+                  isSelected
+                    ? "border-white ring-2 ring-primary ring-offset-1 ring-offset-black scale-110"
+                    : "border-transparent opacity-75 hover:opacity-100"
+                )}
+                style={{ backgroundColor: STEP_COLOR_MAP[cKey].hex }}
+                title={STEP_COLOR_MAP[cKey].name}
+              />
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 export const IntervalTimerSubView = () => {
   const { toast } = useToast();
@@ -613,12 +659,12 @@ export const IntervalTimerSubView = () => {
             activePreset.bloki.map((block, bIdx) => (
               <div
                 key={block.id}
-                className="glass-card p-5 rounded-2xl border border-white/10 bg-black/20 space-y-4 relative group"
+                className="glass-card p-4 sm:p-5 rounded-2xl border border-white/10 bg-black/20 space-y-4 relative group overflow-hidden"
               >
-              {/* Nagłówek pojedynczego Bloku / Pętli */}
-              <div className="flex items-center justify-between gap-2 border-b border-white/5 pb-3">
-                <div className="flex items-center gap-2 flex-1">
-                  <Badge className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-lg border ${
+              {/* Nagłówek pojedynczego Bloku / Pętli (Układ 2-wierszowy) */}
+              <div className="flex flex-col gap-2 border-b border-white/5 pb-3">
+                <div className="flex items-center gap-2 w-full">
+                  <Badge className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-lg border shrink-0 ${
                     block.typ === 'loop'
                       ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
                       : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
@@ -632,16 +678,17 @@ export const IntervalTimerSubView = () => {
                       updated[bIdx].nazwaBloku = e.target.value;
                       setActivePreset({ ...activePreset, bloki: updated });
                     }}
-                    className="glass-input h-9 text-xs font-bold text-white border-white/10 rounded-lg max-w-xs"
+                    placeholder="Nazwa bloku..."
+                    className="glass-input h-9 text-xs font-bold text-white border-white/10 rounded-lg flex-1 min-w-0"
                   />
                 </div>
 
                 {/* Akcje dla Bloku: Przesuń Górę/Dół + DUPLIKUJ/KOPIUJ + Usuń */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center justify-end gap-1.5 pt-1">
                   <button
                     onClick={() => handleMoveBlock(bIdx, 'up')}
                     disabled={bIdx === 0}
-                    className="p-1.5 rounded-lg text-white/50 hover:text-white disabled:opacity-20"
+                    className="p-1.5 rounded-lg text-white/50 hover:text-white disabled:opacity-20 hover:bg-white/5 transition-colors"
                     title="Przesuń blok w górę"
                   >
                     <ArrowUp className="h-4 w-4" />
@@ -649,12 +696,11 @@ export const IntervalTimerSubView = () => {
                   <button
                     onClick={() => handleMoveBlock(bIdx, 'down')}
                     disabled={bIdx === activePreset.bloki.length - 1}
-                    className="p-1.5 rounded-lg text-white/50 hover:text-white disabled:opacity-20"
+                    className="p-1.5 rounded-lg text-white/50 hover:text-white disabled:opacity-20 hover:bg-white/5 transition-colors"
                     title="Przesuń blok w dół"
                   >
                     <ArrowDown className="h-4 w-4" />
                   </button>
-
                   <button
                     onClick={() => handleDuplicateBlock(bIdx)}
                     className="p-1.5 rounded-lg text-cyan-400/80 hover:text-cyan-300 hover:bg-white/10 transition-colors"
@@ -662,10 +708,9 @@ export const IntervalTimerSubView = () => {
                   >
                     <Copy className="h-4 w-4" />
                   </button>
-
                   <button
                     onClick={() => handleDeleteBlock(bIdx)}
-                    className="p-1.5 rounded-lg text-destructive/80 hover:text-destructive hover:bg-white/10 transition-colors"
+                    className="p-1.5 rounded-lg text-destructive/80 hover:text-destructive hover:bg-destructive/10 transition-colors"
                     title="Usuń blok"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -712,7 +757,7 @@ export const IntervalTimerSubView = () => {
               {/* EDYCJA KROKÓW W BLOKU */}
               <div className="space-y-2">
                 {block.typ === 'single' && block.singleStep && (
-                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-black/30 border border-white/5">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 rounded-xl bg-black/30 border border-white/5 overflow-hidden">
                     <Input
                       value={block.singleStep.nazwa}
                       onChange={(e) => {
@@ -720,45 +765,42 @@ export const IntervalTimerSubView = () => {
                         updated[bIdx].singleStep!.nazwa = e.target.value;
                         setActivePreset({ ...activePreset, bloki: updated });
                       }}
-                      placeholder="Nazwa kroków..."
-                      className="glass-input h-8 text-xs font-semibold text-white border-white/10 rounded-lg flex-1"
+                      placeholder="Nazwa kroku..."
+                      className="glass-input h-8 text-xs font-semibold text-white border-white/10 rounded-lg flex-1 min-w-0"
                     />
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold">Czas (s):</span>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={3600}
-                        value={block.singleStep.durationSeconds}
-                        onChange={(e) => {
+                    <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold">Czas:</span>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={3600}
+                          value={block.singleStep.durationSeconds}
+                          onChange={(e) => {
+                            const updated = [...activePreset.bloki];
+                            updated[bIdx].singleStep!.durationSeconds = Math.max(1, parseInt(e.target.value, 10) || 1);
+                            setActivePreset({ ...activePreset, bloki: updated });
+                          }}
+                          className="w-16 h-8 text-center text-xs font-mono font-bold glass-input border-white/10 rounded-lg"
+                        />
+                        <span className="text-[10px] text-muted-foreground font-bold">s</span>
+                      </div>
+                      <ColorPicker
+                        color={block.singleStep.color}
+                        onChange={(newColor) => {
                           const updated = [...activePreset.bloki];
-                          updated[bIdx].singleStep!.durationSeconds = Math.max(1, parseInt(e.target.value, 10) || 1);
+                          updated[bIdx].singleStep!.color = newColor;
                           setActivePreset({ ...activePreset, bloki: updated });
                         }}
-                        className="w-16 h-8 text-center text-xs font-mono font-bold glass-input border-white/10 rounded-lg"
                       />
                     </div>
-                    {/* Wybór Koloru */}
-                    <select
-                      value={block.singleStep.color}
-                      onChange={(e) => {
-                        const updated = [...activePreset.bloki];
-                        updated[bIdx].singleStep!.color = e.target.value as StepColor;
-                        setActivePreset({ ...activePreset, bloki: updated });
-                      }}
-                      className="bg-neutral-900 border border-white/10 rounded-lg h-8 px-2 text-xs text-white"
-                    >
-                      {Object.entries(STEP_COLOR_MAP).map(([key, val]) => (
-                        <option key={key} value={key}>{val.name}</option>
-                      ))}
-                    </select>
                   </div>
                 )}
 
                 {block.typ === 'loop' && block.loopSteps && (
                   <div className="space-y-2">
                     {block.loopSteps.map((step, sIdx) => (
-                      <div key={step.id} className="flex items-center gap-2 p-2.5 rounded-xl bg-black/30 border border-white/5">
+                      <div key={step.id} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 rounded-xl bg-black/30 border border-white/5 overflow-hidden">
                         <Input
                           value={step.nazwa}
                           onChange={(e) => {
@@ -767,49 +809,47 @@ export const IntervalTimerSubView = () => {
                             setActivePreset({ ...activePreset, bloki: updated });
                           }}
                           placeholder="Nazwa kroku..."
-                          className="glass-input h-8 text-xs font-semibold text-white border-white/10 rounded-lg flex-1"
+                          className="glass-input h-8 text-xs font-semibold text-white border-white/10 rounded-lg flex-1 min-w-0"
                         />
-                        <div className="flex items-center gap-1">
-                          <span className="text-[10px] text-muted-foreground uppercase font-bold">Czas (s):</span>
-                          <Input
-                            type="number"
-                            min={1}
-                            max={3600}
-                            value={step.durationSeconds}
-                            onChange={(e) => {
+                        <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-muted-foreground uppercase font-bold">Czas:</span>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={3600}
+                              value={step.durationSeconds}
+                              onChange={(e) => {
+                                const updated = [...activePreset.bloki];
+                                updated[bIdx].loopSteps![sIdx].durationSeconds = Math.max(1, parseInt(e.target.value, 10) || 1);
+                                setActivePreset({ ...activePreset, bloki: updated });
+                              }}
+                              className="w-16 h-8 text-center text-xs font-mono font-bold glass-input border-white/10 rounded-lg"
+                            />
+                            <span className="text-[10px] text-muted-foreground font-bold">s</span>
+                          </div>
+                          <ColorPicker
+                            color={step.color}
+                            onChange={(newColor) => {
                               const updated = [...activePreset.bloki];
-                              updated[bIdx].loopSteps![sIdx].durationSeconds = Math.max(1, parseInt(e.target.value, 10) || 1);
+                              updated[bIdx].loopSteps![sIdx].color = newColor;
                               setActivePreset({ ...activePreset, bloki: updated });
                             }}
-                            className="w-16 h-8 text-center text-xs font-mono font-bold glass-input border-white/10 rounded-lg"
                           />
+                          {block.loopSteps!.length > 1 && (
+                            <button
+                              onClick={() => {
+                                const updated = [...activePreset.bloki];
+                                updated[bIdx].loopSteps = updated[bIdx].loopSteps!.filter((_, i) => i !== sIdx);
+                                setActivePreset({ ...activePreset, bloki: updated });
+                              }}
+                              className="p-1.5 text-white/40 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors shrink-0"
+                              title="Usuń krok z pętli"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
-                        <select
-                          value={step.color}
-                          onChange={(e) => {
-                            const updated = [...activePreset.bloki];
-                            updated[bIdx].loopSteps![sIdx].color = e.target.value as StepColor;
-                            setActivePreset({ ...activePreset, bloki: updated });
-                          }}
-                          className="bg-neutral-900 border border-white/10 rounded-lg h-8 px-2 text-xs text-white"
-                        >
-                          {Object.entries(STEP_COLOR_MAP).map(([key, val]) => (
-                            <option key={key} value={key}>{val.name}</option>
-                          ))}
-                        </select>
-                        {block.loopSteps!.length > 1 && (
-                          <button
-                            onClick={() => {
-                              const updated = [...activePreset.bloki];
-                              updated[bIdx].loopSteps = updated[bIdx].loopSteps!.filter((_, i) => i !== sIdx);
-                              setActivePreset({ ...activePreset, bloki: updated });
-                            }}
-                            className="p-1 text-white/40 hover:text-destructive"
-                            title="Usuń krok z pętli"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        )}
                       </div>
                     ))}
 
@@ -838,7 +878,7 @@ export const IntervalTimerSubView = () => {
         )}
 
           {/* Przycisk dodania nowego bloku */}
-          <div className="flex gap-2 pt-2">
+          <div className="flex flex-wrap gap-2 pt-2">
             <Button
               onClick={() => handleAddBlock('single')}
               variant="outline"

@@ -250,10 +250,10 @@ export const BmiCalculatorSubView: React.FC<BmiCalculatorSubViewProps> = ({ onNa
             {onNavigateTab && (
               <Button
                 onClick={() => onNavigateTab('rfm')}
-                className="w-full h-11 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold flex items-center justify-center gap-2 shadow-sm"
+                className="w-full h-auto min-h-[2.75rem] py-2.5 px-3 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold flex items-center justify-center text-center gap-2 shadow-sm whitespace-normal leading-snug"
               >
                 <span>Sprawdź dokładniejszy kalkulator RFM</span>
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 shrink-0" />
               </Button>
             )}
           </div>

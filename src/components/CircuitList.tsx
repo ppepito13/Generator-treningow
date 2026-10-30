@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useCallback } from 'react';
@@ -124,9 +123,9 @@ export const CircuitList = () => {
   const circuitIds = useMemo(() => circuit.map((s) => s.id), [circuit]);
 
   return (
-    <div className="flex flex-col min-h-screen app-safe-bottom">
-      <div className="sticky top-0 z-20 w-full bg-background/80 backdrop-blur-md border-b border-white/5">
-        <div className="app-container-wide max-w-6xl flex items-center justify-between px-4 sm:px-6 pb-4 pt-[max(env(safe-area-inset-top,0px),48px)]">
+    <div className="flex flex-col min-h-screen app-safe-top app-safe-bottom app-container-wide max-w-6xl px-4 sm:px-6 space-y-6">
+      {/* Nagłówek Obwodu ujednolicony z pozostałymi modułami i przewijalny */}
+      <div className="flex items-center justify-between p-4 rounded-2xl glass-card border-white/10">
         <Button 
           variant="ghost" 
           size="icon" 
@@ -136,46 +135,43 @@ export const CircuitList = () => {
               setActiveTab('generator');
             }
           }} 
-          className="glass-button rounded-xl text-red-400 hover:text-red-300 hover:bg-red-400/10"
+          className="glass-button rounded-xl text-red-400 hover:text-red-300 hover:bg-red-400/10 shrink-0"
+          title="Zakończ trening"
         >
           <X className="h-5 w-5" />
         </Button>
-        <div className="text-center">
+        <div className="text-center px-2">
           <h1 className="text-xl font-bold text-primary">
             Twój Obwód
           </h1>
           <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium leading-tight">
             {currentDiff?.nazwa_grupy || 'Trening'}
-            <span className="block mt-0.5">{participants} osób</span>
+            <span className="inline-block mx-1.5">•</span>
+            <span>{participants} osób</span>
           </p>
         </div>
         
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="glass-button rounded-xl text-secondary">
+            <Button variant="ghost" size="icon" className="glass-button rounded-xl text-secondary shrink-0" title="Udostępnij trening">
               <Share2 className="h-5 w-5" />
             </Button>
           </DialogTrigger>
           <DialogContent className="glass-card border-white/10 text-white sm:max-w-md outline-none">
             <DialogHeader>
-              <DialogTitle className="text-secondary flex items-center gap-2">
-                <Share2 className="h-5 w-5" />
-                Udostępnij Trening
-              </DialogTitle>
+              <DialogTitle className="text-xl font-bold text-center">Udostępnij Trening</DialogTitle>
             </DialogHeader>
-            <div className="mt-4 space-y-4">
-              <div className="bg-white/5 p-5 rounded-2xl font-mono text-[13px] whitespace-pre-wrap border border-white/5 leading-relaxed max-h-[50vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
+            <div className="space-y-4 pt-4">
+              <div className="p-4 rounded-xl bg-white/5 border border-white/5 max-h-60 overflow-y-auto font-mono text-xs text-white/80 whitespace-pre-wrap">
                 {getSummary()}
               </div>
-              
-              <div className="grid grid-cols-1 gap-2">
+              <div className="flex flex-col gap-2">
                 {isShareSupported && (
                   <Button 
                     onClick={handleShare} 
-                    className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 font-bold rounded-xl flex gap-2 transition-all active:scale-95"
+                    className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl flex gap-2 shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95"
                   >
-                    <Send className="h-4 w-4" />
-                    Wyślij wiadomość (Messenger/WA)
+                    <Send className="h-4 w-4" /> Wyślij (Aplikacje / Komunikatory)
                   </Button>
                 )}
                 
@@ -191,10 +187,9 @@ export const CircuitList = () => {
             </div>
           </DialogContent>
         </Dialog>
-        </div>
       </div>
 
-      <div className="app-container-wide max-w-6xl w-full px-4 sm:px-6 pt-6 overflow-y-auto pb-6">
+      <div className="w-full">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={circuitIds} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -206,7 +201,7 @@ export const CircuitList = () => {
         </DndContext>
       </div>
 
-      <div className="app-container-wide max-w-6xl w-full px-4 sm:px-6 mt-4">
+      <div className="w-full">
         <div className="p-6 rounded-3xl bg-secondary/10 border border-secondary/20 text-center space-y-2">
           <p className="text-secondary font-bold text-sm">Gotowy na trening?</p>
           <p className="text-xs text-muted-foreground">

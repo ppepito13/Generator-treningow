@@ -90,7 +90,7 @@ export const ConfigurationForm = () => {
             )}
           </Label>
           <Select value={selectedRoomId} onValueChange={setSelectedRoom}>
-            <SelectTrigger className="h-14 rounded-xl glass-button text-left border-white/10 text-lg font-bold">
+            <SelectTrigger className="min-h-[3.5rem] h-auto py-2.5 px-4 rounded-xl glass-button text-left border-white/10 text-lg font-bold">
               <SelectValue placeholder="Wybierz Salę" />
             </SelectTrigger>
             <SelectContent className="glass-card border-white/10">
@@ -98,7 +98,7 @@ export const ConfigurationForm = () => {
                 <SelectItem key={room.id_sali} value={room.id_sali} className="py-3 focus:bg-primary focus:text-primary-foreground">
                   <div className="flex flex-col gap-0.5">
                     <span className="font-bold">{room.nazwa_sali}</span>
-                    <span className="text-[10px] opacity-70 uppercase tracking-widest">{room.id_sali === 'custom' ? 'Konfiguracja ręczna' : (room.tryb_treningu === 'obwodowy' ? 'Trening Obwodowy' : 'Trening Grupowy')} • Max {room.maksymalna_pojemnosc.osoby} os.</span>
+                    <span className="text-[10px] opacity-70 uppercase tracking-wider">{room.id_sali === 'custom' ? 'Konfiguracja ręczna' : (room.tryb_treningu === 'obwodowy' ? 'Trening Obwodowy' : 'Trening Grupowy')} • Max {room.maksymalna_pojemnosc.osoby} os.</span>
                   </div>
                 </SelectItem>
               ))}
@@ -223,7 +223,7 @@ export const ConfigurationForm = () => {
         <div className="space-y-4">
           <Label className="text-lg font-medium">Poziom Grupy</Label>
           <Select value={difficultyId} onValueChange={setDifficulty}>
-            <SelectTrigger className="h-14 rounded-xl glass-button text-left border-white/10">
+            <SelectTrigger className="min-h-[3.5rem] h-auto py-2.5 px-4 rounded-xl glass-button text-left border-white/10">
               <SelectValue placeholder="Wybierz poziom" />
             </SelectTrigger>
             <SelectContent className="glass-card border-white/10 max-h-80">
