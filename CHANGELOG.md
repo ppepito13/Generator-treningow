@@ -5,6 +5,8 @@ Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 ### Dodano
+- **Mobilny Edge-to-Edge i Globalna Ochrona Notch**: Wdrożenie natywnej obsługi Edge-to-Edge na Androidzie (`WindowCompat.setDecorFitsSystemWindows`) z przezroczystymi paskami systemowymi i jasnymi ikonami, globalnej nakładki `Global Top Shield` w `layout.tsx` chroniącej treść przed fizycznym wycięciem aparatu (notch / camera hole) we wszystkich widokach, oraz reaktywnego chowania paska `BottomNav` po wysunięciu wirtualnej klawiatury (`window.visualViewport`).
+- **Kompaktowy Zegar Interwałowy (Color Dot Picker)**: Wdrożenie 2-wierszowych nagłówków bloków (pełna szerokość nazwy + bezpośrednio dostępne przyciski akcji) oraz kompaktowego próbnika barwnego (Color Dot Picker w okienku Popover) eliminującego poziome rozpychanie ekranu.
 - **Dwukierunkowy Balans Sąsiedztwa i Deduplikacja Nazw (Base Name)**: Wdrożenie wielopoziomowej kaskady doboru ćwiczeń eliminującej powtórzenia tego samego wzorca ruchowego na sąsiadujących stacjach (w tym na styku pętli obwodu stacja ostatnia - pierwsza oraz przy automatycznym re-rollu) oraz zapobieganie występowaniu wielu wariantów tego samego ćwiczenia w jednym treningu (usedBaseNames) z zachowaniem pełnej swobody manualnej trenera.
 - **Ujednolicone Nagłówki i Siatki Responsywne (ModuleHeader)**: Wdrożenie ustandaryzowanego komponentu nagłówka modułów (ModuleHeader) w widokach Zegara, Kalkulatorów i Studia oraz responsywnych siatek 2/3-kolumnowych w Zestawie (rectSortingStrategy w DnD) i Studio Ćwiczeń, optymalizujących wykorzystanie przestrzeni na większych ekranach.
 - **Studio Zarządzania Bazą**: Moduły podglądu, wyszukiwania, edycji oraz eksportu bazy ćwiczeń, sprzętu, sal i konfiguracji poziomów trudności.
@@ -14,12 +16,21 @@ Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/e
 - **Integralność Danych i Testy UI**: Automatyczna walidacja spójności bazy JSON ćwiczeń/sal oraz testy renderowania komponentów interfejsu w środowisku jsdom.
 
 ### Zmieniono
+- **Przewijalny Nagłówek Obwodu (`CircuitList`)**: Ujednolicenie nagłówka "Twój Obwód" z estetyką pozostałych modułów oraz umożliwienie jego naturalnego przewijania z listą stacji treningowych pod ochroną `Global Top Shield`.
+- **Pełnowymiarowy Pasek Nawigacji (`BottomNav`)**: Rozciągnięcie tła i efektu rozmycia na 100% szerokości ekranu oraz w obszar `safe-area-inset-bottom`.
 - **Standaryzacja Układu i Marginesów Bezpiecznych**: Wprowadzono globalne klasy dla marginesów systemowych Androida (.app-safe-top, .app-safe-bottom) oraz ujednolicono szerokości kontenerów (.app-container-narrow, .app-container-wide) we wszystkich 5 modułach, eliminując ucinanie nagłówków pod notchem oraz optymalizując wyświetlanie na tabletach i desktopie.
 - **Architektura Generatora**: Rozbicie monolitycznego pliku store na czystą architekturę domenową (`src/domain/generator/`) z heurystyką balansu mięśniowego (naprzemienność PUSH/PULL) i kaskadowym doborem trudności.
 - **Bezpieczeństwo Danych (Zustand Persist v1)**: Wprowadzenie migracji stanu i selektywnego zapisu (`partialize`), chroniącego przed utratą danych użytkownika i białym ekranem.
 - **Fonty Offline dla Androida**: Zastąpienie zewnętrznego CDN Google Fonts wbudowanym mechanizmem `next/font/google` dla 100% działania offline w aplikacji mobilnej Capacitor.
 
 ### Naprawiono
+- **Natywne Paski Systemowe Androida (Status Bar & Navigation Bar)**: Wymuszenie trwale jasnych (białych) ikon paska stanu (zegar, bateria, wifi) na ciemnym tle aplikacji niezależnie od motywu urządzenia i wersji Androida (API 34 oraz API 37) poprzez przypisanie `postSplashScreenTheme` do `@style/AppTheme.NoActionBar`, ustawienie bazowego motywu na ciemny `Theme.AppCompat.NoActionBar`, programowe wymuszenie `AppCompatDelegate.MODE_NIGHT_YES` oraz re-aplikację `WindowInsetsControllerCompat` w pełnym cyklu życia aktywności (`onCreate`, `onResume`, `onWindowFocusChanged`).
+- **Poziome Przepełnienie i Błędy Responsywności Mobilnej**:
+  - Wyeliminowano poziome rozpychanie strony w Zegarze i ucinanie zakładek dolnego menu ("Stu" zamiast "Studio") na ekranach smartfonów 360px-412px.
+  - Wyeliminowano wylewanie się długich tekstów z przycisków przekierowań w kalkulatorach (BMR, RFM, BMI) poprzez elastyczne zawijanie `whitespace-normal`, dopasowanie wysokości `h-auto` i skrócenie etykiet.
+  - Naprawiono obcinanie tekstu "os." w selektorze sal Generatora (`SelectTrigger` z elastyczną wysokością i `tracking-wider`).
+  - Dodano globalną klasę `.scrollbar-none` eliminującą nakładanie się 12px suwaków Androida na ikony podmenu.
+  - Dodano `overscroll-behavior-y: none;`, wyłączenie tap highlight (`-webkit-tap-highlight-color: transparent`) oraz zabezpieczenie pól formularza przed wymuszonym zoomem na iOS (16px).
 - **Dług Technologiczny**: Usunięcie zdeprecjonowanych bibliotek, odmaskowanie kompilacji Next.js oraz usunięcie 100% ostrzeżeń i błędów ESLint.
 
 ## [1.3.0] - 2026-04-30

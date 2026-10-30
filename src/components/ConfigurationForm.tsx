@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo } from 'react';
@@ -62,18 +61,7 @@ export const ConfigurationForm = () => {
   );
 
   return (
-    <>
-      <div 
-        className="fixed top-0 left-0 right-0 h-[calc(max(env(safe-area-inset-top,0px),48px)+40px)] z-[40] pointer-events-none"
-        style={{
-          background: 'linear-gradient(to bottom, hsl(var(--background) / 0.95) 0%, hsl(var(--background) / 0) 100%)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)'
-        }}
-      />
-      <div className="flex flex-col gap-8 app-container-narrow app-safe-top app-safe-bottom px-4 sm:px-6">
+    <div className="flex flex-col gap-8 app-container-narrow app-safe-top app-safe-bottom px-4 sm:px-6">
       <div className="text-center space-y-4">
         <h1 className="text-3xl font-bold tracking-tighter text-primary font-headline cyan-glow inline-block px-4 py-2 rounded-xl">
           Generator Treningów<br />SW
@@ -102,7 +90,7 @@ export const ConfigurationForm = () => {
             )}
           </Label>
           <Select value={selectedRoomId} onValueChange={setSelectedRoom}>
-            <SelectTrigger className="h-14 rounded-xl glass-button text-left border-white/10 text-lg font-bold">
+            <SelectTrigger className="min-h-[3.5rem] h-auto py-2.5 px-4 rounded-xl glass-button text-left border-white/10 text-lg font-bold">
               <SelectValue placeholder="Wybierz Salę" />
             </SelectTrigger>
             <SelectContent className="glass-card border-white/10">
@@ -110,7 +98,7 @@ export const ConfigurationForm = () => {
                 <SelectItem key={room.id_sali} value={room.id_sali} className="py-3 focus:bg-primary focus:text-primary-foreground">
                   <div className="flex flex-col gap-0.5">
                     <span className="font-bold">{room.nazwa_sali}</span>
-                    <span className="text-[10px] opacity-70 uppercase tracking-widest">{room.id_sali === 'custom' ? 'Konfiguracja ręczna' : (room.tryb_treningu === 'obwodowy' ? 'Trening Obwodowy' : 'Trening Grupowy')} • Max {room.maksymalna_pojemnosc.osoby} os.</span>
+                    <span className="text-[10px] opacity-70 uppercase tracking-wider">{room.id_sali === 'custom' ? 'Konfiguracja ręczna' : (room.tryb_treningu === 'obwodowy' ? 'Trening Obwodowy' : 'Trening Grupowy')} • Max {room.maksymalna_pojemnosc.osoby} os.</span>
                   </div>
                 </SelectItem>
               ))}
@@ -235,7 +223,7 @@ export const ConfigurationForm = () => {
         <div className="space-y-4">
           <Label className="text-lg font-medium">Poziom Grupy</Label>
           <Select value={difficultyId} onValueChange={setDifficulty}>
-            <SelectTrigger className="h-14 rounded-xl glass-button text-left border-white/10">
+            <SelectTrigger className="min-h-[3.5rem] h-auto py-2.5 px-4 rounded-xl glass-button text-left border-white/10">
               <SelectValue placeholder="Wybierz poziom" />
             </SelectTrigger>
             <SelectContent className="glass-card border-white/10 max-h-80">
@@ -284,6 +272,5 @@ export const ConfigurationForm = () => {
         </Button>
       </div>
     </div>
-    </>
   );
 };

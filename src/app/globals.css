@@ -29,17 +29,24 @@
     --chart-3: 195 20% 40%;
     --chart-4: 165 20% 50%;
     --chart-5: 0 84% 60%;
+
+    /* Obsługa marginesów systemowych (env w WebKit / iOS oraz var wstrzykiwane przez Android Bridge) */
+    --safe-area-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+    --safe-area-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
   }
 }
 
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
+  html,
   body {
     @apply bg-background text-foreground font-body;
     background-image: radial-gradient(circle at 50% -20%, #1e2e31 0%, #141d1f 100%);
     min-height: 100vh;
+    overscroll-behavior-y: none;
   }
 }
 
@@ -79,15 +86,33 @@ input[type="number"]::-webkit-outer-spin-button {
   background: rgba(0, 184, 255, 0.5);
 }
 
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ochrona przed wymuszonym auto-zoomem formularzy na silnikach iOS WebKit */
+@media screen and (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* Bezpieczne marginesy dla urządzeń mobilnych (Edge-to-Edge) i dolnego paska nawigacji */
 .safe-pt,
 .app-safe-top {
-  padding-top: calc(max(env(safe-area-inset-top, 0px), 48px) + 16px) !important;
+  padding-top: calc(max(var(--safe-area-top), 48px) + 16px) !important;
 }
 
 .safe-pb,
 .app-safe-bottom {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
+  padding-bottom: calc(var(--safe-area-bottom) + 80px) !important;
 }
 
 /* Ustandaryzowane szerokości kontenerów */

@@ -273,10 +273,10 @@ export const BmrCalculatorSubView: React.FC<BmrCalculatorSubViewProps> = ({ onNa
             {onNavigateTab && (
               <Button
                 onClick={() => onNavigateTab('tdee')}
-                className="w-full h-11 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-center gap-2 shadow-sm"
+                className="w-full h-auto min-h-[2.75rem] py-2.5 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-center text-center gap-2 shadow-sm whitespace-normal leading-snug"
               >
-                <span>Przejdź do kalkulatora TDEE (Całkowite Zapotrzebowanie)</span>
-                <ArrowRight className="h-4 w-4" />
+                <span>Przejdź do kalkulatora TDEE</span>
+                <ArrowRight className="h-4 w-4 shrink-0" />
               </Button>
             )}
           </div>

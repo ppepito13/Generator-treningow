@@ -28,3 +28,45 @@ Marginesy dolne pod `BottomNav` MUST być aplikowane na poziomie pojedynczych wi
 - **GIVEN** użytkownik uruchamia Zegar w trybie `GymViewModal`
 - **WHEN** modal pokrywa ekran
 - **THEN** modal zajmuje 100% wysokości okna bez dolnego paddingu nawigacyjnego.
+
+### Requirement: Pełnoekranowy tryb Edge-to-Edge na platformie Android
+Aplikacja uruchomiona w środowisku natywnym Android MUST rysować interfejs w trybie Edge-to-Edge za przezroczystymi paskami systemowymi (pasek statusu i pasek nawigacji gestami), zachowując jasne ikony systemowe paska statusu i nawigacji.
+
+#### Scenario: Rysowanie aplikacji pod paskami systemowymi Androida
+- **WHEN** aplikacja jest uruchamiana na urządzeniu z systemem Android
+- **THEN** pasek statusu oraz pasek nawigacji gestami posiadają przezroczyste tło, a ikony systemowe są białe i czytelne na ciemnym tle aplikacji.
+
+### Requirement: Globalna ochrona paska statusu i wcięcia ekranu (Global Top Shield)
+Układ główny aplikacji MUST posiadać globalną, pozycjonowaną na stałe przy górnej krawędzi nakładkę rozmycia tła (`backdrop-blur`) z maską gradientową, zapobiegającą kolizji przewijanej treści z fizycznym wycięciem aparatu (notch / camera hole) i zegarem systemowym.
+
+#### Scenario: Przewijanie treści w dowolnym module aplikacji
+- **WHEN** użytkownik przewija treść w dowolnym z widoków (Generator, Zestaw, Zegar, Narzędzia, Studio) ku górze ekranu
+- **THEN** treść płynnie rozmywa się i wygasza pod górnym paskiem systemowym, nie kolidując z obiektywem aparatu.
+
+### Requirement: Reaktywność dolnego paska nawigacji na klawiaturę ekranową
+Dolny pasek nawigacyjny `BottomNav` MUST automatycznie ukrywać się poza dolną krawędź ekranu w momencie aktywacji wirtualnej klawiatury ekranowej, odsłaniając aktywne pole edycji.
+
+#### Scenario: Wprowadzanie tekstu w polu formularza na urządzeniu mobilnym
+- **WHEN** użytkownik aktywuje pole tekstowe i pojawia się wirtualna klawiatura ekranowa
+- **THEN** komponent `BottomNav` natychmiast płynnie zjeżdża w dół poza widoczny obszar ekranu, a po zamknięciu klawiatury powraca na swoje miejsce.
+
+### Requirement: Obsługa systemowej nawigacji 3-przyciskowej w Androidzie
+Dolny pasek nawigacyjny `BottomNav` oraz dolne marginesy treści MUST dynamicznie uwzględniać wysokość systemowego paska nawigacji 3-przyciskowej Androida (48dp), unosząc ikony nawigacyjne ponad przyciski sprzętowe/wirtualne systemu.
+
+#### Scenario: Uruchomienie aplikacji w trybie nawigacji 3-przyciskowej
+- **WHEN** aplikacja działa na urządzeniu Android z włączoną 3-przyciskową belką nawigacyjną (wstecz, home, ostatnie)
+- **THEN** pasek `BottomNav` unosi swoje przyciski o wysokość paska systemowego, a jego tło rozmycia wypełnia przestrzeń pod przyciskami bez zasłaniania etykiet.
+
+### Requirement: Programowe wymuszenie jasnych ikon paska statusu
+Aktywność natywna Androida MUST wymusić jasne (białe) ikony zegara, baterii i łączności w kontrolerze okna (`WindowInsetsControllerCompat`), zapobiegając renderowaniu czarnych ikon przy włączonym motywie jasnym w systemie Android.
+
+#### Scenario: Uruchomienie na telefonie z systemowym trybem jasnym
+- **WHEN** telefon lub emulator posiada włączony systemowy motyw jasny (Light Mode)
+- **THEN** pasek statusu w aplikacji wyświetla biały zegar i białe ikony systemowe czytelne na ciemnym tle aplikacji.
+
+### Requirement: Trwałe wymuszenie białych ikon paska statusu w cyklu życia aplikacji
+Aplikacja Android MUST utrzymywać białe ikony paska statusu (zegar, stan baterii, łączność) w całym cyklu życia aktywności, w tym po zniknięciu ekranu splash screen, podczas odzyskiwania focusu okna oraz po zmianie orientacji lub motywu systemowego.
+
+#### Scenario: Uruchomienie aplikacji i przejście przez splash screen na Androidzie w trybie Light
+- **WHEN** aplikacja kończy wyświetlanie ekranu splash screen i przekazuje sterowanie do WebView na urządzeniu z systemowym motywem jasnym
+- **THEN** pasek statusu zachowuje białe ikony i biały zegar bez powrotu do domyślnych czarnych ikon systemowych.

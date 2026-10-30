@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/app/lib/store';
 import type { TabType } from '@/app/lib/store';
 import { Wand2, ClipboardCheck, Timer, Calculator, Database } from 'lucide-react';
@@ -10,6 +10,25 @@ export const BottomNav = () => {
   const activeTab = useAppStore((state) => state.activeTab);
   const setActiveTab = useAppStore((state) => state.setActiveTab);
   const hasCircuit = useAppStore((state) => state.circuit.length > 0);
+
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+
+    const handleResize = () => {
+      const vv = window.visualViewport;
+      if (!vv) return;
+      // Wirtualna klawiatura ekranowa na urządzeniach mobilnych zmniejsza wysokość visualViewport o > 150px
+      const isKeyboard = vv.height < window.innerHeight - 150;
+      setIsKeyboardVisible(isKeyboard);
+    };
+
+    window.visualViewport.addEventListener('resize', handleResize);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   const tabs = [
     {
@@ -47,19 +66,20 @@ export const BottomNav = () => {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-50 pointer-events-auto"
+      className={cn(
+        "fixed bottom-0 left-0 right-0 z-50 w-full bg-background/85 backdrop-blur-md border-t border-white/5 transition-all duration-300 ease-in-out select-none",
+        isKeyboardVisible ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100 pointer-events-auto"
+      )}
       style={{
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px))',
+        WebkitBackdropFilter: 'blur(12px)',
       }}
     >
       <div className="relative mx-auto w-full max-w-md">
         {/* Glow effect at the top border */}
         <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
         
-        <div 
-          className="flex items-center justify-between px-2 h-16 bg-background/80 backdrop-blur-md border-t border-white/5"
-          style={{ WebkitBackdropFilter: 'blur(12px)' }}
-        >
+        <div className="flex items-center justify-between px-2 h-16">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -70,7 +90,7 @@ export const BottomNav = () => {
                 onClick={() => !tab.disabled && setActiveTab(tab.id as TabType)}
                 disabled={tab.disabled}
                 className={cn(
-                  "relative flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-200",
+                  "relative flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-200 select-none",
                   isActive ? "text-cyan-400" : "text-muted-foreground",
                   tab.disabled ? "opacity-30 cursor-not-allowed" : "hover:text-cyan-400/80 active:scale-95"
                 )}

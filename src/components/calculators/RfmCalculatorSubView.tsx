@@ -273,10 +273,10 @@ export const RfmCalculatorSubView: React.FC<RfmCalculatorSubViewProps> = ({ onNa
             {onNavigateTab && (
               <Button
                 onClick={handleUseRfmForBmr}
-                className="w-full h-11 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center justify-center gap-2 shadow-sm"
+                className="w-full h-auto min-h-[2.75rem] py-2.5 px-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center justify-center text-center gap-2 shadow-sm whitespace-normal leading-snug"
               >
-                <span>Użyj RFM ({rfmResult.value}%) do wyliczenia BMR</span>
-                <ArrowRight className="h-4 w-4" />
+                <span>Użyj RFM ({rfmResult.value}%) w kalkulatorze BMR</span>
+                <ArrowRight className="h-4 w-4 shrink-0" />
               </Button>
             )}
           </div>
