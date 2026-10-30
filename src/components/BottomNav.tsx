@@ -71,7 +71,7 @@ export const BottomNav = () => {
         isKeyboardVisible ? "translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100 pointer-events-auto"
       )}
       style={{
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px))',
         WebkitBackdropFilter: 'blur(12px)',
       }}
     >
