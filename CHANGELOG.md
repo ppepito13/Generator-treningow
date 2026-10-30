@@ -24,6 +24,7 @@ Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/e
 - **Fonty Offline dla Androida**: Zastąpienie zewnętrznego CDN Google Fonts wbudowanym mechanizmem `next/font/google` dla 100% działania offline w aplikacji mobilnej Capacitor.
 
 ### Naprawiono
+- **Natywne Paski Systemowe Androida (Status Bar & Navigation Bar)**: Wymuszenie trwale jasnych (białych) ikon paska stanu (zegar, bateria, wifi) na ciemnym tle aplikacji niezależnie od motywu urządzenia i wersji Androida (API 34 oraz API 37) poprzez przypisanie `postSplashScreenTheme` do `@style/AppTheme.NoActionBar`, ustawienie bazowego motywu na ciemny `Theme.AppCompat.NoActionBar`, programowe wymuszenie `AppCompatDelegate.MODE_NIGHT_YES` oraz re-aplikację `WindowInsetsControllerCompat` w pełnym cyklu życia aktywności (`onCreate`, `onResume`, `onWindowFocusChanged`).
 - **Poziome Przepełnienie i Błędy Responsywności Mobilnej**:
   - Wyeliminowano poziome rozpychanie strony w Zegarze i ucinanie zakładek dolnego menu ("Stu" zamiast "Studio") na ekranach smartfonów 360px-412px.
   - Wyeliminowano wylewanie się długich tekstów z przycisków przekierowań w kalkulatorach (BMR, RFM, BMI) poprzez elastyczne zawijanie `whitespace-normal`, dopasowanie wysokości `h-auto` i skrócenie etykiet.
