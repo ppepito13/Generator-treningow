@@ -16,6 +16,7 @@ Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/e
 - **Integralność Danych i Testy UI**: Automatyczna walidacja spójności bazy JSON ćwiczeń/sal oraz testy renderowania komponentów interfejsu w środowisku jsdom.
 
 ### Zmieniono
+- **Rekalibracja Poziomów Trudności i Nazw Ćwiczeń (#41)**: Zaktualizowano poziomy trudności dla 34 ćwiczeń w bazie produkcyjnej (głównie segment PULL: klasyczne podciąganie nachwyt ➔ 7, podchwyt ➔ 6, podciągania z obciążeniem / izometryczne ➔ 8, warianty asystowane gumą i australijskie ➔ 3-5) oraz wprowadzono 5 spolszczonych nazw (m.in. TRX Jednorącz, Wiosłowanie sztangą w opadzie jednorącz, Dotknięcia ramion w Pike HS).
 - **Kolejność Modułów RIG w Sali Balaton**: Zamiana kolejności modułów RIG (Środek i drabinki) wraz z właściwym przypisaniem zakazanych kategorii sprzętu.
 - **Przewijalny Nagłówek Obwodu (`CircuitList`)**: Ujednolicenie nagłówka "Twój Obwód" z estetyką pozostałych modułów oraz umożliwienie jego naturalnego przewijania z listą stacji treningowych pod ochroną `Global Top Shield`.
 - **Pełnowymiarowy Pasek Nawigacji (`BottomNav`)**: Rozciągnięcie tła i efektu rozmycia na 100% szerokości ekranu oraz w obszar `safe-area-inset-bottom`.
@@ -25,6 +26,7 @@ Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/e
 - **Fonty Offline dla Androida**: Zastąpienie zewnętrznego CDN Google Fonts wbudowanym mechanizmem `next/font/google` dla 100% działania offline w aplikacji mobilnej Capacitor.
 
 ### Naprawiono
+- **Integralność Danych przy Edycji Ćwiczeń w Studio (#41)**: Naprawiono błąd w AddExerciseDialog oraz createDefaultExercise, który przy edycji ćwiczenia wbudowanego powodował wyzerowanie wymagań sprzętowych (wymagania_sprzetowe), biomechaniki i zaangażowanych mięśni. Wprowadzono samonaprawiający mechanizm dziedziczenia metadanych z bazy wbudowanej.
 - **Natywne Paski Systemowe Androida (Status Bar & Navigation Bar)**: Wymuszenie trwale jasnych (białych) ikon paska stanu (zegar, bateria, wifi) na ciemnym tle aplikacji niezależnie od motywu urządzenia i wersji Androida (API 34 oraz API 37) poprzez przypisanie `postSplashScreenTheme` do `@style/AppTheme.NoActionBar`, ustawienie bazowego motywu na ciemny `Theme.AppCompat.NoActionBar`, programowe wymuszenie `AppCompatDelegate.MODE_NIGHT_YES` oraz re-aplikację `WindowInsetsControllerCompat` w pełnym cyklu życia aktywności (`onCreate`, `onResume`, `onWindowFocusChanged`).
 - **Poziome Przepełnienie i Błędy Responsywności Mobilnej**:
   - Wyeliminowano poziome rozpychanie strony w Zegarze i ucinanie zakładek dolnego menu ("Stu" zamiast "Studio") na ekranach smartfonów 360px-412px.

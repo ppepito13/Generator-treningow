@@ -7,7 +7,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 3,
+    "poziom": 4,
     "glowne_partie": [
       "Barki",
       "Plecy"
@@ -62,7 +62,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Naprzemienne",
-    "poziom": 5,
+    "poziom": 9,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -91,7 +91,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 3,
+    "poziom": 5,
     "glowne_partie": [
       "Ramiona"
     ],
@@ -147,7 +147,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 6,
+    "poziom": 7,
     "glowne_partie": [
       "Barki",
       "Core",
@@ -176,7 +176,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Asymetryczne",
-    "poziom": 6,
+    "poziom": 8,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -205,7 +205,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 2,
+    "poziom": 4,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -234,7 +234,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 1,
+    "poziom": 5,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -262,7 +262,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 1,
+    "poziom": 3,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -290,7 +290,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 6,
+    "poziom": 7,
     "glowne_partie": [
       "Core",
       "Plecy",
@@ -318,7 +318,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 3,
+    "poziom": 8,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -346,7 +346,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 2,
+    "poziom": 8,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -374,7 +374,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 4,
+    "poziom": 7,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -401,7 +401,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 3,
+    "poziom": 6,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -428,7 +428,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Unilateralny",
-    "poziom": 6,
+    "poziom": 8,
     "glowne_partie": [
       "Core",
       "Plecy",
@@ -457,7 +457,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Unilateralny",
-    "poziom": 6,
+    "poziom": 8,
     "glowne_partie": [
       "Core",
       "Plecy",
@@ -486,7 +486,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 6,
+    "poziom": 8,
     "glowne_partie": [
       "Core",
       "Plecy",
@@ -514,7 +514,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 5,
+    "poziom": 8,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -542,7 +542,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Asymetryczne",
-    "poziom": 5,
+    "poziom": 7,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -569,7 +569,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Unilateralny",
-    "poziom": 5,
+    "poziom": 7,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -596,7 +596,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 2,
+    "poziom": 3,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -651,7 +651,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 1,
+    "poziom": 3,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -678,7 +678,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 5,
+    "poziom": 8,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -705,7 +705,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 3,
+    "poziom": 7,
     "glowne_partie": [
       "Ramiona"
     ],
@@ -731,7 +731,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 7,
+    "poziom": 8,
     "glowne_partie": [
       "Core",
       "Plecy",
@@ -761,7 +761,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 6,
+    "poziom": 8,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -873,7 +873,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 1,
+    "poziom": 2,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -950,13 +950,13 @@
   },
   {
     "id_cwiczenia": "ex_035",
-    "nazwa": "TRX Single-Arm Power Pull",
+    "nazwa": "TRX Jednorącz",
     "wariant": "Klasyczny",
     "segment_id": 1,
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Unilateralny",
-    "poziom": 4,
+    "poziom": 5,
     "glowne_partie": [
       "Barki",
       "Core",
@@ -1017,7 +1017,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 3,
+    "poziom": 4,
     "glowne_partie": [
       "Ramiona"
     ],
@@ -1043,7 +1043,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 2,
+    "poziom": 4,
     "glowne_partie": [
       "Ramiona"
     ],
@@ -1132,7 +1132,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 2,
+    "poziom": 4,
     "glowne_partie": [
       "Plecy",
       "Ramiona"
@@ -1159,7 +1159,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 4,
+    "poziom": 5,
     "glowne_partie": [
       "Barki",
       "Plecy"
@@ -1180,7 +1180,7 @@
   },
   {
     "id_cwiczenia": "ex_043",
-    "nazwa": "Wiosłowanie w opadzie (Meadows Row)",
+    "nazwa": "Wiosłowanie sztangą w opadzie jednorącz",
     "wariant": "Single arm",
     "segment_id": 1,
     "segment_nazwa": "PULL",
@@ -1249,7 +1249,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Naprzemienne",
-    "poziom": 3,
+    "poziom": 2,
     "glowne_partie": [
       "Ramiona"
     ],
@@ -1276,7 +1276,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 1,
+    "poziom": 2,
     "glowne_partie": [
       "Ramiona"
     ],
@@ -1302,7 +1302,7 @@
     "segment_nazwa": "PULL",
     "tryb_pracy": "Solo",
     "biomechanika": "Unilateralny",
-    "poziom": 6,
+    "poziom": 7,
     "glowne_partie": [
       "Plecy"
     ],
@@ -1658,7 +1658,7 @@
   },
   {
     "id_cwiczenia": "ex_060",
-    "nazwa": "Pike Shoulder Taps",
+    "nazwa": "Dotknięcia ramion w Pike HS",
     "wariant": "Klasyczny",
     "segment_id": 2,
     "segment_nazwa": "PUSH",
@@ -1865,7 +1865,7 @@
     "segment_nazwa": "PUSH",
     "tryb_pracy": "Solo",
     "biomechanika": "Bilateralny",
-    "poziom": 1,
+    "poziom": 2,
     "glowne_partie": [
       "Barki",
       "Core",
@@ -2264,7 +2264,7 @@
   },
   {
     "id_cwiczenia": "ex_083",
-    "nazwa": "Shoulder Taps",
+    "nazwa": "Dotknięcia barków w podporze nogami o piłkę",
     "wariant": "Nogi na piłce",
     "segment_id": 2,
     "segment_nazwa": "PUSH",
@@ -2291,7 +2291,7 @@
   },
   {
     "id_cwiczenia": "ex_084",
-    "nazwa": "Shoulder Taps",
+    "nazwa": "Dotknięcia barków w podporze przodem",
     "wariant": "Podpór przodem (ziemia)",
     "segment_id": 2,
     "segment_nazwa": "PUSH",
