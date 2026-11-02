@@ -65,21 +65,55 @@ export const createDefaultExercise = (input: {
     ? input.id_cwiczenia.trim()
     : normalizeExerciseKey(input.nazwa);
 
+  const baseBuiltIn = (exercises as Exercise[]).find(e => e.id_cwiczenia === generatedId);
+
+  // Zabezpieczenie wymagań sprzętowych: preferuj podane w input, w przeciwnym razie zachowaj z bazy wbudowanej
+  const finalEquipment = (input.wymagania_sprzetowe && input.wymagania_sprzetowe.length > 0)
+    ? input.wymagania_sprzetowe
+    : (baseBuiltIn?.wymagania_sprzetowe ?? []);
+
+  // Zabezpieczenie biomechaniki
+  const finalBiomechanika = (input.biomechanika && input.biomechanika !== "Ogólna")
+    ? input.biomechanika
+    : (baseBuiltIn?.biomechanika ?? input.biomechanika ?? "Ogólna");
+
+  // Zabezpieczenie zaangażowanych mięśni
+  const finalMiesnie = (input.zaangazowane_miesnie && input.zaangazowane_miesnie !== "Brak szczegółowych danych")
+    ? input.zaangazowane_miesnie
+    : (baseBuiltIn?.zaangazowane_miesnie ?? input.zaangazowane_miesnie ?? "Brak szczegółowych danych");
+
+  // Zabezpieczenie tagów specjalnych
+  const finalTagi = (input.tagi_specjalne && input.tagi_specjalne.length > 0 && JSON.stringify(input.tagi_specjalne) !== JSON.stringify(["Własne"]))
+    ? input.tagi_specjalne
+    : (baseBuiltIn?.tagi_specjalne ?? input.tagi_specjalne ?? ["Własne"]);
+
+  // Zabezpieczenie kategorii treningu
+  const finalKategorie = (input.kategorie_treningu && input.kategorie_treningu.length > 0 && JSON.stringify(input.kategorie_treningu) !== JSON.stringify(["all", "Kalistenika", "FBW", "Cross"]))
+    ? input.kategorie_treningu
+    : (baseBuiltIn?.kategorie_treningu ?? input.kategorie_treningu ?? ["all", "Kalistenika", "FBW", "Cross"]);
+
+  const finalPartie = (input.glowne_partie && input.glowne_partie.length > 0)
+    ? input.glowne_partie
+    : (baseBuiltIn?.glowne_partie ?? ["Wszystkie / Uniwersalne"]);
+
+  const finalSegmentId = input.segment_id ?? baseBuiltIn?.segment_id ?? 99;
+  const finalSegmentNazwa = input.segment_nazwa ?? baseBuiltIn?.segment_nazwa ?? "NIEWYBRANY / OGÓLNE";
+
   return {
     id_cwiczenia: generatedId,
     nazwa: input.nazwa.trim(),
-    wariant: input.wariant?.trim() ?? "",
-    segment_id: input.segment_id ?? 99,
-    segment_nazwa: input.segment_nazwa ?? "NIEWYBRANY / OGÓLNE",
-    tryb_pracy: input.tryb_pracy ?? "Solo",
-    poziom: input.poziom ?? 0, // 0 = poziom uniwersalny (pasuje do każdego poziomu 1-10)
-    glowne_partie: input.glowne_partie && input.glowne_partie.length > 0 ? input.glowne_partie : ["Wszystkie / Uniwersalne"],
-    zaangazowane_miesnie: input.zaangazowane_miesnie ?? "Brak szczegółowych danych",
-    tagi_specjalne: input.tagi_specjalne ?? ["Własne"],
-    kategorie_treningu: input.kategorie_treningu && input.kategorie_treningu.length > 0 ? input.kategorie_treningu : ["all", "Kalistenika", "FBW", "Cross"],
-    instrukcja: input.instrukcja?.trim() || "Brak opisu (dodano w trybie szybkim)",
-    wymagania_sprzetowe: input.wymagania_sprzetowe ?? [],
-    biomechanika: input.biomechanika ?? "Ogólna",
+    wariant: input.wariant?.trim() ?? baseBuiltIn?.wariant ?? "",
+    segment_id: finalSegmentId,
+    segment_nazwa: finalSegmentNazwa,
+    tryb_pracy: input.tryb_pracy ?? baseBuiltIn?.tryb_pracy ?? "Solo",
+    poziom: input.poziom ?? baseBuiltIn?.poziom ?? 0,
+    glowne_partie: finalPartie,
+    zaangazowane_miesnie: finalMiesnie,
+    tagi_specjalne: finalTagi,
+    kategorie_treningu: finalKategorie,
+    instrukcja: input.instrukcja?.trim() || baseBuiltIn?.instrukcja || "Brak opisu (dodano w trybie szybkim)",
+    wymagania_sprzetowe: finalEquipment,
+    biomechanika: finalBiomechanika,
     isCustom: true,
     isOverridden: isOverridden,
   };

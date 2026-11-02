@@ -103,4 +103,34 @@ describe('Zustand Store - Domain Generator Integration', () => {
     const state = useAppStore.getState();
     expect(state.generationConflict).toBeNull();
   });
+
+  it('preserves equipment requirements and biomechanics when overriding a built-in exercise', () => {
+    const store = useAppStore.getState();
+    store.clearAllCustomExercises();
+
+    // Modyfikacja wbudowanego ćwiczenia ex_014 bez przekazywania wymagań sprzętowych
+    const modified = store.addCustomExercise({
+      id_cwiczenia: 'ex_014',
+      nazwa: 'Podciąganie klasyczne (Zmodyfikowane)',
+      poziom: 7,
+    });
+
+    expect(modified.id_cwiczenia).toBe('ex_014');
+    expect(modified.nazwa).toBe('Podciąganie klasyczne (Zmodyfikowane)');
+    expect(modified.poziom).toBe(7);
+    expect(modified.isOverridden).toBe(true);
+    // Wymagania sprzętowe i biomechanika nie mogą zostać wykasowane!
+    expect(modified.wymagania_sprzetowe).toEqual([{ drazek: 1 }]);
+    expect(modified.biomechanika).toBe('Bilateralny');
+
+    // getAllExercises musi zwrócić nadpisane ćwiczenie z zachowanym sprzętem
+    const all = store.getAllExercises();
+    const retrieved = all.find(e => e.id_cwiczenia === 'ex_014');
+    expect(retrieved).toBeDefined();
+    expect(retrieved?.wymagania_sprzetowe).toEqual([{ drazek: 1 }]);
+    expect(retrieved?.biomechanika).toBe('Bilateralny');
+
+    // Sprzątanie po teście
+    store.clearAllCustomExercises();
+  });
 });

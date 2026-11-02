@@ -110,6 +110,11 @@ export const AddExerciseDialog = ({
       glowne_partie: glownePartie.trim() ? glownePartie.split(",").map((s) => s.trim()) : undefined,
       instrukcja: instrukcja.trim() || undefined,
       isOverridden: isOverridingBuiltIn,
+      wymagania_sprzetowe: initialExercise?.wymagania_sprzetowe,
+      biomechanika: initialExercise?.biomechanika,
+      zaangazowane_miesnie: initialExercise?.zaangazowane_miesnie,
+      tagi_specjalne: initialExercise?.tagi_specjalne,
+      kategorie_treningu: initialExercise?.kategorie_treningu,
     });
 
     if (onSuccess) {
