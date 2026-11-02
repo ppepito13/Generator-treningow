@@ -49,7 +49,7 @@ export interface GenerationConflictState {
 }
 
 export type ViewType = 'HOME' | 'CIRCUIT' | 'BMI' | 'TIMER' | 'SETTINGS';
-export type TabType = 'generator' | 'circuit' | 'timer' | 'calculators' | 'studio';
+export type TabType = 'generator' | 'circuit' | 'timer' | 'calculators' | 'studio' | 'settings';
 
 interface AppState {
   selectedRoomId: string;
