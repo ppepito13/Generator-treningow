@@ -5,7 +5,7 @@ import { useAppStore } from '@/app/lib/store';
 import { DIFFICULTY_LEVELS, ALL_ROOMS, KATEGORIE_TRENINGOW, ALL_EXERCISES } from '@/app/lib/data';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Zap, Trophy, LayoutGrid, ShieldAlert, ShieldCheck, MapPin, Settings2, History } from 'lucide-react';
+import { Zap, Trophy, LayoutGrid, ShieldAlert, ShieldCheck, MapPin, Settings2, History, Settings } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -30,7 +30,8 @@ export const ConfigurationForm = () => {
     customRoomCategory,
     setCustomRoomCategory,
     customRoomEquipment: _customRoomEquipment,
-    resetCustomRoom
+    resetCustomRoom,
+    setActiveTab
   } = useAppStore();
 
   const getAllRooms = useAppStore(state => state.getAllRooms);
@@ -62,9 +63,18 @@ export const ConfigurationForm = () => {
 
   return (
     <div className="flex flex-col gap-8 app-container-narrow app-safe-top app-safe-bottom px-4 sm:px-6">
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold tracking-tighter text-primary font-headline cyan-glow inline-block px-4 py-2 rounded-xl">
-          Generator Treningów<br />SW
+      <div className="relative text-center space-y-4">
+        <button
+          type="button"
+          onClick={() => setActiveTab('settings')}
+          className="absolute top-1 right-1 p-2 text-muted-foreground hover:text-cyan-400 active:scale-90 transition-all duration-300 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-cyan-400/50 cursor-pointer group"
+          aria-label="Otwórz ustawienia"
+        >
+          <Settings className="h-6 w-6 transition-transform duration-500 group-hover:rotate-90 group-active:rotate-180" />
+        </button>
+
+        <h1 className="text-3xl font-bold tracking-tighter text-primary font-headline cyan-glow inline-block px-5 py-2 rounded-xl leading-tight">
+          Generator<br />Sport&apos;s Way
         </h1>
         <p className="text-muted-foreground text-sm uppercase tracking-widest">Elastyczne plany grupowe</p>
       </div>

@@ -11,6 +11,7 @@ import { ExerciseStudioView } from '@/components/ExerciseStudioView';
 import { TimerView } from '@/components/TimerView';
 import { CalculatorsView } from '@/components/CalculatorsView';
 import { GlobalIntervalTimerController } from '@/components/GlobalIntervalTimerController';
+import { SettingsView } from '@/components/SettingsView';
 
 export default function Home() {
   const { activeTab, activeView: _activeView, popView: _popView, generationConflict, resolveConflict } = useAppStore();
@@ -25,7 +26,7 @@ export default function Home() {
 
   // Automatyczne przewijanie na górę po wygenerowaniu treningu
   useEffect(() => {
-    if (activeTab === 'circuit' || activeTab === 'studio' || activeTab === 'timer' || activeTab === 'calculators') {
+    if (activeTab === 'circuit' || activeTab === 'studio' || activeTab === 'timer' || activeTab === 'calculators' || activeTab === 'settings') {
       window.scrollTo(0, 0);
     }
   }, [activeTab]);
@@ -90,6 +91,9 @@ export default function Home() {
       </div>
       <div style={{ display: activeTab === 'studio' ? 'block' : 'none' }}>
         <ExerciseStudioView />
+      </div>
+      <div style={{ display: activeTab === 'settings' ? 'block' : 'none' }}>
+        <SettingsView />
       </div>
 
       {/* Globalny Kontroler Zegara Interwałowego (Działanie w tle + Pływający Widget + Fullscreen Gym View) */}
