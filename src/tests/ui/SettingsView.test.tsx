@@ -81,11 +81,23 @@ describe('Komponent UI: SettingsView', () => {
     expect(screen.getByText('Zalecany na salę')).toBeInTheDocument();
   });
 
-  it('wyświetla stan niezalogowanego konta Google z przyciskiem do połączenia', () => {
-    render(<SettingsView />);
+  it('wyświetla stan niezalogowanego konta Google z przyciskiem do połączenia oraz wielokolorowym logo Google', () => {
+    const { container } = render(<SettingsView />);
 
     expect(screen.getByText('Niezalogowany')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /połącz z kontem google/i })).toBeInTheDocument();
+    const connectBtn = screen.getByRole('button', { name: /połącz z kontem google/i });
+    expect(connectBtn).toBeInTheDocument();
+
+    // Weryfikacja obecności 4-kolorowego logo Google (SVG z oficjalnymi kolorami na kafelku i przycisku)
+    const bluePaths = container.querySelectorAll('path[fill="#4285F4"]');
+    const greenPaths = container.querySelectorAll('path[fill="#34A853"]');
+    const yellowPaths = container.querySelectorAll('path[fill="#FBBC05"]');
+    const redPaths = container.querySelectorAll('path[fill="#EA4335"]');
+
+    expect(bluePaths.length).toBeGreaterThanOrEqual(2);
+    expect(greenPaths.length).toBeGreaterThanOrEqual(2);
+    expect(yellowPaths.length).toBeGreaterThanOrEqual(2);
+    expect(redPaths.length).toBeGreaterThanOrEqual(2);
   });
 
   it('wyświetla dane zalogowanego użytkownika Google oraz przycisk odłączenia', () => {
