@@ -138,7 +138,7 @@ export const SettingsView: React.FC = () => {
             }`}
           >
             <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded text-[8px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-wider">
-              Wkrótce #15
+              Wkrótce
             </span>
             <div className="p-2 rounded-xl bg-white/10 text-amber-300">
               <Sun className="h-5 w-5" />
@@ -238,9 +238,7 @@ export const SettingsView: React.FC = () => {
                     <span className="text-[10px] text-muted-foreground block">Niezalogowany</span>
                   </div>
                 </div>
-                <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 uppercase tracking-wider">
-                  Etap #39
-                </span>
+                
               </div>
 
               <p className="text-[11px] text-white/60 leading-relaxed">
