@@ -11,7 +11,10 @@ describe('Komponent UI: SettingsView', () => {
   beforeEach(() => {
     useAppStore.setState({ 
       activeTab: 'settings',
-      customExercises: []
+      customExercises: [],
+      googleUser: null,
+      authStatus: 'idle',
+      authError: null,
     });
   });
 
@@ -76,5 +79,49 @@ describe('Komponent UI: SettingsView', () => {
     fireEvent.click(darkThemeBtn);
 
     expect(screen.getByText('Zalecany na salę')).toBeInTheDocument();
+  });
+
+  it('wyświetla stan niezalogowanego konta Google z przyciskiem do połączenia', () => {
+    render(<SettingsView />);
+
+    expect(screen.getByText('Niezalogowany')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /połącz z kontem google/i })).toBeInTheDocument();
+  });
+
+  it('wyświetla dane zalogowanego użytkownika Google oraz przycisk odłączenia', () => {
+    useAppStore.setState({
+      googleUser: {
+        id: 'usr_1',
+        name: 'Jan Trener',
+        email: 'trener@sportsway.eu',
+        picture: 'https://lh3.googleusercontent.com/avatar.jpg',
+      },
+    });
+
+    render(<SettingsView />);
+
+    expect(screen.getByText('Jan Trener')).toBeInTheDocument();
+    expect(screen.getByText('trener@sportsway.eu')).toBeInTheDocument();
+    expect(screen.getByText('Połączono')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /odłącz konto google/i })).toBeInTheDocument();
+  });
+
+  it('otwiera modal potwierdzenia po kliknięciu Odłącz konto Google', () => {
+    useAppStore.setState({
+      googleUser: {
+        id: 'usr_1',
+        name: 'Jan Trener',
+        email: 'trener@sportsway.eu',
+      },
+    });
+
+    render(<SettingsView />);
+
+    const disconnectBtn = screen.getByRole('button', { name: /odłącz konto google/i });
+    fireEvent.click(disconnectBtn);
+
+    expect(screen.getByText('Odłączanie Konta Google')).toBeInTheDocument();
+    expect(screen.getByText(/Wstrzymanie synchronizacji:/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /potwierdzam, odłącz konto/i })).toBeInTheDocument();
   });
 });

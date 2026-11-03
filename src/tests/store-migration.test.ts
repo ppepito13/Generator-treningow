@@ -110,12 +110,15 @@ describe('Zustand Store Persist Migration & Partialize', () => {
         'customRoomCategory',
         'customRoomEquipment',
         'activeTab',
+        'googleUser',
       ];
 
       expect(Object.keys(partial).sort()).toEqual(expectedPersistedKeys.sort());
 
       // Assert ephemeral state omission
       expect(partial).not.toHaveProperty('circuit');
+      expect(partial).not.toHaveProperty('authStatus');
+      expect(partial).not.toHaveProperty('authError');
       expect(partial).not.toHaveProperty('activeView');
       expect(partial).not.toHaveProperty('navigationStack');
       expect(partial).not.toHaveProperty('isGenerated');
