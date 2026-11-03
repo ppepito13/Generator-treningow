@@ -39,6 +39,8 @@ next-env.d.ts
 
 .genkit/*
 .env*
+!.env.local.example
+!.env.example
 
 # firebase
 .firebase/

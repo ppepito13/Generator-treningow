@@ -19,6 +19,8 @@ import {
 import { IntervalPreset, TimerAudioSettings } from '@/types/timer';
 import { FlattenedQueueItem } from '@/components/GymViewModal';
 import { UserProfileData } from '@/types/calculators';
+import type { GoogleUserProfile, AuthStatus } from '@/types/auth';
+import { signOutFromGoogle } from '@/services/auth/googleAuth';
 import {
   ensureEquipment,
   getEquipmentString,
@@ -154,6 +156,14 @@ interface AppState {
   reorderCircuit: (oldIndex: number, newIndex: number) => void;
   getEffectiveRoomConfig: () => RoomConfig;
   reset: () => void;
+
+  // Stan autoryzacji Google (#39)
+  googleUser: GoogleUserProfile | null;
+  authStatus: AuthStatus;
+  authError: string | null;
+  setGoogleUser: (user: GoogleUserProfile | null) => void;
+  setAuthStatus: (status: AuthStatus, error?: string | null) => void;
+  disconnectGoogleAccount: () => Promise<void>;
 }
 
 
@@ -178,6 +188,22 @@ export const getValidExercisesForZone = (
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
+      googleUser: null,
+      authStatus: 'idle',
+      authError: null,
+      setGoogleUser: (user: GoogleUserProfile | null) => set({
+        googleUser: user,
+        authStatus: user ? 'authenticated' : 'idle',
+        authError: null,
+      }),
+      setAuthStatus: (status: AuthStatus, error: string | null = null) => set({
+        authStatus: status,
+        authError: error,
+      }),
+      disconnectGoogleAccount: async () => {
+        await signOutFromGoogle();
+        set({ googleUser: null, authStatus: 'idle', authError: null });
+      },
       selectedRoomId: ALL_ROOMS[0].id_sali,
       participants: 8,
       stationCount: 7,
@@ -871,6 +897,7 @@ export const useAppStore = create<AppState>()(
 );
 
 export const partializeStoreState = (state: AppState) => ({
+  googleUser: state.googleUser,
   customExercises: state.customExercises,
   customRooms: state.customRooms,
   customEquipment: state.customEquipment,
