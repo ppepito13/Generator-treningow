@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { useAppStore } from '@/app/lib/store';
+import { ALL_EXERCISES } from '@/app/lib/data';
+import { APP_VERSION, APP_WEBSITE_URL, APP_WEBSITE_DISPLAY } from '@/config/appInfo';
 import { ModuleHeader } from '@/components/ui/ModuleHeader';
 import { Button } from '@/components/ui/button';
 import { 
@@ -15,12 +17,20 @@ import {
   CheckCircle2, 
   ShieldCheck, 
   Database,
-  Sparkles
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
   const setActiveTab = useAppStore((state) => state.setActiveTab);
+  const customExercises = useAppStore((state) => state.customExercises);
   const [selectedTheme, setSelectedTheme] = useState<'dark' | 'light'>('dark');
+
+  const baseCount = ALL_EXERCISES.length;
+  const customCount = customExercises.length;
+  const exerciseCountLabel = customCount > 0 
+    ? `${baseCount} w bazie (+${customCount} własnych)` 
+    : `${baseCount} w bazie`;
 
   return (
     <div className="min-h-screen app-safe-top app-safe-bottom app-container-narrow px-4 sm:px-6 space-y-6">
@@ -181,14 +191,26 @@ export const SettingsView: React.FC = () => {
           <div className="flex items-center justify-between py-2.5">
             <span className="text-muted-foreground">Wersja</span>
             <span className="inline-flex items-center gap-1 font-mono font-bold text-cyan-400">
-              v1.3.0
+              {APP_VERSION}
             </span>
+          </div>
+          <div className="flex items-center justify-between py-2.5">
+            <span className="text-muted-foreground">Strona WWW</span>
+            <a
+              href={APP_WEBSITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 font-medium transition-colors hover:underline"
+            >
+              <span>{APP_WEBSITE_DISPLAY}</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
           </div>
           <div className="flex items-center justify-between py-2.5">
             <span className="text-muted-foreground">Baza ćwiczeń</span>
             <span className="inline-flex items-center gap-1 text-white/80">
               <Database className="h-3.5 w-3.5 text-cyan-400" />
-              40 ćwiczeń kalibrowanych
+              {exerciseCountLabel}
             </span>
           </div>
           <div className="flex items-center justify-between py-2.5">

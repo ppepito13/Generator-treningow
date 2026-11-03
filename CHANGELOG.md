@@ -5,6 +5,8 @@ Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 ### Dodano
+- **Oficjalna Witryna Projektu w Ustawieniach (#43)**: Dodano bezpieczny odnośnik do https://sportsway.eu/ w sekcji O Aplikacji (atrybuty target="_blank" i rel="noopener noreferrer", ikona ExternalLink) otwierający zewnętrzną przeglądarkę systemową na Androidzie i nową kartę w przeglądarce.
+- **Centralne Zarządzanie Metadanymi Aplikacji**: Utworzono moduł `src/config/appInfo.ts` zapewniający bezpieczne wstrzykiwanie numeru wersji z `app-version.json` z defensywnym fallbackiem na wypadek środowisk bez statycznego pliku.
 - **Dedykowany Moduł Ustawień i Przycisk Zębatki (#38)**: Wdrożenie modułu Ustawień (`SettingsView`) w oparciu o ustandaryzowany nagłówek `ModuleHeader`, zintegrowanego z nowym punktem wejścia w prawym górnym rogu ekranu głównego (lekka, animowana zębatka bez tła). Przygotowano logiczne sekcje Personalizacji pod motyw jasny/ciemny (#15), Konta i Chmury pod integrację z Google (#39, #40) oraz O Aplikacji (wersja v1.3.0, status bazy ćwiczeń i sal). Wdrożono czysty, reaktywny model (Auto-save) oraz obsługę powrotu do Generatora (w tym za pomocą sprzętowego przycisku Back na Androidzie).
 - **Mobilny Edge-to-Edge i Globalna Ochrona Notch**: Wdrożenie natywnej obsługi Edge-to-Edge na Androidzie (`WindowCompat.setDecorFitsSystemWindows`) z przezroczystymi paskami systemowymi i jasnymi ikonami, globalnej nakładki `Global Top Shield` w `layout.tsx` chroniącej treść przed fizycznym wycięciem aparatu (notch / camera hole) we wszystkich widokach, oraz reaktywnego chowania paska `BottomNav` po wysunięciu wirtualnej klawiatury (`window.visualViewport`).
 - **Kompaktowy Zegar Interwałowy (Color Dot Picker)**: Wdrożenie 2-wierszowych nagłówków bloków (pełna szerokość nazwy + bezpośrednio dostępne przyciski akcji) oraz kompaktowego próbnika barwnego (Color Dot Picker w okienku Popover) eliminującego poziome rozpychanie ekranu.
@@ -17,6 +19,7 @@ Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/e
 - **Integralność Danych i Testy UI**: Automatyczna walidacja spójności bazy JSON ćwiczeń/sal oraz testy renderowania komponentów interfejsu w środowisku jsdom.
 
 ### Zmieniono
+- **Reaktywny Wskaźnik Bazy Ćwiczeń (#42)**: Zastąpiono statyczny licznik ćwiczeń dynamicznym zliczaniem ze store (270 ćwiczeń bazy fabrycznej oraz wyszczególnienie modyfikacji i ćwiczeń autorskich użytkownika, np. „270 w bazie (+X własnych)”).
 - **Rebranding Tytułu na Ekranie Głównym**: Zmiana nagłówka aplikacji na „Generator Sport's Way” w 2-wierszowym kafelku z cyjanową poświatą, optymalizująca szerokość na wąskich ekranach smartfonów i eliminująca kolizję z przyciskiem zębatki.
 - **Rekalibracja Poziomów Trudności i Nazw Ćwiczeń (#41)**: Zaktualizowano poziomy trudności dla 34 ćwiczeń w bazie produkcyjnej (głównie segment PULL: klasyczne podciąganie nachwyt ➔ 7, podchwyt ➔ 6, podciągania z obciążeniem / izometryczne ➔ 8, warianty asystowane gumą i australijskie ➔ 3-5) oraz wprowadzono 5 spolszczonych nazw (m.in. TRX Jednorącz, Wiosłowanie sztangą w opadzie jednorącz, Dotknięcia ramion w Pike HS).
 - **Kolejność Modułów RIG w Sali Balaton**: Zamiana kolejności modułów RIG (Środek i drabinki) wraz z właściwym przypisaniem zakazanych kategorii sprzętu.
@@ -28,6 +31,7 @@ Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/e
 - **Fonty Offline dla Androida**: Zastąpienie zewnętrznego CDN Google Fonts wbudowanym mechanizmem `next/font/google` dla 100% działania offline w aplikacji mobilnej Capacitor.
 
 ### Naprawiono
+- **Błędna Liczba Ćwiczeń w Ustawieniach (#42)**: Wyeliminowano dezinformujący, zahardkodowany napis „40 ćwiczeń kalibrowanych” w module Ustawień.
 - **Integralność Danych przy Edycji Ćwiczeń w Studio (#41)**: Naprawiono błąd w AddExerciseDialog oraz createDefaultExercise, który przy edycji ćwiczenia wbudowanego powodował wyzerowanie wymagań sprzętowych (wymagania_sprzetowe), biomechaniki i zaangażowanych mięśni. Wprowadzono samonaprawiający mechanizm dziedziczenia metadanych z bazy wbudowanej.
 - **Natywne Paski Systemowe Androida (Status Bar & Navigation Bar)**: Wymuszenie trwale jasnych (białych) ikon paska stanu (zegar, bateria, wifi) na ciemnym tle aplikacji niezależnie od motywu urządzenia i wersji Androida (API 34 oraz API 37) poprzez przypisanie `postSplashScreenTheme` do `@style/AppTheme.NoActionBar`, ustawienie bazowego motywu na ciemny `Theme.AppCompat.NoActionBar`, programowe wymuszenie `AppCompatDelegate.MODE_NIGHT_YES` oraz re-aplikację `WindowInsetsControllerCompat` w pełnym cyklu życia aktywności (`onCreate`, `onResume`, `onWindowFocusChanged`).
 - **Poziome Przepełnienie i Błędy Responsywności Mobilnej**:
