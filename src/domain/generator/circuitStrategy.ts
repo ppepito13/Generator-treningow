@@ -37,10 +37,29 @@ export const generateCircuitStrategy = (params: CircuitStrategyParams): Generati
   const numDoubleStations = participants - stationCount;
   const isPairMode = participants > stationCount;
 
+  const ringsCount = currentRoom.inwentarz?.['kolko_gimnastyczne'] ?? 0;
+  const hasRingsEquipment = ringsCount > 0;
+  const hasRingsExercise =
+    hasRingsEquipment &&
+    allExercisesSource.some(ex => {
+      const usesRings = JSON.stringify(ex.wymagania_sprzetowe || []).includes('kolko_gimnastyczne');
+      if (!usesRings) return false;
+      if (category !== 'all' && !ex.kategorie_treningu?.includes(category)) return false;
+      const minLevel = Math.max(1, mainDiff.min_poziom - (isStrictDifficulty ? 0 : 2));
+      const maxLevel = Math.min(10, mainDiff.max_poziom + (isStrictDifficulty ? 0 : 2));
+      return ex.poziom >= minLevel && ex.poziom <= maxLevel;
+    });
+  const ringsAvailable = hasRingsEquipment && hasRingsExercise;
+
   const selectedZones = selectRoomZonesForCircuit(
     currentRoom.strefy,
     stationCount,
-    isPairMode
+    {
+      isPairMode,
+      ringsAvailable,
+      roomId: currentRoom.id_sali,
+      inventory: currentRoom.inwentarz,
+    }
   );
 
   const generated: Station[] = [];

@@ -1,4 +1,4 @@
-import exercises from './data/lista_cwiczen.json';
+﻿import exercises from './data/lista_cwiczen.json';
 import equipment from './data/lista_sprzetu.json';
 import levels from './data/poziomy_trudnosci.json';
 import segments from './data/segmenty.json';
@@ -134,6 +134,7 @@ export interface Zone {
   nazwa: string;
   typ: string;
   kolejnosc_sortowania?: number;
+  wymuszona_w_obwodzie?: boolean;
   blokada_zmiany_recznej?: boolean;
   zakazane_kategorie_sprzetu?: string[];
   pojemnosc_stacji?: number;
