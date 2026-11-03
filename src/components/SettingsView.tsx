@@ -9,6 +9,7 @@ import { ModuleHeader } from '@/components/ui/ModuleHeader';
 import { Button } from '@/components/ui/button';
 import { DisconnectAccountDialog } from '@/components/DisconnectAccountDialog';
 import { signInWithGoogle } from '@/services/auth/googleAuth';
+import { GoogleIcon } from '@/components/icons/GoogleIcon';
 import { 
   Settings, 
   ArrowLeft, 
@@ -19,8 +20,7 @@ import {
   Info, 
   CheckCircle2, 
   ShieldCheck, 
-  Database,
-  Sparkles,
+  Database,
   ExternalLink,
   LogOut,
   AlertCircle,
@@ -230,8 +230,8 @@ export const SettingsView: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-white flex items-center justify-center font-black text-black text-xs shadow-sm">
-                    G
+                  <div className="h-7 w-7 rounded-lg bg-white flex items-center justify-center p-1 shadow-sm">
+                    <GoogleIcon className="h-4 w-4" />
                   </div>
                   <div>
                     <span className="text-xs font-bold text-white block">Konto Google</span>
@@ -267,7 +267,7 @@ export const SettingsView: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+                    <GoogleIcon className="h-3.5 w-3.5 shrink-0" />
                     <span>Połącz z Kontem Google</span>
                   </>
                 )}

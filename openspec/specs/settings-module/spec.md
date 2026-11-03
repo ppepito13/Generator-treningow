@@ -56,7 +56,8 @@ Sekcja Konta w widoku Ustawień MUST dynamicznie reagować na stan sesji Google 
 
 #### Scenario: Prezentacja stanu niezalogowanego
 - **WHEN** użytkownik nie połączył konta Google z aplikacją
-- **THEN** sekcja Konta wyświetla stan „Niezalogowany” oraz aktywny przycisk „Połącz z Kontem Google”
+- **THEN** sekcja Konta wyświetla stan „Niezalogowany” z oficjalną, wielokolorową ikoną Google
+- **AND** udostępnia aktywny przycisk „Połącz z Kontem Google” zawierający wielokolorową ikonę Google
 
 #### Scenario: Prezentacja połączonego profilu Google
 - **WHEN** użytkownik pomyślnie połączył konto Google
