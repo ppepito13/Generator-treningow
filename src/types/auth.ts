@@ -19,6 +19,8 @@ export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'error';
  */
 export interface AuthSession {
   accessToken?: string;
+  idToken?: string;
+  serverAuthCode?: string;
   expiresAt?: number;
 }
 

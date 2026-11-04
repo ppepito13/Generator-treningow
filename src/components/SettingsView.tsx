@@ -43,10 +43,11 @@ export const SettingsView: React.FC = () => {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
   useEffect(() => {
-    if (googleUser) {
+    if (useAppStore.getState().googleUser) {
       validateGoogleSessionState();
     }
-  }, [googleUser, validateGoogleSessionState]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const baseCount = ALL_EXERCISES.length;
   const customCount = customExercises.length;

@@ -307,12 +307,12 @@ const signInWithGoogleNative = async (clientId: string): Promise<GoogleUserProfi
   const name = result.displayName || [result.givenName, result.familyName].filter(Boolean).join(' ') || email || 'Użytkownik';
   const picture = result.imageUrl || undefined;
 
-  if (result.accessToken) {
-    saveAuthSession({
-      accessToken: result.accessToken,
-      expiresAt: Date.now() + 3500 * 1000,
-    });
-  }
+  saveAuthSession({
+    idToken: result.idToken || undefined,
+    accessToken: result.accessToken || undefined,
+    serverAuthCode: result.serverAuthCode || undefined,
+    expiresAt: Date.now() + 3500 * 1000,
+  });
 
   return {
     id: result.userId,
@@ -367,10 +367,11 @@ export const validateGoogleSession = async (): Promise<AuthValidationResult> => 
   }
 
   // 2. Ensure current session is present
-  const session = currentSession.accessToken ? currentSession : loadStoredAuthSession();
-  const token = session.accessToken;
+  const session = (currentSession.accessToken || currentSession.idToken) ? currentSession : loadStoredAuthSession();
+  const accessToken = session.accessToken;
+  const idToken = session.idToken;
 
-  if (!token) {
+  if (!accessToken && !idToken) {
     // If running in test environment with mockUser, treat as valid
     if (mockUser) {
       return { status: 'valid' };
@@ -380,7 +381,11 @@ export const validateGoogleSession = async (): Promise<AuthValidationResult> => 
 
   // 3. Query Google tokeninfo endpoint
   try {
-    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(token)}`);
+    const url = accessToken
+      ? `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`
+      : `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken!)}`;
+
+    const response = await fetch(url);
 
     if (response.ok) {
       return { status: 'valid' };
@@ -394,6 +399,15 @@ export const validateGoogleSession = async (): Promise<AuthValidationResult> => 
       } catch {
         // ignore parse error
       }
+
+      // Safeguard for Android native ID tokens:
+      // An ID token naturally expires after 60 minutes. On mobile, identity remains logged in offline-first,
+      // and natural expiration of the static ID token must NOT revoke the user's account session!
+      // Only explicit revocation or invalid value triggers a true revoke.
+      if (!accessToken && idToken && errorDesc.toLowerCase().includes('expired')) {
+        return { status: 'valid' };
+      }
+
       return {
         status: 'revoked',
         error: errorDesc || 'Dostęp do Konta Google wygasł lub został cofnięty.',
@@ -437,7 +451,7 @@ export const signOutFromGoogle = async (): Promise<void> => {
  * Returns currently stored auth session (loads from storage if not initialized in memory).
  */
 export const getCurrentAuthSession = (): AuthSession => {
-  if (!currentSession.accessToken) {
+  if (!currentSession.accessToken && !currentSession.idToken) {
     loadStoredAuthSession();
   }
   return { ...currentSession };

@@ -6,6 +6,9 @@ import {
   signInWithGoogle,
   signOutFromGoogle,
   formatAuthError,
+  saveAuthSession,
+  getCurrentAuthSession,
+  validateGoogleSession,
 } from '@/services/auth/googleAuth';
 import type { GoogleUserProfile } from '@/types/auth';
 
@@ -189,6 +192,52 @@ describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
       expect(fullLocalized).toBe(
         'Dostęp do Konta Google wygasł lub został cofnięty na Twoim koncie. Zaloguj się ponownie, aby wznowić zabezpieczanie danych.'
       );
+    });
+
+    it('properly preserves idToken for Android native sessions and validates via tokeninfo', async () => {
+      saveAuthSession({
+        idToken: 'mock-android-id-token',
+        expiresAt: Date.now() + 3600000,
+      });
+
+      const session = getCurrentAuthSession();
+      expect(session.idToken).toBe('mock-android-id-token');
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ email: 'test@sportsway.eu', email_verified: true }),
+      } as Response);
+
+      const validation = await validateGoogleSession();
+      expect(validation.status).toBe('valid');
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('https://oauth2.googleapis.com/tokeninfo?id_token=')
+      );
+
+      globalThis.fetch = originalFetch;
+    });
+
+    it('safeguards Android sessions from being revoked when idToken is merely expired after 60m', async () => {
+      saveAuthSession({
+        idToken: 'expired-android-id-token',
+        expiresAt: Date.now() - 1000,
+      });
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: async () => ({
+          error: 'invalid_token',
+          error_description: 'The token provided in the request is already expired.',
+        }),
+      } as Response);
+
+      const validation = await validateGoogleSession();
+      expect(validation.status).toBe('valid');
+
+      globalThis.fetch = originalFetch;
     });
   });
 });
