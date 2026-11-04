@@ -24,6 +24,7 @@ import {
   ExternalLink,
   LogOut,
   AlertCircle,
+  AlertTriangle,
   Loader2
 } from 'lucide-react';
 
@@ -215,11 +216,51 @@ export const SettingsView: React.FC = () => {
                     <span className="text-xs text-muted-foreground block truncate font-mono">{googleUser.email}</span>
                   </div>
                 </div>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Połączono
-                </span>
+                {googleUser.hasDriveScope === false ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 shrink-0">
+                    <AlertTriangle className="h-3 w-3" />
+                    Wymaga uprawnień
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Połączono
+                  </span>
+                )}
               </div>
+
+              {googleUser.hasDriveScope === false && (
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2.5">
+                  <div className="flex items-start gap-2 text-amber-300 text-xs">
+                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <span className="font-semibold block">Kopia zapasowa wstrzymana</span>
+                      <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                        Nie przyznano dostępu do Dysku Google. Twoje autorskie ćwiczenia i sale nie są synchronizowane. Nadaj uprawnienie, aby włączyć kopię zapasową.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGoogleSignIn}
+                    disabled={isSigningIn}
+                    className="w-full border-amber-500/40 bg-amber-500/20 text-amber-200 hover:bg-amber-500/30 hover:border-amber-500/60 text-xs gap-2 rounded-xl cursor-pointer font-semibold"
+                  >
+                    {isSigningIn ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Łączenie z Dyskiem...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Cloud className="h-3.5 w-3.5 text-amber-400" />
+                        <span>Nadaj uprawnienie do Dysku Google</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
 
               <div className="pt-1">
                 <Button

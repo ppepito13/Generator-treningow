@@ -13,11 +13,22 @@ declare global {
           initTokenClient: (config: {
             client_id: string;
             scope: string;
-            callback: (response: { access_token?: string; error?: string }) => void;
+            prompt?: string;
+            callback: (response: { access_token?: string; scope?: string; error?: string }) => void;
             error_callback?: (error: unknown) => void;
           }) => {
-            requestAccessToken: () => void;
+            requestAccessToken: (overrideConfig?: { prompt?: string }) => void;
           };
+          hasGrantedAllScopes?: (
+            tokenResponse: { scope?: string },
+            firstScope: string,
+            ...restScopes: string[]
+          ) => boolean;
+          hasGrantedAnyScope?: (
+            tokenResponse: { scope?: string },
+            firstScope: string,
+            ...restScopes: string[]
+          ) => boolean;
           revoke?: (token: string, done?: () => void) => void;
         };
       };
@@ -25,7 +36,8 @@ declare global {
   }
 }
 
-const DEFAULT_SCOPES = 'openid email profile';
+export const GOOGLE_DRIVE_APPDATA_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+export const DEFAULT_SCOPES = 'openid email profile ' + GOOGLE_DRIVE_APPDATA_SCOPE;
 const SCRIPT_URL = 'https://accounts.google.com/gsi/client';
 const AUTH_TIMEOUT_MS = 35000; // 35s twardy limit czasu oczekiwania
 const FOCUS_GRACE_PERIOD_MS = 3500; // 3.5s buforu po powrocie do okna aplikacji
@@ -248,6 +260,7 @@ const signInWithGoogleWeb = async (clientId: string): Promise<GoogleUserProfile>
       const client = window.google!.accounts.oauth2.initTokenClient({
         client_id: clientId,
         scope: DEFAULT_SCOPES,
+        prompt: 'consent',
         callback: async (tokenResponse) => {
           if (tokenResponse.error) {
             settleReject(new Error(`Błąd autoryzacji Google: ${tokenResponse.error}`));
@@ -260,6 +273,11 @@ const signInWithGoogleWeb = async (clientId: string): Promise<GoogleUserProfile>
             return;
           }
 
+          const grantedScopes = tokenResponse.scope || '';
+          const hasDriveScope =
+            grantedScopes.includes(GOOGLE_DRIVE_APPDATA_SCOPE) ||
+            Boolean(window.google?.accounts?.oauth2?.hasGrantedAllScopes?.(tokenResponse, GOOGLE_DRIVE_APPDATA_SCOPE));
+
           const session = {
             accessToken,
             expiresAt: Date.now() + 3500 * 1000,
@@ -268,6 +286,7 @@ const signInWithGoogleWeb = async (clientId: string): Promise<GoogleUserProfile>
 
           try {
             const profile = await fetchGoogleUserProfile(accessToken);
+            profile.hasDriveScope = hasDriveScope;
             settleResolve(profile);
           } catch (profileError) {
             settleReject(profileError instanceof Error ? profileError : new Error(String(profileError)));
@@ -278,7 +297,7 @@ const signInWithGoogleWeb = async (clientId: string): Promise<GoogleUserProfile>
         },
       });
 
-      client.requestAccessToken();
+      client.requestAccessToken({ prompt: 'consent' });
     } catch (err) {
       settleReject(err instanceof Error ? err : new Error(String(err)));
     }
@@ -292,7 +311,7 @@ const signInWithGoogleNative = async (clientId: string): Promise<GoogleUserProfi
   if (!isNativeInitialized) {
     await GoogleSignIn.initialize({
       clientId,
-      scopes: ['openid', 'email', 'profile'],
+      scopes: ['openid', 'email', 'profile', GOOGLE_DRIVE_APPDATA_SCOPE],
     });
     isNativeInitialized = true;
   }
@@ -320,6 +339,7 @@ const signInWithGoogleNative = async (clientId: string): Promise<GoogleUserProfi
     name,
     picture,
     verifiedEmail: Boolean(email),
+    hasDriveScope: true,
   };
 };
 
@@ -428,6 +448,32 @@ export const validateGoogleSession = async (): Promise<AuthValidationResult> => 
 };
 
 /**
+ * Revokes a Google access token via Google Identity Services and the Google OAuth2 revoke endpoint.
+ */
+export const revokeGoogleToken = async (token: string): Promise<void> => {
+  if (!token) return;
+
+  try {
+    if (typeof window !== 'undefined' && window.google?.accounts?.oauth2?.revoke) {
+      window.google.accounts.oauth2.revoke(token);
+    }
+  } catch {
+    // Ignore GIS revoke errors
+  }
+
+  try {
+    await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+  } catch {
+    // Ignore network errors when revoking
+  }
+};
+
+/**
  * Revokes access token and clears session from memory and storage.
  */
 export const signOutFromGoogle = async (): Promise<void> => {
@@ -437,12 +483,8 @@ export const signOutFromGoogle = async (): Promise<void> => {
     } catch {
       // Ignorujemy błędy przy wylogowaniu natywnym
     }
-  } else if (typeof window !== 'undefined' && currentSession.accessToken && window.google?.accounts?.oauth2?.revoke) {
-    try {
-      window.google.accounts.oauth2.revoke(currentSession.accessToken);
-    } catch {
-      // Ignorujemy błędy przy cofaniu tokena webowego
-    }
+  } else if (currentSession.accessToken) {
+    await revokeGoogleToken(currentSession.accessToken);
   }
   clearStoredAuthSession();
 };
@@ -455,4 +497,28 @@ export const getCurrentAuthSession = (): AuthSession => {
     loadStoredAuthSession();
   }
   return { ...currentSession };
+};
+/**
+ * Sets mock auth session for testing purposes.
+ */
+export const setMockAuthSession = (session: AuthSession | null): void => {
+  if (session) {
+    saveAuthSession(session);
+  } else {
+    clearStoredAuthSession();
+  }
+};
+
+/**
+ * Retrieves valid access token for Google API calls, checking expiration and storage.
+ */
+export const getValidAccessToken = (): string | null => {
+  const session = getCurrentAuthSession();
+  if (!session.accessToken) {
+    return null;
+  }
+  if (session.expiresAt && Date.now() > session.expiresAt - 60000) {
+    return null;
+  }
+  return session.accessToken;
 };

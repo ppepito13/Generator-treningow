@@ -136,4 +136,25 @@ describe('Komponent UI: SettingsView', () => {
     expect(screen.getByText(/Wstrzymanie synchronizacji:/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /potwierdzam, odłącz konto/i })).toBeInTheDocument();
   });
+
+  it('wyświetla status Wymaga uprawnień, ostrzeżenie o wstrzymaniu kopii oraz przycisk nadania uprawnień przy hasDriveScope === false (#40.1-granular-scope)', () => {
+    useAppStore.setState({
+      googleUser: {
+        id: 'usr_partial',
+        name: 'Jan Trener',
+        email: 'trener@sportsway.eu',
+        hasDriveScope: false,
+      },
+    });
+
+    render(<SettingsView />);
+
+    expect(screen.getByText('Jan Trener')).toBeInTheDocument();
+    expect(screen.getByText('trener@sportsway.eu')).toBeInTheDocument();
+    expect(screen.getByText('Wymaga uprawnień')).toBeInTheDocument();
+    expect(screen.getByText('Kopia zapasowa wstrzymana')).toBeInTheDocument();
+    expect(screen.getByText(/Nie przyznano dostępu do Dysku Google/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /nadaj uprawnienie do dysku google/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /odłącz konto google/i })).toBeInTheDocument();
+  });
 });

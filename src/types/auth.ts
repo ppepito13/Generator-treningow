@@ -7,6 +7,7 @@ export interface GoogleUserProfile {
   name: string;
   picture?: string;
   verifiedEmail?: boolean;
+  hasDriveScope?: boolean;
 }
 
 /**
@@ -22,6 +23,25 @@ export interface AuthSession {
   idToken?: string;
   serverAuthCode?: string;
   expiresAt?: number;
+}
+
+/**
+ * Metadata for Google Drive files stored in appDataFolder.
+ */
+export interface GoogleDriveFile {
+  id: string;
+  name: string;
+  modifiedTime?: string;
+}
+
+/**
+ * Result of Google Drive storage operations.
+ */
+export interface GoogleDriveOperationResult<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  statusCode?: number;
 }
 
 /**

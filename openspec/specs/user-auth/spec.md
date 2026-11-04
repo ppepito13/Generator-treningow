@@ -7,17 +7,23 @@ Zapewnia bezpieczne uwierzytelnianie użytkowników za pomocą Konta Google, zar
 ## Requirements
 
 ### Requirement: Uwierzytelnianie za pomocą Konta Google
-System MUST umożliwiać zalogowanie użytkownika za pośrednictwem Konta Google przy użyciu protokołu OAuth 2.0 z minimalnym zakresem uprawnień, gwarantując niezawodną obsługę w środowisku przeglądarki Web oraz natywnej aplikacji mobilnej Android (Capacitor), wraz z automatycznym zabezpieczeniem przed zawieszeniem interfejsu oraz prezentacją przyjaznych, zlokalizowanych komunikatów o błędach w języku polskim.
+System MUST umożliwiać zalogowanie użytkownika za pośrednictwem Konta Google przy użyciu protokołu OAuth 2.0 z zakresem uprawnień tożsamości oraz dostępu do ukrytego folderu danych aplikacji (`https://www.googleapis.com/auth/drive.appdata`), gwarantując niezawodną obsługę w środowisku przeglądarki Web oraz natywnej aplikacji mobilnej Android (Capacitor), wraz z automatycznym zabezpieczeniem przed zawieszeniem interfejsu oraz prezentacją przyjaznych, zlokalizowanych komunikatów o błędach w języku polskim. W przypadku gdy użytkownik w oknie autoryzacji Google zaloguje się, lecz pominie opcjonalne uprawnienie do Dysku Google, system MUST zapisać profil użytkownika z jawnym oznaczeniem braku uprawnień do Dysku (`hasDriveScope: false`), zachować spójność z Kontem Google oraz udostępnić w interfejsie możliwość doautoryzowania dostępu.
 
 #### Scenario: Udane logowanie przez okno dialogowe Google
 - **WHEN** użytkownik wybierze opcję połączenia konta Google w aplikacji webowej
-- **THEN** system inicjuje przepływ autoryzacyjny Google Identity Services z uprawnieniami `openid`, `email`, `profile`
-- **AND** po udanym uwierzytelnieniu pobiera identyfikator użytkownika, adres e-mail, nazwę wyświetlaną oraz opcjonalny adres awatara
+- **THEN** system inicjuje przepływ autoryzacyjny Google Identity Services z uprawnieniami `openid`, `email`, `profile` oraz `https://www.googleapis.com/auth/drive.appdata`
+- **AND** po udanym uwierzytelnieniu pobiera identyfikator użytkownika, adres e-mail, nazwę wyświetlaną, opcjonalny adres awatara oraz token dostępowy `accessToken` uprawniający do operacji na Dysku Google
 
 #### Scenario: Udane logowanie w środowisku mobilnym Android (Capacitor)
 - **WHEN** użytkownik wybierze opcję połączenia konta Google w natywnej aplikacji mobilnej na systemie Android
-- **THEN** system inicjuje natywny przepływ Google Sign-In / Credential Manager za pośrednictwem mostka Capacitor
-- **AND** po udanym uwierzytelnieniu przekazuje dane tożsamości do stanu aplikacji bez otwierania zewnętrznej przeglądarki
+- **THEN** system inicjuje natywny przepływ Google Sign-In / Credential Manager za pośrednictwem mostka Capacitor z żądanym zakresem `https://www.googleapis.com/auth/drive.appdata`
+- **AND** po udanym uwierzytelnieniu przekazuje dane tożsamości oraz token `accessToken` do stanu sesji aplikacji
+
+#### Scenario: Odrzucenie niepełnych uprawnień (brak zgody na Dysk Google)
+- **WHEN** użytkownik w oknie Google pominie lub odznaczy pole wyboru uprawnienia do Dysku Google i kliknie Dalej
+- **THEN** system zapisuje profil użytkownika ze statusem połączenia, oznaczając brak uprawnienia do Dysku Google (`hasDriveScope: false`)
+- **AND** wstrzymuje operacje synchronizacji w chmurze
+- **AND** prezentuje w module Ustawień status „Wymaga uprawnień” oraz dedykowany przycisk umożliwiający doautoryzowanie dostępu do Dysku Google
 
 #### Scenario: Limit czasu i przerwanie logowania (Timeout & Focus Recovery)
 - **WHEN** proces autoryzacji Google przekroczy zdefiniowany limit czasu (30 sekund) lub użytkownik powróci do aplikacji bez pomyślnego zakończenia sesji
