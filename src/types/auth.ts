@@ -19,7 +19,17 @@ export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'error';
  */
 export interface AuthSession {
   accessToken?: string;
+  idToken?: string;
+  serverAuthCode?: string;
   expiresAt?: number;
+}
+
+/**
+ * Outcome of background silent session validation.
+ */
+export interface AuthValidationResult {
+  status: 'valid' | 'revoked' | 'offline' | 'error';
+  error?: string;
 }
 
 /**
@@ -32,4 +42,3 @@ export interface GoogleAuthClient {
   getUserProfile: () => GoogleUserProfile | null;
   isConfigured: () => boolean;
 }
-

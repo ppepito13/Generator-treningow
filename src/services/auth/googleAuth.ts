@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { GoogleSignIn } from '@capawesome/capacitor-google-sign-in';
-import type { GoogleUserProfile, AuthSession } from '@/types/auth';
+import type { GoogleUserProfile, AuthSession, AuthValidationResult } from '@/types/auth';
 import { formatAuthError } from './authErrors';
 
 export { formatAuthError };
@@ -29,10 +29,12 @@ const DEFAULT_SCOPES = 'openid email profile';
 const SCRIPT_URL = 'https://accounts.google.com/gsi/client';
 const AUTH_TIMEOUT_MS = 35000; // 35s twardy limit czasu oczekiwania
 const FOCUS_GRACE_PERIOD_MS = 3500; // 3.5s buforu po powrocie do okna aplikacji
+export const AUTH_SESSION_STORAGE_KEY = 'kinetic_auth_session';
 
 let currentSession: AuthSession = {};
 let scriptLoadingPromise: Promise<void> | null = null;
 let mockUser: GoogleUserProfile | null = null;
+let mockValidationResult: AuthValidationResult | null = null;
 let isNativeInitialized = false;
 
 export const getGoogleClientId = (): string => {
@@ -48,6 +50,62 @@ export const isGoogleAuthConfigured = (): boolean => {
  */
 export const setMockGoogleUser = (user: GoogleUserProfile | null): void => {
   mockUser = user;
+};
+
+/**
+ * Set a mock validation result for testing session revalidation and revocation.
+ */
+export const setMockValidationResult = (result: AuthValidationResult | null): void => {
+  mockValidationResult = result;
+};
+
+/**
+ * Persists active AuthSession into localStorage.
+ */
+export const saveAuthSession = (session: AuthSession): void => {
+  currentSession = { ...session };
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session));
+    } catch {
+      // Ignore storage write issues
+    }
+  }
+};
+
+/**
+ * Loads stored AuthSession from localStorage if available.
+ */
+export const loadStoredAuthSession = (): AuthSession => {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const raw = window.localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          currentSession = parsed;
+          return currentSession;
+        }
+      }
+    } catch {
+      // Ignore parse issues
+    }
+  }
+  return currentSession;
+};
+
+/**
+ * Clears stored AuthSession from memory and localStorage.
+ */
+export const clearStoredAuthSession = (): void => {
+  currentSession = {};
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
+    } catch {
+      // Ignore storage remove issues
+    }
+  }
 };
 
 /**
@@ -202,10 +260,11 @@ const signInWithGoogleWeb = async (clientId: string): Promise<GoogleUserProfile>
             return;
           }
 
-          currentSession = {
+          const session = {
             accessToken,
             expiresAt: Date.now() + 3500 * 1000,
           };
+          saveAuthSession(session);
 
           try {
             const profile = await fetchGoogleUserProfile(accessToken);
@@ -248,12 +307,12 @@ const signInWithGoogleNative = async (clientId: string): Promise<GoogleUserProfi
   const name = result.displayName || [result.givenName, result.familyName].filter(Boolean).join(' ') || email || 'Użytkownik';
   const picture = result.imageUrl || undefined;
 
-  if (result.accessToken) {
-    currentSession = {
-      accessToken: result.accessToken,
-      expiresAt: Date.now() + 3500 * 1000,
-    };
-  }
+  saveAuthSession({
+    idToken: result.idToken || undefined,
+    accessToken: result.accessToken || undefined,
+    serverAuthCode: result.serverAuthCode || undefined,
+    expiresAt: Date.now() + 3500 * 1000,
+  });
 
   return {
     id: result.userId,
@@ -270,7 +329,7 @@ const signInWithGoogleNative = async (clientId: string): Promise<GoogleUserProfi
 export const signInWithGoogle = async (): Promise<GoogleUserProfile> => {
   // Return mock user if configured (for unit/e2e tests)
   if (mockUser) {
-    currentSession = { accessToken: 'mock-access-token' };
+    saveAuthSession({ accessToken: 'mock-access-token' });
     return mockUser;
   }
 
@@ -295,7 +354,81 @@ export const signInWithGoogle = async (): Promise<GoogleUserProfile> => {
 };
 
 /**
- * Revokes access token and clears session from memory.
+ * Performs silent background validation of the active Google session.
+ */
+export const validateGoogleSession = async (): Promise<AuthValidationResult> => {
+  if (mockValidationResult) {
+    return mockValidationResult;
+  }
+
+  // 1. Check network connectivity (Offline-First preservation)
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return { status: 'offline' };
+  }
+
+  // 2. Ensure current session is present
+  const session = (currentSession.accessToken || currentSession.idToken) ? currentSession : loadStoredAuthSession();
+  const accessToken = session.accessToken;
+  const idToken = session.idToken;
+
+  if (!accessToken && !idToken) {
+    // If running in test environment with mockUser, treat as valid
+    if (mockUser) {
+      return { status: 'valid' };
+    }
+    return { status: 'revoked', error: 'Brak aktywnego tokenu autoryzacji sesji.' };
+  }
+
+  // 3. Query Google tokeninfo endpoint
+  try {
+    const url = accessToken
+      ? `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`
+      : `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken!)}`;
+
+    const response = await fetch(url);
+
+    if (response.ok) {
+      return { status: 'valid' };
+    }
+
+    if (response.status === 400 || response.status === 401) {
+      let errorDesc = '';
+      try {
+        const errData = await response.json();
+        errorDesc = errData.error_description || errData.error || '';
+      } catch {
+        // ignore parse error
+      }
+
+      // Safeguard for Android native ID tokens:
+      // An ID token naturally expires after 60 minutes. On mobile, identity remains logged in offline-first,
+      // and natural expiration of the static ID token must NOT revoke the user's account session!
+      // Only explicit revocation or invalid value triggers a true revoke.
+      if (!accessToken && idToken && errorDesc.toLowerCase().includes('expired')) {
+        return { status: 'valid' };
+      }
+
+      return {
+        status: 'revoked',
+        error: errorDesc || 'Dostęp do Konta Google wygasł lub został cofnięty.',
+      };
+    }
+
+    return {
+      status: 'error',
+      error: `Google API zwróciło status ${response.status}`,
+    };
+  } catch (err) {
+    // Network failure (DNS error, offline, fetch abort) -> NEVER revoke on network failures
+    return {
+      status: 'offline',
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+};
+
+/**
+ * Revokes access token and clears session from memory and storage.
  */
 export const signOutFromGoogle = async (): Promise<void> => {
   if (Capacitor.isNativePlatform()) {
@@ -311,12 +444,15 @@ export const signOutFromGoogle = async (): Promise<void> => {
       // Ignorujemy błędy przy cofaniu tokena webowego
     }
   }
-  currentSession = {};
+  clearStoredAuthSession();
 };
 
 /**
- * Returns currently stored in-memory auth session.
+ * Returns currently stored auth session (loads from storage if not initialized in memory).
  */
 export const getCurrentAuthSession = (): AuthSession => {
+  if (!currentSession.accessToken && !currentSession.idToken) {
+    loadStoredAuthSession();
+  }
   return { ...currentSession };
 };

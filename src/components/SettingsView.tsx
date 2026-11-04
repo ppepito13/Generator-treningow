@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useAppStore } from '@/app/lib/store';
 import { ALL_EXERCISES } from '@/app/lib/data';
@@ -35,11 +35,19 @@ export const SettingsView: React.FC = () => {
   const setGoogleUser = useAppStore((state) => state.setGoogleUser);
   const setAuthStatus = useAppStore((state) => state.setAuthStatus);
   const disconnectGoogleAccount = useAppStore((state) => state.disconnectGoogleAccount);
+  const validateGoogleSessionState = useAppStore((state) => state.validateGoogleSessionState);
 
   const [selectedTheme, setSelectedTheme] = useState<'dark' | 'light'>('dark');
   const [isDisconnectDialogOpen, setIsDisconnectDialogOpen] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+
+  useEffect(() => {
+    if (useAppStore.getState().googleUser) {
+      validateGoogleSessionState();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const baseCount = ALL_EXERCISES.length;
   const customCount = customExercises.length;
