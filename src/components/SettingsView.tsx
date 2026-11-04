@@ -9,6 +9,7 @@ import { ModuleHeader } from '@/components/ui/ModuleHeader';
 import { Button } from '@/components/ui/button';
 import { DisconnectAccountDialog } from '@/components/DisconnectAccountDialog';
 import { InitialSyncConflictDialog } from '@/components/InitialSyncConflictDialog';
+import { RestoreCloudBackupDialog } from '@/components/RestoreCloudBackupDialog';
 import { signInWithGoogle, formatAuthError } from '@/services/auth/googleAuth';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +17,7 @@ import {
   formatLastSyncedAt,
   checkInitialSyncConflict,
   resolveInitialSync,
+  restoreFromCloudBackup,
   performSync,
 } from '@/services/sync/syncCoordinator';
 import type { InitialSyncConflictAction, InitialSyncConflictDetails } from '@/types/sync';
@@ -26,6 +28,7 @@ import {
   Moon, 
   Sun, 
   Cloud, 
+  CloudDownload,
   Info, 
   CheckCircle2, 
   ShieldCheck, 
@@ -61,6 +64,8 @@ export const SettingsView: React.FC = () => {
   const [initialConflictDetails, setInitialConflictDetails] = useState<InitialSyncConflictDetails | null>(null);
   const [isResolvingConflict, setIsResolvingConflict] = useState(false);
   const [isManualSyncing, setIsManualSyncing] = useState(false);
+  const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
+  const [isRestoringBackup, setIsRestoringBackup] = useState(false);
 
   useEffect(() => {
     if (useAppStore.getState().googleUser) {
@@ -154,6 +159,28 @@ export const SettingsView: React.FC = () => {
       }
     } finally {
       setIsResolvingConflict(false);
+    }
+  };
+
+  const handleConfirmRestore = async () => {
+    setIsRestoringBackup(true);
+    try {
+      const res = await restoreFromCloudBackup();
+      if (res.success) {
+        setIsRestoreDialogOpen(false);
+        toast({
+          title: "Przywrócono kopię z chmury",
+          description: "Wszystkie autorskie dane zostały zastąpione stanem z Dysku Google.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Błąd przywracania",
+          description: res.error || "Nie udało się pobrać kopii z Dysku Google.",
+        });
+      }
+    } finally {
+      setIsRestoringBackup(false);
     }
   };
 
@@ -398,6 +425,17 @@ export const SettingsView: React.FC = () => {
                     <RefreshCw className={`h-3.5 w-3.5 ${syncStatus === 'syncing' || isManualSyncing ? 'animate-spin' : ''}`} />
                     <span>{syncStatus === 'syncing' || isManualSyncing ? 'Synchronizowanie...' : 'Synchronizuj teraz'}</span>
                   </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsRestoreDialogOpen(true)}
+                    disabled={syncStatus === 'syncing' || isManualSyncing || isRestoringBackup}
+                    className="w-full text-muted-foreground hover:text-cyan-300 hover:bg-white/5 text-xs gap-2 rounded-xl cursor-pointer"
+                  >
+                    <CloudDownload className="h-3.5 w-3.5 text-cyan-400" />
+                    <span>Przywróć kopię z chmury</span>
+                  </Button>
                 </div>
               )}
 
@@ -531,6 +569,14 @@ export const SettingsView: React.FC = () => {
         conflictDetails={initialConflictDetails}
         onResolve={handleResolveInitialSync}
         isResolving={isResolvingConflict}
+      />
+
+      {/* MODAL POTWIERDZENIA PRZYWRACANIA Z CHMURY */}
+      <RestoreCloudBackupDialog
+        open={isRestoreDialogOpen}
+        onOpenChange={setIsRestoreDialogOpen}
+        onConfirm={handleConfirmRestore}
+        isRestoring={isRestoringBackup}
       />
     </div>
   );

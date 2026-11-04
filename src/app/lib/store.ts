@@ -218,7 +218,14 @@ export const useAppStore = create<AppState>()(
       }),
       disconnectGoogleAccount: async () => {
         await signOutFromGoogle();
-        set({ googleUser: null, authStatus: 'idle', authError: null });
+        set({
+          googleUser: null,
+          authStatus: 'idle',
+          authError: null,
+          lastSyncedAt: null,
+          syncStatus: 'idle',
+          syncError: null,
+        });
       },
       validateGoogleSessionState: async () => {
         const { googleUser } = get();
