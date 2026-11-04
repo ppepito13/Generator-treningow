@@ -9,6 +9,7 @@ import {
   formatLastSyncedAt,
   checkInitialSyncConflict,
   resolveInitialSync,
+  restoreFromCloudBackup,
 } from '@/services/sync/syncCoordinator';
 import { useAppStore } from '@/app/lib/store';
 import * as googleDriveClient from '@/services/cloud/googleDriveClient';
@@ -362,6 +363,35 @@ describe('SyncCoordinator Lifecycle (#40.3)', () => {
       expect(result.remoteCount?.exercises).toBe(1);
       expect(result.remoteModifiedTime).toBe('2026-11-04T12:00:00Z');
     });
+
+    it('returns hasConflict: true when local device has only tombstones (isDeleted: true) and remote backup exists (#40.4)', async () => {
+      const deletedEx = {
+        ...createDefaultExercise({ id_cwiczenia: 'ex1', nazwa: 'Skasowane' }),
+        _sync: { updatedAt: 2000, version: 2, isDeleted: true },
+      };
+      useAppStore.setState({ googleUser: mockUser, lastSyncedAt: null, customExercises: [deletedEx] });
+
+      vi.mocked(googleDriveClient.findBackupFile).mockResolvedValue({
+        id: 'remote-file-id',
+        name: 'sportsway_sync_backup.json',
+      });
+      vi.mocked(googleDriveClient.downloadBackupFile).mockResolvedValue({
+        schemaVersion: 1,
+        clientVersion: '1.3.0',
+        lastModified: 1000,
+        data: {
+          customExercises: [createDefaultExercise({ id_cwiczenia: 'ex1', nazwa: 'W Chmurze' })],
+          customRooms: [],
+          customEquipment: [],
+          customIntervalPresets: [],
+        },
+      } as SyncBackupPayload);
+
+      const result = await checkInitialSyncConflict();
+      expect(result.hasConflict).toBe(true);
+      expect(result.localCount.total).toBe(0); // 0 active items
+      expect(result.remoteCount?.exercises).toBe(1);
+    });
   });
 
   describe('resolveInitialSync (#40.3b)', () => {
@@ -434,6 +464,41 @@ describe('SyncCoordinator Lifecycle (#40.3)', () => {
         'remote-file-id'
       );
       expect(useAppStore.getState().lastSyncedAt).not.toBeNull();
+    });
+  });
+
+  describe('restoreFromCloudBackup (#40.4)', () => {
+    it('restores state from cloud and clears local tombstones', async () => {
+      const deletedEx = {
+        ...createDefaultExercise({ id_cwiczenia: 'ex_local_deleted', nazwa: 'Skasowane' }),
+        _sync: { updatedAt: 2000, version: 2, isDeleted: true },
+      };
+      useAppStore.setState({ googleUser: mockUser, customExercises: [deletedEx] });
+
+      vi.mocked(googleDriveClient.findBackupFile).mockResolvedValue({
+        id: 'remote-file-id',
+        name: 'sportsway_sync_backup.json',
+      });
+
+      const remoteEx = createDefaultExercise({ id_cwiczenia: 'ex_cloud_active', nazwa: 'Aktywne z chmury' });
+      vi.mocked(googleDriveClient.downloadBackupFile).mockResolvedValue({
+        schemaVersion: 1,
+        clientVersion: '1.3.0',
+        lastModified: 5000,
+        data: {
+          customExercises: [remoteEx],
+          customRooms: [],
+          customEquipment: [],
+          customIntervalPresets: [],
+        },
+      } as SyncBackupPayload);
+
+      const result = await restoreFromCloudBackup();
+      expect(result.success).toBe(true);
+      expect(useAppStore.getState().customExercises).toHaveLength(1);
+      expect(useAppStore.getState().customExercises[0].id_cwiczenia).toBe('ex_cloud_active');
+      expect(useAppStore.getState().lastSyncedAt).not.toBeNull();
+      expect(useAppStore.getState().syncStatus).toBe('idle');
     });
   });
 });

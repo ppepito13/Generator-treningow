@@ -256,6 +256,12 @@ export const checkInitialSyncConflict = async (): Promise<InitialSyncConflictDet
   const localPresets = (store.customIntervalPresets || []).filter(item => !item._sync?.isDeleted).length;
   const totalLocal = localExercises + localRooms + localEquipment + localPresets;
 
+  const totalRawRecords =
+    (store.customExercises?.length || 0) +
+    (store.customRooms?.length || 0) +
+    (store.customEquipment?.length || 0) +
+    (store.customIntervalPresets?.length || 0);
+
   const localCount = {
     exercises: localExercises,
     rooms: localRooms,
@@ -268,7 +274,8 @@ export const checkInitialSyncConflict = async (): Promise<InitialSyncConflictDet
     return { hasConflict: false, localCount };
   }
 
-  if (totalLocal === 0) {
+  // If device is completely empty (no active items AND no tombstones), no conflict
+  if (totalRawRecords === 0) {
     return { hasConflict: false, localCount };
   }
 
@@ -391,6 +398,14 @@ export const resolveInitialSync = async (
     isSyncingInProgress = false;
     suppressAutoSync = false;
   }
+};
+
+/**
+ * Explicitly restores data from Google Drive backup, replacing all local custom
+ * collections (exercises, rooms, equipment, interval presets) and discarding local tombstones.
+ */
+export const restoreFromCloudBackup = async (): Promise<{ success: boolean; error?: string }> => {
+  return resolveInitialSync('pull');
 };
 
 /**

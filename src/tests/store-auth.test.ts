@@ -100,9 +100,11 @@ describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
     expect(useAppStore.getState().googleUser).toBeNull();
   });
 
-  it('disconnects google account, clearing user session while strictly preserving local custom data', async () => {
+  it('disconnects google account, clearing user session while strictly preserving local custom data and resetting sync session (#40.4)', async () => {
     const customEx = useAppStore.getState().addCustomExercise({ nazwa: 'Moje Ćwiczenie Testowe' });
     useAppStore.getState().setGoogleUser(mockUser);
+    useAppStore.getState().setLastSyncedAt(123456789);
+    useAppStore.getState().setSyncStatus('error', 'Wystąpił błąd');
 
     expect(useAppStore.getState().googleUser).not.toBeNull();
     expect(useAppStore.getState().customExercises.length).toBeGreaterThan(0);
@@ -113,6 +115,9 @@ describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
     expect(stateAfter.googleUser).toBeNull();
     expect(stateAfter.authStatus).toBe('idle');
     expect(stateAfter.authError).toBeNull();
+    expect(stateAfter.lastSyncedAt).toBeNull();
+    expect(stateAfter.syncStatus).toBe('idle');
+    expect(stateAfter.syncError).toBeNull();
 
     expect(stateAfter.customExercises.some(e => e.id_cwiczenia === customEx.id_cwiczenia)).toBe(true);
   });

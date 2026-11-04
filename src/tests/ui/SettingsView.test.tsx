@@ -15,6 +15,7 @@ vi.mock('@/services/sync/syncCoordinator', async (importOriginal) => {
     performSync: vi.fn().mockResolvedValue({ success: true }),
     checkInitialSyncConflict: vi.fn().mockResolvedValue({ hasConflict: false }),
     resolveInitialSync: vi.fn().mockResolvedValue({ success: true }),
+    restoreFromCloudBackup: vi.fn().mockResolvedValue({ success: true }),
   };
 });
 
@@ -236,5 +237,35 @@ describe('Komponent UI: SettingsView', () => {
 
     expect(screen.getByText('Błąd synchronizacji')).toBeInTheDocument();
     expect(screen.getByText('Błąd połączenia z serwerem Google Drive (503).')).toBeInTheDocument();
+  });
+
+  it('wyświetla przycisk Przywróć kopię z chmury i otwiera modal potwierdzenia (#40.4)', async () => {
+    useAppStore.setState({
+      googleUser: {
+        id: 'usr_full',
+        name: 'Jan Trener',
+        email: 'trener@sportsway.eu',
+        hasDriveScope: true,
+      },
+      syncStatus: 'idle',
+      lastSyncedAt: 1000,
+      syncError: null,
+    });
+
+    render(<SettingsView />);
+
+    const restoreBtn = screen.getByRole('button', { name: /przywróć kopię z chmury/i });
+    expect(restoreBtn).toBeInTheDocument();
+    expect(restoreBtn).not.toBeDisabled();
+
+    fireEvent.click(restoreBtn);
+
+    expect(screen.getByText('Przywracanie kopii z Dysku Google')).toBeInTheDocument();
+    const confirmBtn = screen.getByRole('button', { name: 'Przywróć dane z chmury' });
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(syncCoordinator.restoreFromCloudBackup).toHaveBeenCalled();
+    });
   });
 });
