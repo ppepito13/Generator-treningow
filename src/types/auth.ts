@@ -25,6 +25,25 @@ export interface AuthSession {
 }
 
 /**
+ * Metadata for Google Drive files stored in appDataFolder.
+ */
+export interface GoogleDriveFile {
+  id: string;
+  name: string;
+  modifiedTime?: string;
+}
+
+/**
+ * Result of Google Drive storage operations.
+ */
+export interface GoogleDriveOperationResult<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  statusCode?: number;
+}
+
+/**
  * Outcome of background silent session validation.
  */
 export interface AuthValidationResult {

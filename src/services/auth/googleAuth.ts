@@ -25,7 +25,8 @@ declare global {
   }
 }
 
-const DEFAULT_SCOPES = 'openid email profile';
+export const GOOGLE_DRIVE_APPDATA_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+export const DEFAULT_SCOPES = 'openid email profile ' + GOOGLE_DRIVE_APPDATA_SCOPE;
 const SCRIPT_URL = 'https://accounts.google.com/gsi/client';
 const AUTH_TIMEOUT_MS = 35000; // 35s twardy limit czasu oczekiwania
 const FOCUS_GRACE_PERIOD_MS = 3500; // 3.5s buforu po powrocie do okna aplikacji
@@ -292,7 +293,7 @@ const signInWithGoogleNative = async (clientId: string): Promise<GoogleUserProfi
   if (!isNativeInitialized) {
     await GoogleSignIn.initialize({
       clientId,
-      scopes: ['openid', 'email', 'profile'],
+      scopes: ['openid', 'email', 'profile', GOOGLE_DRIVE_APPDATA_SCOPE],
     });
     isNativeInitialized = true;
   }
@@ -455,4 +456,28 @@ export const getCurrentAuthSession = (): AuthSession => {
     loadStoredAuthSession();
   }
   return { ...currentSession };
+};
+/**
+ * Sets mock auth session for testing purposes.
+ */
+export const setMockAuthSession = (session: AuthSession | null): void => {
+  if (session) {
+    saveAuthSession(session);
+  } else {
+    clearStoredAuthSession();
+  }
+};
+
+/**
+ * Retrieves valid access token for Google API calls, checking expiration and storage.
+ */
+export const getValidAccessToken = (): string | null => {
+  const session = getCurrentAuthSession();
+  if (!session.accessToken) {
+    return null;
+  }
+  if (session.expiresAt && Date.now() > session.expiresAt - 60000) {
+    return null;
+  }
+  return session.accessToken;
 };
