@@ -57,10 +57,10 @@ describe('Zustand Store Persist Migration & Partialize', () => {
     });
   });
 
-  describe('Partialize Filter (Allowlist of 16 fields)', () => {
-    it('serializes only the 16 allowed fields and excludes ephemeral/runtime state', () => {
+  describe('Partialize Filter (Allowlist of 17 fields)', () => {
+    it('serializes only the 17 allowed fields and excludes ephemeral/runtime state', () => {
       const fullMockState = {
-        // 16 Persisted fields
+        // 17 Persisted fields
         customExercises: [{ id: 'ex-1', nazwa: 'Plank' }],
         customRooms: [{ id: 'room-1', nazwa_sali: 'CrossBox' }],
         customEquipment: [{ id: 'eq-1', nazwa: 'Hantle' }],
@@ -77,6 +77,8 @@ describe('Zustand Store Persist Migration & Partialize', () => {
         customRoomCategory: 'ogolnorozwojowy',
         customRoomEquipment: ['eq-1'],
         activeTab: 'calculators',
+        googleUser: { id: 'u1', email: 'test@example.com' },
+        lastSyncedAt: 1700000000000,
 
         // 6 Ephemeral fields (MUST be omitted)
         circuit: [{ id: 'station-1' }],
@@ -111,6 +113,7 @@ describe('Zustand Store Persist Migration & Partialize', () => {
         'customRoomEquipment',
         'activeTab',
         'googleUser',
+        'lastSyncedAt',
       ];
 
       expect(Object.keys(partial).sort()).toEqual(expectedPersistedKeys.sort());

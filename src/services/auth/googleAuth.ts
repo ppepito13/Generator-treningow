@@ -39,7 +39,7 @@ declare global {
 export const GOOGLE_DRIVE_APPDATA_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
 export const DEFAULT_SCOPES = 'openid email profile ' + GOOGLE_DRIVE_APPDATA_SCOPE;
 const SCRIPT_URL = 'https://accounts.google.com/gsi/client';
-const AUTH_TIMEOUT_MS = 35000; // 35s twardy limit czasu oczekiwania
+const AUTH_TIMEOUT_MS = 60000; // 60s twardy limit czasu oczekiwania
 const FOCUS_GRACE_PERIOD_MS = 3500; // 3.5s buforu po powrocie do okna aplikacji
 export const AUTH_SESSION_STORAGE_KEY = 'kinetic_auth_session';
 
