@@ -65,6 +65,16 @@ describe('formatAuthError (#49)', () => {
     );
   });
 
+  it('maps missing Google Drive scope errors to actionable instruction (#40.1-fix)', () => {
+    const expected =
+      'Wymagane uprawnienie: Nie przyznano dostępu do Dysku Google. Bez tego aplikacja nie może synchronizować Twoich ćwiczeń i sal. Połącz konto ponownie i upewnij się, że pole wyboru przy Dysku Google jest zaznaczone.';
+
+    expect(formatAuthError('DRIVE_SCOPE_REQUIRED')).toBe(expected);
+    expect(formatAuthError(new Error('DRIVE_SCOPE_REQUIRED'))).toBe(expected);
+    expect(formatAuthError(new Error('Nie przyznano uprawnień do Dysku Google'))).toBe(expected);
+    expect(formatAuthError('Missing required scope: drive.appdata')).toBe(expected);
+  });
+
   it('handles empty, null, and unknown errors defensively', () => {
     expect(formatAuthError(null)).toBe('Wystąpił nieoczekiwany błąd logowania Google.');
     expect(formatAuthError(undefined)).toBe('Wystąpił nieoczekiwany błąd logowania Google.');

@@ -218,6 +218,79 @@ describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
       globalThis.fetch = originalFetch;
     });
 
+    it('rejects sign-in and clears session when user skips Google Drive scope permission (#40.1-fix)', async () => {
+      const originalClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+      const originalWindow = globalThis.window;
+      const originalDoc = globalThis.document;
+      process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = 'test-client-id';
+
+      let initConfig: { callback?: (res: { access_token?: string; scope?: string; error?: string }) => void } | null = null;
+      const mockClient = {
+        requestAccessToken: vi.fn(() => {
+          // Simulate user consenting to profile but unchecking Google Drive scope
+          if (initConfig?.callback) {
+            initConfig.callback({
+              access_token: 'valid-token-without-drive',
+              scope: 'openid email profile', // drive.appdata is missing!
+            });
+          }
+        }),
+      };
+
+      const mockDoc = {
+        querySelector: vi.fn().mockReturnValue(null),
+        createElement: vi.fn().mockReturnValue({}),
+        head: { appendChild: vi.fn() },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        visibilityState: 'visible',
+      };
+
+      const mockWindow = {
+        localStorage: {
+          getItem: vi.fn(),
+          setItem: vi.fn(),
+          removeItem: vi.fn(),
+        },
+        document: mockDoc,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        google: {
+          accounts: {
+            oauth2: {
+              initTokenClient: vi.fn(
+                (config: { callback?: (res: { access_token?: string; scope?: string; error?: string }) => void }) => {
+                  initConfig = config;
+                  return mockClient;
+                }
+              ),
+              hasGrantedAllScopes: vi.fn(() => false),
+            },
+          },
+        },
+      };
+
+      // @ts-expect-error - mock window and document for test
+      globalThis.window = mockWindow;
+      // @ts-expect-error - mock document for test
+      globalThis.document = mockDoc;
+
+      await expect(signInWithGoogle()).rejects.toThrow(
+        'Wymagane uprawnienie: Nie przyznano dostępu do Dysku Google'
+      );
+
+      // Verify session was cleared
+      expect(getCurrentAuthSession().accessToken).toBeUndefined();
+
+      // Verify store remains unauthenticated
+      expect(useAppStore.getState().googleUser).toBeNull();
+
+      // Restore
+      process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = originalClientId;
+      globalThis.window = originalWindow;
+      globalThis.document = originalDoc;
+    });
+
     it('safeguards Android sessions from being revoked when idToken is merely expired after 60m', async () => {
       saveAuthSession({
         idToken: 'expired-android-id-token',

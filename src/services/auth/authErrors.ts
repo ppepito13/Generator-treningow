@@ -112,6 +112,15 @@ export const formatAuthError = (error: unknown): string => {
     return 'Brak skonfigurowanego identyfikatora Google Client ID.';
   }
 
+  // 10. Required Google Drive scope not granted
+  if (
+    combined.includes('drive_scope_required') ||
+    combined.includes('nie przyznano uprawnień do dysku google') ||
+    combined.includes('drive.appdata')
+  ) {
+    return 'Wymagane uprawnienie: Nie przyznano dostępu do Dysku Google. Bez tego aplikacja nie może synchronizować Twoich ćwiczeń i sal. Połącz konto ponownie i upewnij się, że pole wyboru przy Dysku Google jest zaznaczone.';
+  }
+
   // 9. Expired or revoked access token
   if (
     combined.includes('invalid_token') ||
@@ -131,7 +140,8 @@ export const formatAuthError = (error: unknown): string => {
     trimmed.startsWith('Logowanie zostało') ||
     trimmed.startsWith('Usługi Google Play') ||
     trimmed.startsWith('Brak połączenia z Internetem') ||
-    trimmed.startsWith('Dostęp do Konta Google')
+    trimmed.startsWith('Dostęp do Konta Google') ||
+    trimmed.startsWith('Wymagane uprawnienie:')
   ) {
     return trimmed;
   }

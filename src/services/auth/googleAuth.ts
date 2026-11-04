@@ -13,11 +13,22 @@ declare global {
           initTokenClient: (config: {
             client_id: string;
             scope: string;
-            callback: (response: { access_token?: string; error?: string }) => void;
+            prompt?: string;
+            callback: (response: { access_token?: string; scope?: string; error?: string }) => void;
             error_callback?: (error: unknown) => void;
           }) => {
-            requestAccessToken: () => void;
+            requestAccessToken: (overrideConfig?: { prompt?: string }) => void;
           };
+          hasGrantedAllScopes?: (
+            tokenResponse: { scope?: string },
+            firstScope: string,
+            ...restScopes: string[]
+          ) => boolean;
+          hasGrantedAnyScope?: (
+            tokenResponse: { scope?: string },
+            firstScope: string,
+            ...restScopes: string[]
+          ) => boolean;
           revoke?: (token: string, done?: () => void) => void;
         };
       };
@@ -249,6 +260,7 @@ const signInWithGoogleWeb = async (clientId: string): Promise<GoogleUserProfile>
       const client = window.google!.accounts.oauth2.initTokenClient({
         client_id: clientId,
         scope: DEFAULT_SCOPES,
+        prompt: 'consent',
         callback: async (tokenResponse) => {
           if (tokenResponse.error) {
             settleReject(new Error(`Błąd autoryzacji Google: ${tokenResponse.error}`));
@@ -258,6 +270,17 @@ const signInWithGoogleWeb = async (clientId: string): Promise<GoogleUserProfile>
           const accessToken = tokenResponse.access_token;
           if (!accessToken) {
             settleReject(new Error('Nie otrzymano tokenu dostępowego od Google.'));
+            return;
+          }
+
+          const grantedScopes = tokenResponse.scope || '';
+          const hasDriveScope =
+            grantedScopes.includes(GOOGLE_DRIVE_APPDATA_SCOPE) ||
+            Boolean(window.google?.accounts?.oauth2?.hasGrantedAllScopes?.(tokenResponse, GOOGLE_DRIVE_APPDATA_SCOPE));
+
+          if (!hasDriveScope) {
+            clearStoredAuthSession();
+            settleReject(new Error('DRIVE_SCOPE_REQUIRED'));
             return;
           }
 
@@ -279,7 +302,7 @@ const signInWithGoogleWeb = async (clientId: string): Promise<GoogleUserProfile>
         },
       });
 
-      client.requestAccessToken();
+      client.requestAccessToken({ prompt: 'consent' });
     } catch (err) {
       settleReject(err instanceof Error ? err : new Error(String(err)));
     }
