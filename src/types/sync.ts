@@ -41,3 +41,10 @@ export interface MergeSummary {
   totalChanges: number;
 }
 
+export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error' | 'offline';
+
+export interface SyncLifecycleState {
+  syncStatus: SyncStatus;
+  lastSyncedAt: number | null;
+  syncError: string | null;
+}

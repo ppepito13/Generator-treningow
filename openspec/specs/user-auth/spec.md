@@ -26,7 +26,7 @@ System MUST umożliwiać zalogowanie użytkownika za pośrednictwem Konta Google
 - **AND** prezentuje w module Ustawień status „Wymaga uprawnień” oraz dedykowany przycisk umożliwiający doautoryzowanie dostępu do Dysku Google
 
 #### Scenario: Limit czasu i przerwanie logowania (Timeout & Focus Recovery)
-- **WHEN** proces autoryzacji Google przekroczy zdefiniowany limit czasu (30 sekund) lub użytkownik powróci do aplikacji bez pomyślnego zakończenia sesji
+- **WHEN** proces autoryzacji Google przekroczy zdefiniowany limit czasu (60 sekund) lub użytkownik powróci do aplikacji bez pomyślnego zakończenia sesji
 - **THEN** system automatycznie anuluje stan oczekiwania na logowanie
 - **AND** przywraca interaktywność przycisku logowania oraz prezentuje czytelny komunikat błędu
 

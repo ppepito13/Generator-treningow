@@ -17,9 +17,10 @@ import {
   formatEquipmentName
 } from './data';
 import { IntervalPreset, TimerAudioSettings } from '@/types/timer';
-import type { SyncBackupPayload, SyncDataCollections, MergeSummary } from '@/types/sync';
+import type { SyncBackupPayload, SyncDataCollections, MergeSummary, SyncStatus } from '@/types/sync';
 import { touchSyncMetadata, markSyncDeleted } from '@/domain/sync/syncMetadata';
 import { mergeSyncData } from '@/domain/sync/mergeEngine';
+import { scheduleDebouncedSync } from '@/services/sync/syncCoordinator';
 import { FlattenedQueueItem } from '@/components/GymViewModal';
 import { UserProfileData } from '@/types/calculators';
 import type { GoogleUserProfile, AuthStatus } from '@/types/auth';
@@ -170,6 +171,13 @@ interface AppState {
   validateGoogleSessionState: () => Promise<boolean>;
 
   // Synchronizacja Danych i Kopia Zapasowa (#40)
+  syncStatus: SyncStatus;
+  lastSyncedAt: number | null;
+  syncError: string | null;
+  setSyncStatus: (status: SyncStatus, error?: string | null) => void;
+  setLastSyncedAt: (timestamp: number | null) => void;
+  setSyncError: (error: string | null) => void;
+  triggerSync: () => Promise<boolean>;
   mergeRemoteBackup: (payload: SyncBackupPayload) => MergeSummary;
   getAllIntervalPresets: () => IntervalPreset[];
 }
@@ -271,6 +279,20 @@ export const useAppStore = create<AppState>()(
 
         return summary;
       },
+      syncStatus: 'idle',
+      lastSyncedAt: null,
+      syncError: null,
+      setSyncStatus: (status: SyncStatus, error: string | null = null) => set({
+        syncStatus: status,
+        syncError: error !== undefined ? error : get().syncError,
+      }),
+      setLastSyncedAt: (timestamp: number | null) => set({ lastSyncedAt: timestamp }),
+      setSyncError: (error: string | null) => set({ syncError: error }),
+      triggerSync: async () => {
+        const { performSync } = await import('@/services/sync/syncCoordinator');
+        const res = await performSync();
+        return res.success;
+      },
       selectedRoomId: ALL_ROOMS[0].id_sali,
       participants: 8,
       stationCount: 7,
@@ -310,6 +332,7 @@ export const useAppStore = create<AppState>()(
         const touched = touchSyncMetadata({ ...created, _sync: prev?._sync });
         const updated = [...filtered, touched];
         set({ customExercises: updated });
+        scheduleDebouncedSync();
         return touched;
       },
 
@@ -319,10 +342,12 @@ export const useAppStore = create<AppState>()(
         if (!target) return;
         const deleted = markSyncDeleted(target);
         set({ customExercises: existing.map(ex => ex.id_cwiczenia === id ? deleted : ex) });
+        scheduleDebouncedSync();
       },
 
       clearAllCustomExercises: () => {
         set({ customExercises: [] });
+        scheduleDebouncedSync();
       },
 
       exportCustomExercises: () => {
@@ -359,6 +384,7 @@ export const useAppStore = create<AppState>()(
           });
 
           set({ customExercises: Array.from(existingMap.values()) });
+          scheduleDebouncedSync();
           return { success: true, count: importedCount };
         } catch (e: unknown) {
           const message = e instanceof Error ? e.message : 'BĹ‚Ä…d odczytu pliku JSON.';
@@ -406,6 +432,7 @@ export const useAppStore = create<AppState>()(
             stationCount: Math.min(Math.max(currentS, 1), created.maksymalna_pojemnosc.stacje)
           });
         }
+        scheduleDebouncedSync();
         return touched;
       },
 
@@ -423,10 +450,12 @@ export const useAppStore = create<AppState>()(
             stationCount: Math.min(get().stationCount, room.maksymalna_pojemnosc.stacje)
           });
         }
+        scheduleDebouncedSync();
       },
 
       clearAllCustomRooms: () => {
         set({ customRooms: [] });
+        scheduleDebouncedSync();
       },
 
       exportCustomRooms: () => {
@@ -468,6 +497,7 @@ export const useAppStore = create<AppState>()(
 
           const updated = Array.from(existingMap.values());
           set({ customRooms: updated });
+          scheduleDebouncedSync();
           return { success: true, count: importedCount };
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : "Niepoprawny format pliku JSON.";
@@ -509,6 +539,7 @@ export const useAppStore = create<AppState>()(
         const touched = touchSyncMetadata({ ...created, _sync: prev?._sync });
         const updated = [...filtered, touched];
         set({ customEquipment: updated });
+        scheduleDebouncedSync();
         return touched;
       },
 
@@ -518,10 +549,12 @@ export const useAppStore = create<AppState>()(
         if (!target) return;
         const deleted = markSyncDeleted(target);
         set({ customEquipment: existing.map(e => e.id === id ? deleted : e) });
+        scheduleDebouncedSync();
       },
 
       clearAllCustomEquipment: () => {
         set({ customEquipment: [] });
+        scheduleDebouncedSync();
       },
 
       exportCustomEquipment: () => {
@@ -573,6 +606,7 @@ export const useAppStore = create<AppState>()(
 
           const updated = Array.from(existingMap.values());
           set({ customEquipment: updated });
+          scheduleDebouncedSync();
           return { success: true, count: importedCount };
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : "Niepoprawny format pliku JSON.";
@@ -600,6 +634,7 @@ export const useAppStore = create<AppState>()(
         const touched = touchSyncMetadata({ ...preset, _sync: prev?._sync });
         const filtered = existing.filter(p => p.id !== preset.id);
         set({ customIntervalPresets: [...filtered, touched] });
+        scheduleDebouncedSync();
       },
 
       removeCustomIntervalPreset: (id) => {
@@ -608,6 +643,7 @@ export const useAppStore = create<AppState>()(
         if (!target) return;
         const deleted = markSyncDeleted(target);
         set({ customIntervalPresets: existing.map(p => p.id === id ? deleted : p) });
+        scheduleDebouncedSync();
       },
 
       updateTimerAudioSettings: (settings) => {
@@ -991,6 +1027,7 @@ export const useAppStore = create<AppState>()(
 
 export const partializeStoreState = (state: AppState) => ({
   googleUser: state.googleUser,
+  lastSyncedAt: state.lastSyncedAt,
   customExercises: state.customExercises,
   customRooms: state.customRooms,
   customEquipment: state.customEquipment,

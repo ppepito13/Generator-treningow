@@ -51,6 +51,9 @@ describe('formatAuthError (#49)', () => {
   });
 
   it('maps timeout errors to retry instruction', () => {
+    expect(formatAuthError('Upłynął limit czasu oczekiwania na logowanie Google (60s).')).toBe(
+      'Upłynął limit czasu oczekiwania na logowanie Google. Spróbuj ponownie.'
+    );
     expect(formatAuthError('Upłynął limit czasu oczekiwania na logowanie Google (35s).')).toBe(
       'Upłynął limit czasu oczekiwania na logowanie Google. Spróbuj ponownie.'
     );
