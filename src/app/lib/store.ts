@@ -17,6 +17,9 @@ import {
   formatEquipmentName
 } from './data';
 import { IntervalPreset, TimerAudioSettings } from '@/types/timer';
+import type { SyncBackupPayload, SyncDataCollections, MergeSummary } from '@/types/sync';
+import { touchSyncMetadata, markSyncDeleted } from '@/domain/sync/syncMetadata';
+import { mergeSyncData } from '@/domain/sync/mergeEngine';
 import { FlattenedQueueItem } from '@/components/GymViewModal';
 import { UserProfileData } from '@/types/calculators';
 import type { GoogleUserProfile, AuthStatus } from '@/types/auth';
@@ -65,7 +68,7 @@ interface AppState {
   customRoomCategory: string;
   customRoomEquipment: string[];
 
-  // Zarządzanie Własną Bazą Ćwiczeń
+  // ZarzÄ…dzanie WĹ‚asnÄ… BazÄ… Ä†wiczeĹ„
   customExercises: Exercise[];
   getAllExercises: () => Exercise[];
   addCustomExercise: (input: Partial<Exercise> & { nazwa: string }) => Exercise;
@@ -74,7 +77,7 @@ interface AppState {
   exportCustomExercises: () => string;
   importCustomExercises: (importedData: unknown) => { success: boolean; count: number; error?: string };
 
-  // Zarządzanie Własną i Modyfikowaną Bazą Sal
+  // ZarzÄ…dzanie WĹ‚asnÄ… i ModyfikowanÄ… BazÄ… Sal
   customRooms: RoomConfig[];
   getAllRooms: () => RoomConfig[];
   addCustomRoom: (input: Partial<RoomConfig> & { nazwa_sali: string }) => RoomConfig;
@@ -83,7 +86,7 @@ interface AppState {
   exportCustomRooms: () => string;
   importCustomRooms: (importedData: unknown) => { success: boolean; count: number; error?: string };
 
-  // Zarządzanie Własną i Modyfikowaną Bazą Sprzętu
+  // ZarzÄ…dzanie WĹ‚asnÄ… i ModyfikowanÄ… BazÄ… SprzÄ™tu
   customEquipment: EquipmentItem[];
   getAllEquipmentItems: () => EquipmentItem[];
   addCustomEquipment: (input: { id?: string; nazwa: string; opis?: string; isOverridden?: boolean }) => EquipmentItem;
@@ -92,14 +95,14 @@ interface AppState {
   exportCustomEquipment: () => string;
   importCustomEquipment: (importedData: unknown) => { success: boolean; count: number; error?: string };
 
-  // Zarządzanie Presety Zegara i Audio
+  // ZarzÄ…dzanie Presety Zegara i Audio
   customIntervalPresets: IntervalPreset[];
   timerAudioSettings: TimerAudioSettings;
   addCustomIntervalPreset: (preset: IntervalPreset) => void;
   removeCustomIntervalPreset: (id: string) => void;
   updateTimerAudioSettings: (settings: Partial<TimerAudioSettings>) => void;
 
-  // Aktywne Wykonanie Zegara Interwałowego (Globalne)
+  // Aktywne Wykonanie Zegara InterwaĹ‚owego (Globalne)
   activeIntervalExecution: {
     preset: IntervalPreset;
     queue: FlattenedQueueItem[];
@@ -116,7 +119,7 @@ interface AppState {
   maximizeGymView: () => void;
   closeActiveIntervalExecution: () => void;
 
-  // Współdzielony Profil Użytkownika dla Kalkulatorów (Narzędzia)
+  // WspĂłĹ‚dzielony Profil UĹĽytkownika dla KalkulatorĂłw (NarzÄ™dzia)
   sharedUserProfile: UserProfileData;
   updateSharedProfile: (profile: Partial<UserProfileData>) => void;
   clearSharedProfile: () => void;
@@ -165,6 +168,10 @@ interface AppState {
   setAuthStatus: (status: AuthStatus, error?: string | null) => void;
   disconnectGoogleAccount: () => Promise<void>;
   validateGoogleSessionState: () => Promise<boolean>;
+
+  // Synchronizacja Danych i Kopia Zapasowa (#40)
+  mergeRemoteBackup: (payload: SyncBackupPayload) => MergeSummary;
+  getAllIntervalPresets: () => IntervalPreset[];
 }
 
 
@@ -244,6 +251,26 @@ export const useAppStore = create<AppState>()(
           return true;
         }
       },
+
+      mergeRemoteBackup: (payload: SyncBackupPayload): MergeSummary => {
+        const localCollections: SyncDataCollections = {
+          customExercises: get().customExercises || [],
+          customRooms: get().customRooms || [],
+          customEquipment: get().customEquipment || [],
+          customIntervalPresets: get().customIntervalPresets || [],
+        };
+
+        const { mergedCollections, summary } = mergeSyncData(localCollections, payload?.data || {});
+
+        set({
+          customExercises: mergedCollections.customExercises,
+          customRooms: mergedCollections.customRooms,
+          customEquipment: mergedCollections.customEquipment,
+          customIntervalPresets: mergedCollections.customIntervalPresets,
+        });
+
+        return summary;
+      },
       selectedRoomId: ALL_ROOMS[0].id_sali,
       participants: 8,
       stationCount: 7,
@@ -256,14 +283,15 @@ export const useAppStore = create<AppState>()(
       customExercises: [] as Exercise[],
 
       getAllExercises: () => {
-        const custom = get().customExercises || [];
+        const custom = (get().customExercises || []).filter(ex => !ex._sync?.isDeleted);
         if (custom.length === 0) return ALL_EXERCISES;
 
         const customMap = new Map<string, Exercise>();
         const newCustom: Exercise[] = [];
 
+        const builtInIds = new Set(ALL_EXERCISES.map(e => e.id_cwiczenia));
         custom.forEach(ex => {
-          if (ex.isOverridden || !ex.id_cwiczenia.startsWith('custom-')) {
+          if (ex.isOverridden || builtInIds.has(ex.id_cwiczenia)) {
             customMap.set(ex.id_cwiczenia, { ...ex, isOverridden: true, isCustom: true });
           } else {
             newCustom.push(ex);
@@ -278,14 +306,19 @@ export const useAppStore = create<AppState>()(
         const created = createDefaultExercise(input);
         const existing = get().customExercises || [];
         const filtered = existing.filter(ex => ex.id_cwiczenia !== created.id_cwiczenia);
-        const updated = [...filtered, created];
+        const prev = existing.find(ex => ex.id_cwiczenia === created.id_cwiczenia);
+        const touched = touchSyncMetadata({ ...created, _sync: prev?._sync });
+        const updated = [...filtered, touched];
         set({ customExercises: updated });
-        return created;
+        return touched;
       },
 
       removeCustomExercise: (id) => {
         const existing = get().customExercises || [];
-        set({ customExercises: existing.filter(ex => ex.id_cwiczenia !== id) });
+        const target = existing.find(ex => ex.id_cwiczenia === id);
+        if (!target) return;
+        const deleted = markSyncDeleted(target);
+        set({ customExercises: existing.map(ex => ex.id_cwiczenia === id ? deleted : ex) });
       },
 
       clearAllCustomExercises: () => {
@@ -293,7 +326,7 @@ export const useAppStore = create<AppState>()(
       },
 
       exportCustomExercises: () => {
-        const custom = get().customExercises || [];
+        const custom = (get().customExercises || []).filter(ex => !ex._sync?.isDeleted);
         return JSON.stringify(custom, null, 2);
       },
 
@@ -307,12 +340,12 @@ export const useAppStore = create<AppState>()(
           }
 
           if (!Array.isArray(list)) {
-            return { success: false, count: 0, error: 'Nieprawidłowy format pliku JSON (oczekiwano tablicy ćwiczeń).' };
+            return { success: false, count: 0, error: 'NieprawidĹ‚owy format pliku JSON (oczekiwano tablicy Ä‡wiczeĹ„).' };
           }
 
           const validEntries = list.filter(item => item && typeof item === 'object' && typeof item.nazwa === 'string');
           if (validEntries.length === 0) {
-            return { success: false, count: 0, error: 'Plik nie zawiera poprawnych wpisów ćwiczeń.' };
+            return { success: false, count: 0, error: 'Plik nie zawiera poprawnych wpisĂłw Ä‡wiczeĹ„.' };
           }
 
           const existingMap = new Map<string, Exercise>();
@@ -328,7 +361,7 @@ export const useAppStore = create<AppState>()(
           set({ customExercises: Array.from(existingMap.values()) });
           return { success: true, count: importedCount };
         } catch (e: unknown) {
-          const message = e instanceof Error ? e.message : 'Błąd odczytu pliku JSON.';
+          const message = e instanceof Error ? e.message : 'BĹ‚Ä…d odczytu pliku JSON.';
           return { success: false, count: 0, error: message };
         }
       },
@@ -336,7 +369,7 @@ export const useAppStore = create<AppState>()(
       customRooms: [] as RoomConfig[],
 
       getAllRooms: () => {
-        const custom = get().customRooms || [];
+        const custom = (get().customRooms || []).filter(r => !r._sync?.isDeleted);
         if (custom.length === 0) return ALL_ROOMS;
 
         const customMap = new Map<string, RoomConfig>();
@@ -360,7 +393,9 @@ export const useAppStore = create<AppState>()(
 
         const existing = get().customRooms || [];
         const filtered = existing.filter(r => r.id_sali !== created.id_sali);
-        const updated = [...filtered, created];
+        const prev = existing.find(r => r.id_sali === created.id_sali);
+        const touched = touchSyncMetadata({ ...created, _sync: prev?._sync });
+        const updated = [...filtered, touched];
         set({ customRooms: updated });
 
         if (get().selectedRoomId === created.id_sali) {
@@ -371,12 +406,15 @@ export const useAppStore = create<AppState>()(
             stationCount: Math.min(Math.max(currentS, 1), created.maksymalna_pojemnosc.stacje)
           });
         }
-        return created;
+        return touched;
       },
 
       removeCustomRoom: (id) => {
         const existing = get().customRooms || [];
-        set({ customRooms: existing.filter(r => r.id_sali !== id) });
+        const target = existing.find(r => r.id_sali === id);
+        if (!target) return;
+        const deleted = markSyncDeleted(target);
+        set({ customRooms: existing.map(r => r.id_sali === id ? deleted : r) });
         if (get().selectedRoomId === id) {
           const allRooms = get().getAllRooms();
           const room = allRooms.find(r => r.id_sali === id) || allRooms[0];
@@ -392,7 +430,7 @@ export const useAppStore = create<AppState>()(
       },
 
       exportCustomRooms: () => {
-        const rooms = get().customRooms || [];
+        const rooms = (get().customRooms || []).filter(r => !r._sync?.isDeleted);
         return JSON.stringify(rooms, null, 2);
       },
 
@@ -413,7 +451,7 @@ export const useAppStore = create<AppState>()(
           }
 
           if (!Array.isArray(rooms)) {
-            return { success: false, count: 0, error: "Plik musi zawierać tablicę sal." };
+            return { success: false, count: 0, error: "Plik musi zawieraÄ‡ tablicÄ™ sal." };
           }
 
           const existingMap = new Map<string, RoomConfig>();
@@ -440,7 +478,7 @@ export const useAppStore = create<AppState>()(
       customEquipment: [] as EquipmentItem[],
 
       getAllEquipmentItems: () => {
-        const custom = get().customEquipment || [];
+        const custom = (get().customEquipment || []).filter(eq => !eq._sync?.isDeleted);
         const customMap = new Map<string, EquipmentItem>();
         const newCustom: EquipmentItem[] = [];
 
@@ -467,14 +505,19 @@ export const useAppStore = create<AppState>()(
         const created = createDefaultEquipment(input);
         const existing = get().customEquipment || [];
         const filtered = existing.filter(e => e.id !== created.id);
-        const updated = [...filtered, created];
+        const prev = existing.find(e => e.id === created.id);
+        const touched = touchSyncMetadata({ ...created, _sync: prev?._sync });
+        const updated = [...filtered, touched];
         set({ customEquipment: updated });
-        return created;
+        return touched;
       },
 
       removeCustomEquipment: (id) => {
         const existing = get().customEquipment || [];
-        set({ customEquipment: existing.filter(e => e.id !== id) });
+        const target = existing.find(e => e.id === id);
+        if (!target) return;
+        const deleted = markSyncDeleted(target);
+        set({ customEquipment: existing.map(e => e.id === id ? deleted : e) });
       },
 
       clearAllCustomEquipment: () => {
@@ -482,7 +525,7 @@ export const useAppStore = create<AppState>()(
       },
 
       exportCustomEquipment: () => {
-        const custom = get().customEquipment || [];
+        const custom = (get().customEquipment || []).filter(e => !e._sync?.isDeleted);
         return JSON.stringify(custom, null, 2);
       },
 
@@ -501,7 +544,7 @@ export const useAppStore = create<AppState>()(
           }
 
           if (!Array.isArray(items)) {
-            return { success: false, count: 0, error: "Plik musi zawierać tablicę sprzętu." };
+            return { success: false, count: 0, error: "Plik musi zawieraÄ‡ tablicÄ™ sprzÄ™tu." };
           }
 
           const existingMap = new Map<string, EquipmentItem>();
@@ -546,15 +589,25 @@ export const useAppStore = create<AppState>()(
         volume: 0.9,
       } as TimerAudioSettings,
 
+      getAllIntervalPresets: () => {
+        const custom = get().customIntervalPresets || [];
+        return custom.filter(p => !p._sync?.isDeleted);
+      },
+
       addCustomIntervalPreset: (preset) => {
         const existing = get().customIntervalPresets || [];
+        const prev = existing.find(p => p.id === preset.id);
+        const touched = touchSyncMetadata({ ...preset, _sync: prev?._sync });
         const filtered = existing.filter(p => p.id !== preset.id);
-        set({ customIntervalPresets: [...filtered, preset] });
+        set({ customIntervalPresets: [...filtered, touched] });
       },
 
       removeCustomIntervalPreset: (id) => {
         const existing = get().customIntervalPresets || [];
-        set({ customIntervalPresets: existing.filter(p => p.id !== id) });
+        const target = existing.find(p => p.id === id);
+        if (!target) return;
+        const deleted = markSyncDeleted(target);
+        set({ customIntervalPresets: existing.map(p => p.id === id ? deleted : p) });
       },
 
       updateTimerAudioSettings: (settings) => {
@@ -627,7 +680,7 @@ export const useAppStore = create<AppState>()(
       setActiveTab: (tab: TabType) => set({ activeTab: tab }),
       setGenerationConflict: (conflict) => set({ generationConflict: conflict }),
 
-      // Helper do pobierania aktualnej konfiguracji sali (uwzględnia wirtualną salę Custom)
+      // Helper do pobierania aktualnej konfiguracji sali (uwzglÄ™dnia wirtualnÄ… salÄ™ Custom)
       getEffectiveRoomConfig: () => {
         const { selectedRoomId, customRoomMode, customRoomEquipment } = get();
         const allRooms = get().getAllRooms ? get().getAllRooms() : ALL_ROOMS;
@@ -645,7 +698,7 @@ export const useAppStore = create<AppState>()(
 
       setCustomRoomMode: (mode) => {
         set({ customRoomMode: mode });
-        // Po zmianie trybu musimy zweryfikować czy obecna liczba stacji mieści się w nowych limitach
+        // Po zmianie trybu musimy zweryfikowaÄ‡ czy obecna liczba stacji mieĹ›ci siÄ™ w nowych limitach
         const room = get().getEffectiveRoomConfig();
         const maxStations = room.tryb_treningu === 'synchroniczny' 
           ? room.maksymalna_pojemnosc.stacje 
@@ -690,7 +743,7 @@ export const useAppStore = create<AppState>()(
         set({
           navigationStack: newStack,
           activeView: prevView,
-          // Jeśli wracamy z widoku CIRCUIT do HOME, czyścimy isGenerated
+          // JeĹ›li wracamy z widoku CIRCUIT do HOME, czyĹ›cimy isGenerated
           ...(prevView === 'HOME' && { isGenerated: false })
         });
       },
@@ -897,7 +950,7 @@ export const useAppStore = create<AppState>()(
         const newCircuit = [...circuit];
 
         if (type === 'A') {
-          // Jeśli stacja jest wspóldzielona (oba ćwiczenia te same), podmień oba
+          // JeĹ›li stacja jest wspĂłldzielona (oba Ä‡wiczenia te same), podmieĹ„ oba
           const isShared = station.exerciseB && station.exerciseA.id_cwiczenia === station.exerciseB.id_cwiczenia;
           newCircuit[stationIndex] = { 
             ...station, 

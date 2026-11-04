@@ -1,9 +1,10 @@
-﻿import exercises from './data/lista_cwiczen.json';
+import exercises from './data/lista_cwiczen.json';
 import equipment from './data/lista_sprzetu.json';
 import levels from './data/poziomy_trudnosci.json';
 import segments from './data/segmenty.json';
 import sala from './data/sala.json';
 import categories from './data/kategorie_treningow.json';
+import type { SyncMetadata } from '@/types/sync';
 
 export type SingleRequirement = Record<string, number>;
 export type EquipmentRequirement = SingleRequirement | SingleRequirement[];
@@ -25,6 +26,7 @@ export interface Exercise {
   instrukcja: string;
   isCustom?: boolean;
   isOverridden?: boolean;
+  _sync?: SyncMetadata;
 }
 
 export const normalizeExerciseKey = (name: string): string => {
@@ -57,6 +59,7 @@ export const createDefaultExercise = (input: {
   wymagania_sprzetowe?: EquipmentRequirement[];
   biomechanika?: string;
   isOverridden?: boolean;
+  _sync?: SyncMetadata;
 }): Exercise => {
   const isBuiltInId = input.id_cwiczenia && !input.id_cwiczenia.startsWith('custom-');
   const isOverridden = input.isOverridden ?? (isBuiltInId ? true : false);
@@ -159,6 +162,7 @@ export interface RoomConfig {
   zakazane_tryby_pracy?: Array<"Solo" | "W_Parze">;
   isCustom?: boolean;
   isOverridden?: boolean;
+  _sync?: SyncMetadata;
 }
 
 export const createDefaultRoom = (input: {
@@ -171,6 +175,7 @@ export const createDefaultRoom = (input: {
   reguly_przeplywu_i_kolizji?: Record<string, string>;
   zakazane_tryby_pracy?: Array<"Solo" | "W_Parze">;
   isOverridden?: boolean;
+  _sync?: SyncMetadata;
 }): RoomConfig => {
   const isBuiltInId = input.id_sali && !input.id_sali.startsWith('custom-room-');
   const isOverridden = input.isOverridden ?? (isBuiltInId ? true : false);
@@ -218,6 +223,7 @@ export interface EquipmentItem {
   opis?: string;
   isCustom?: boolean;
   isOverridden?: boolean;
+  _sync?: SyncMetadata;
 }
 
 export const normalizeEquipmentKey = (name: string): string => {
@@ -239,6 +245,7 @@ export const createDefaultEquipment = (input: {
   nazwa: string;
   opis?: string;
   isOverridden?: boolean;
+  _sync?: SyncMetadata;
 }): EquipmentItem => {
   const generatedId = input.id ? input.id.trim() : normalizeEquipmentKey(input.nazwa);
   const isBuiltIn = ALL_EQUIPMENT.includes(generatedId);
