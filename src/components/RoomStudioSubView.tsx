@@ -89,13 +89,14 @@ export const RoomStudioSubView = () => {
 
   const counts = useMemo(() => {
     const total = allRooms.length;
-    const customCount = customRooms.filter((r) => r.id_sali !== 'custom').length;
+    const customCount = customRooms.filter((r) => r.id_sali !== 'custom' && !r._sync?.isDeleted).length;
     const builtinCount = ALL_ROOMS.filter((r) => r.id_sali !== 'custom').length;
     return { total, customCount, builtinCount };
   }, [allRooms, customRooms]);
 
   const handleExport = () => {
-    if (customRooms.length === 0) {
+    const activeCustomRooms = customRooms.filter((r) => r.id_sali !== 'custom' && !r._sync?.isDeleted);
+    if (activeCustomRooms.length === 0) {
       toast({
         title: "Brak zaktualizowanych sal",
         description: "Nie dodano ani nie zmodyfikowano jeszcze żadnych sal do wyeksportowania.",
@@ -118,7 +119,7 @@ export const RoomStudioSubView = () => {
 
     toast({
       title: "Pomyślnie wyeksportowano sale",
-      description: `Pobrano plik z ${customRooms.length} zmodyfikowanymi/własnymi salami w formacie JSON.`,
+      description: `Pobrano plik z ${activeCustomRooms.length} zmodyfikowanymi/własnymi salami w formacie JSON.`,
     });
   };
 

@@ -94,5 +94,10 @@ System SHALL zaopatrywać autorskie encje użytkownika (własne ćwiczenia, sale
 - **THEN** system nie traktuje wpisu jako błędu i przyjmuje wyższy numer wersji oraz nowszy timestamp
 
 #### Scenario: Filtrowanie nagrobków (tombstones) w widokach i generatorze
-- **WHEN** metody pobierające obiekty (`getAllExercises`, `getAllRooms`, `getAllEquipment`) przygotowują listę dla generatora lub widoków aplikacji
+- **WHEN** metody pobierające obiekty (`getAllExercises`, `getAllRooms`, `getAllEquipment`, `getAllIntervalPresets`) przygotowują listę dla generatora lub widoków aplikacji
 - **THEN** wszystkie obiekty posiadające `_sync.isDeleted === true` są automatycznie wykluczane z wynikowej listy
+
+#### Scenario: Spójność liczników i odznak zakładek w obecności nagrobków
+- **WHEN** komponenty interfejsu (`ExerciseStudioView`, `SettingsView`, `RoomStudioSubView`, `EquipmentStudioSubView`) obliczają liczbę autorskich pozycji użytkownika dla zakładek, podsumowań lub eksportu
+- **THEN** system zlicza wyłącznie rekordy aktywne (`!item._sync?.isDeleted`) i nie uwzględnia nagrobków (tombstones)
+- **AND** usunięcie edycji ćwiczenia powoduje natychmiastowy spadek licznika pozycji lokalnych do zera

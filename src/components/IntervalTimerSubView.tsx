@@ -86,7 +86,11 @@ export const IntervalTimerSubView = () => {
   const { toast } = useToast();
 
   const circuit = useAppStore((state) => state.circuit);
-  const customIntervalPresets = useAppStore((state) => state.customIntervalPresets);
+  const rawCustomIntervalPresets = useAppStore((state) => state.customIntervalPresets);
+  const customIntervalPresets = useMemo(
+    () => (rawCustomIntervalPresets || []).filter((p) => !p._sync?.isDeleted),
+    [rawCustomIntervalPresets]
+  );
   const addCustomIntervalPreset = useAppStore((state) => state.addCustomIntervalPreset);
   const removeCustomIntervalPreset = useAppStore((state) => state.removeCustomIntervalPreset);
   const timerAudioSettings = useAppStore((state) => state.timerAudioSettings);
