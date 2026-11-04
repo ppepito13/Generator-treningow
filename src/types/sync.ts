@@ -48,3 +48,21 @@ export interface SyncLifecycleState {
   lastSyncedAt: number | null;
   syncError: string | null;
 }
+
+export type InitialSyncConflictAction = 'merge' | 'pull' | 'push';
+
+export interface SyncItemsCount {
+  exercises: number;
+  rooms: number;
+  equipment: number;
+  presets: number;
+  total: number;
+}
+
+export interface InitialSyncConflictDetails {
+  hasConflict: boolean;
+  localCount: SyncItemsCount;
+  remoteCount?: SyncItemsCount;
+  remoteModifiedTime?: string;
+}
+

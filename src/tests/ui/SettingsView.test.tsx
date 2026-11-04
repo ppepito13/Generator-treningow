@@ -1,11 +1,22 @@
 // @vitest-environment jsdom
 import React from 'react';
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SettingsView } from '@/components/SettingsView';
 import { useAppStore } from '@/app/lib/store';
 import { APP_VERSION, APP_WEBSITE_URL, APP_WEBSITE_DISPLAY } from '@/config/appInfo';
 import { createDefaultExercise, Exercise } from '@/app/lib/data';
+import * as syncCoordinator from '@/services/sync/syncCoordinator';
+
+vi.mock('@/services/sync/syncCoordinator', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/services/sync/syncCoordinator')>();
+  return {
+    ...actual,
+    performSync: vi.fn().mockResolvedValue({ success: true }),
+    checkInitialSyncConflict: vi.fn().mockResolvedValue({ hasConflict: false }),
+    resolveInitialSync: vi.fn().mockResolvedValue({ success: true }),
+  };
+});
 
 describe('Komponent UI: SettingsView', () => {
   beforeEach(() => {
@@ -156,5 +167,74 @@ describe('Komponent UI: SettingsView', () => {
     expect(screen.getByText(/Nie przyznano dostępu do Dysku Google/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /nadaj uprawnienie do dysku google/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /odłącz konto google/i })).toBeInTheDocument();
+  });
+
+  it('wyświetla wskaźnik Zsynchronizowano, czas ostatniej kopii i aktywny przycisk ręcznej synchronizacji (#40.3b)', async () => {
+    const fixedTimestamp = new Date(2026, 10, 4, 15, 30, 0).getTime();
+    useAppStore.setState({
+      googleUser: {
+        id: 'usr_full',
+        name: 'Jan Trener',
+        email: 'trener@sportsway.eu',
+        hasDriveScope: true,
+      },
+      syncStatus: 'idle',
+      lastSyncedAt: fixedTimestamp,
+      syncError: null,
+    });
+
+    render(<SettingsView />);
+
+    expect(screen.getByText('Stan synchronizacji:')).toBeInTheDocument();
+    expect(screen.getByText('Zsynchronizowano')).toBeInTheDocument();
+    expect(screen.getByText('Ostatnia kopia w chmurze:')).toBeInTheDocument();
+    const syncNowBtn = screen.getByRole('button', { name: /synchronizuj teraz/i });
+    expect(syncNowBtn).toBeInTheDocument();
+    expect(syncNowBtn).not.toBeDisabled();
+
+    fireEvent.click(syncNowBtn);
+
+    await waitFor(() => {
+      expect(syncCoordinator.performSync).toHaveBeenCalledWith({ force: true });
+    });
+  });
+
+  it('blokuje przycisk synchronizacji i prezentuje spinner podczas trwającej synchronizacji (#40.3b)', () => {
+    useAppStore.setState({
+      googleUser: {
+        id: 'usr_full',
+        name: 'Jan Trener',
+        email: 'trener@sportsway.eu',
+        hasDriveScope: true,
+      },
+      syncStatus: 'syncing',
+      lastSyncedAt: null,
+      syncError: null,
+    });
+
+    render(<SettingsView />);
+
+    expect(screen.getAllByText('Synchronizowanie...').length).toBeGreaterThanOrEqual(1);
+    const syncBtn = screen.getByRole('button', { name: /synchronizowanie.../i });
+    expect(syncBtn).toBeDisabled();
+  });
+
+  it('prezentuje komunikat błędu synchronizacji z opisem (#40.3b)', () => {
+    useAppStore.setState({
+      googleUser: {
+        id: 'usr_full',
+        name: 'Jan Trener',
+        email: 'trener@sportsway.eu',
+        hasDriveScope: true,
+      },
+      syncStatus: 'error',
+      lastSyncedAt: null,
+      syncError: 'Błąd połączenia z serwerem Google Drive (503).',
+    });
+
+    render(<SettingsView />);
+
+    expect(screen.getByText('Błąd synchronizacji')).toBeInTheDocument();
+    expect(screen.getByText('Błąd połączenia z serwerem Google Drive (503).')).toBeInTheDocument();
   });
 });

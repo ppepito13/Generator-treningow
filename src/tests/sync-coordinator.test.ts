@@ -6,6 +6,9 @@ import {
   cancelDebouncedSync,
   initSyncNetworkListeners,
   resetSyncCoordinatorForTests,
+  formatLastSyncedAt,
+  checkInitialSyncConflict,
+  resolveInitialSync,
 } from '@/services/sync/syncCoordinator';
 import { useAppStore } from '@/app/lib/store';
 import * as googleDriveClient from '@/services/cloud/googleDriveClient';
@@ -276,5 +279,161 @@ describe('SyncCoordinator Lifecycle (#40.3)', () => {
     expect(googleDriveClient.findBackupFile).toHaveBeenCalledTimes(1);
 
     cleanup();
+  });
+
+  describe('formatLastSyncedAt helper', () => {
+    it('returns "Nigdy" for null, undefined, or invalid input', () => {
+      expect(formatLastSyncedAt(null)).toBe('Nigdy');
+      expect(formatLastSyncedAt(undefined)).toBe('Nigdy');
+      expect(formatLastSyncedAt(0)).toBe('Nigdy');
+      expect(formatLastSyncedAt(NaN)).toBe('Nigdy');
+    });
+
+    it('formats today timestamp as "Dzisiaj, HH:mm"', () => {
+      const now = new Date();
+      now.setHours(14, 30, 0, 0);
+      expect(formatLastSyncedAt(now.getTime())).toBe('Dzisiaj, 14:30');
+    });
+
+    it('formats yesterday timestamp as "Wczoraj, HH:mm"', () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(9, 15, 0, 0);
+      expect(formatLastSyncedAt(yesterday.getTime())).toBe('Wczoraj, 09:15');
+    });
+
+    it('formats older timestamp as "DD.MM.YYYY, HH:mm"', () => {
+      const older = new Date(2025, 5, 12, 18, 45, 0);
+      expect(formatLastSyncedAt(older.getTime())).toBe('12.06.2025, 18:45');
+    });
+  });
+
+  describe('checkInitialSyncConflict (#40.3b)', () => {
+    it('returns hasConflict: false when local items count is 0', async () => {
+      useAppStore.setState({ googleUser: mockUser, lastSyncedAt: null, customExercises: [] });
+      const result = await checkInitialSyncConflict();
+      expect(result.hasConflict).toBe(false);
+      expect(result.localCount.total).toBe(0);
+    });
+
+    it('returns hasConflict: false when device already has lastSyncedAt', async () => {
+      const exercise = createDefaultExercise({ id_cwiczenia: 'ex1', nazwa: 'Pompki autorskie' });
+      useAppStore.setState({ googleUser: mockUser, lastSyncedAt: 1000, customExercises: [exercise] });
+      const result = await checkInitialSyncConflict();
+      expect(result.hasConflict).toBe(false);
+    });
+
+    it('returns hasConflict: false when remote cloud backup does not exist', async () => {
+      const exercise = createDefaultExercise({ id_cwiczenia: 'ex1', nazwa: 'Pompki autorskie' });
+      useAppStore.setState({ googleUser: mockUser, lastSyncedAt: null, customExercises: [exercise] });
+      vi.mocked(googleDriveClient.findBackupFile).mockResolvedValue(null);
+
+      const result = await checkInitialSyncConflict();
+      expect(result.hasConflict).toBe(false);
+      expect(result.localCount.total).toBe(1);
+    });
+
+    it('returns hasConflict: true with item counts when local items exist and remote backup found', async () => {
+      const localEx = createDefaultExercise({ id_cwiczenia: 'ex1', nazwa: 'Pompki autorskie' });
+      useAppStore.setState({ googleUser: mockUser, lastSyncedAt: null, customExercises: [localEx] });
+
+      vi.mocked(googleDriveClient.findBackupFile).mockResolvedValue({
+        id: 'remote-file-id',
+        name: 'sportsway_sync_backup.json',
+        modifiedTime: '2026-11-04T12:00:00Z',
+      });
+
+      const remoteEx = createDefaultExercise({ id_cwiczenia: 'ex2', nazwa: 'Podciąganie w chmurze' });
+      vi.mocked(googleDriveClient.downloadBackupFile).mockResolvedValue({
+        schemaVersion: 1,
+        clientVersion: '1.3.0',
+        lastModified: 2000,
+        data: {
+          customExercises: [remoteEx],
+          customRooms: [],
+          customEquipment: [],
+          customIntervalPresets: [],
+        },
+      } as SyncBackupPayload);
+
+      const result = await checkInitialSyncConflict();
+      expect(result.hasConflict).toBe(true);
+      expect(result.localCount.exercises).toBe(1);
+      expect(result.remoteCount?.exercises).toBe(1);
+      expect(result.remoteModifiedTime).toBe('2026-11-04T12:00:00Z');
+    });
+  });
+
+  describe('resolveInitialSync (#40.3b)', () => {
+    it('executes merge when action is "merge"', async () => {
+      useAppStore.setState({ googleUser: mockUser });
+      vi.mocked(googleDriveClient.findBackupFile).mockResolvedValue(null);
+      vi.mocked(googleDriveClient.uploadBackupFile).mockResolvedValue({
+        id: 'file-id',
+        name: 'sportsway_sync_backup.json',
+      });
+
+      const result = await resolveInitialSync('merge');
+      expect(result.success).toBe(true);
+      expect(googleDriveClient.uploadBackupFile).toHaveBeenCalled();
+    });
+
+    it('replaces local collections with remote backup when action is "pull"', async () => {
+      const localEx = createDefaultExercise({ id_cwiczenia: 'ex_local', nazwa: 'Lokalne' });
+      useAppStore.setState({ googleUser: mockUser, customExercises: [localEx] });
+
+      vi.mocked(googleDriveClient.findBackupFile).mockResolvedValue({
+        id: 'remote-file-id',
+        name: 'sportsway_sync_backup.json',
+      });
+
+      const remoteEx = createDefaultExercise({ id_cwiczenia: 'ex_cloud', nazwa: 'Z Chmury' });
+      vi.mocked(googleDriveClient.downloadBackupFile).mockResolvedValue({
+        schemaVersion: 1,
+        clientVersion: '1.3.0',
+        lastModified: 5000,
+        data: {
+          customExercises: [remoteEx],
+          customRooms: [],
+          customEquipment: [],
+          customIntervalPresets: [],
+        },
+      } as SyncBackupPayload);
+
+      const result = await resolveInitialSync('pull');
+      expect(result.success).toBe(true);
+      expect(useAppStore.getState().customExercises).toHaveLength(1);
+      expect(useAppStore.getState().customExercises[0].id_cwiczenia).toBe('ex_cloud');
+      expect(useAppStore.getState().lastSyncedAt).not.toBeNull();
+      // Should not upload back to cloud when pulling
+      expect(googleDriveClient.uploadBackupFile).not.toHaveBeenCalled();
+    });
+
+    it('overwrites cloud backup with local data when action is "push"', async () => {
+      const localEx = createDefaultExercise({ id_cwiczenia: 'ex_device', nazwa: 'Na Urządzeniu' });
+      useAppStore.setState({ googleUser: mockUser, customExercises: [localEx] });
+
+      vi.mocked(googleDriveClient.findBackupFile).mockResolvedValue({
+        id: 'remote-file-id',
+        name: 'sportsway_sync_backup.json',
+      });
+      vi.mocked(googleDriveClient.uploadBackupFile).mockResolvedValue({
+        id: 'remote-file-id',
+        name: 'sportsway_sync_backup.json',
+      });
+
+      const result = await resolveInitialSync('push');
+      expect(result.success).toBe(true);
+      expect(googleDriveClient.uploadBackupFile).toHaveBeenCalledWith(
+        'test-access-token-123',
+        expect.objectContaining({
+          data: expect.objectContaining({
+            customExercises: [expect.objectContaining({ id_cwiczenia: 'ex_device' })],
+          }),
+        }),
+        'remote-file-id'
+      );
+      expect(useAppStore.getState().lastSyncedAt).not.toBeNull();
+    });
   });
 });

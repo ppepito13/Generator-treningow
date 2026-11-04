@@ -8,8 +8,17 @@ import { APP_VERSION, APP_WEBSITE_URL, APP_WEBSITE_DISPLAY } from '@/config/appI
 import { ModuleHeader } from '@/components/ui/ModuleHeader';
 import { Button } from '@/components/ui/button';
 import { DisconnectAccountDialog } from '@/components/DisconnectAccountDialog';
+import { InitialSyncConflictDialog } from '@/components/InitialSyncConflictDialog';
 import { signInWithGoogle, formatAuthError } from '@/services/auth/googleAuth';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
+import { useToast } from '@/hooks/use-toast';
+import {
+  formatLastSyncedAt,
+  checkInitialSyncConflict,
+  resolveInitialSync,
+  performSync,
+} from '@/services/sync/syncCoordinator';
+import type { InitialSyncConflictAction, InitialSyncConflictDetails } from '@/types/sync';
 import { 
   Settings, 
   ArrowLeft, 
@@ -25,14 +34,20 @@ import {
   LogOut,
   AlertCircle,
   AlertTriangle,
-  Loader2
+  Loader2,
+  RefreshCw,
+  WifiOff
 } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
+  const { toast } = useToast();
   const setActiveTab = useAppStore((state) => state.setActiveTab);
   const customExercises = useAppStore((state) => state.customExercises);
   const googleUser = useAppStore((state) => state.googleUser);
   const authError = useAppStore((state) => state.authError);
+  const syncStatus = useAppStore((state) => state.syncStatus);
+  const lastSyncedAt = useAppStore((state) => state.lastSyncedAt);
+  const syncError = useAppStore((state) => state.syncError);
   const setGoogleUser = useAppStore((state) => state.setGoogleUser);
   const setAuthStatus = useAppStore((state) => state.setAuthStatus);
   const disconnectGoogleAccount = useAppStore((state) => state.disconnectGoogleAccount);
@@ -42,6 +57,10 @@ export const SettingsView: React.FC = () => {
   const [isDisconnectDialogOpen, setIsDisconnectDialogOpen] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [isInitialConflictDialogOpen, setIsInitialConflictDialogOpen] = useState(false);
+  const [initialConflictDetails, setInitialConflictDetails] = useState<InitialSyncConflictDetails | null>(null);
+  const [isResolvingConflict, setIsResolvingConflict] = useState(false);
+  const [isManualSyncing, setIsManualSyncing] = useState(false);
 
   useEffect(() => {
     if (useAppStore.getState().googleUser) {
@@ -62,11 +81,79 @@ export const SettingsView: React.FC = () => {
       setAuthStatus('loading');
       const profile = await signInWithGoogle();
       setGoogleUser(profile);
+
+      // Sprawdzenie kolizji początkowej po pierwszym zalogowaniu na urządzeniu
+      if (profile.hasDriveScope !== false) {
+        const conflict = await checkInitialSyncConflict();
+        if (conflict.hasConflict) {
+          setInitialConflictDetails(conflict);
+          setIsInitialConflictDialogOpen(true);
+        } else {
+          void performSync();
+        }
+      }
     } catch (err: unknown) {
       const message = formatAuthError(err);
       setAuthStatus('error', message);
     } finally {
       setIsSigningIn(false);
+    }
+  };
+
+  const handleManualSync = async () => {
+    if (googleUser && googleUser.hasDriveScope !== false && lastSyncedAt === null) {
+      const conflict = await checkInitialSyncConflict();
+      if (conflict.hasConflict) {
+        setInitialConflictDetails(conflict);
+        setIsInitialConflictDialogOpen(true);
+        return;
+      }
+    }
+
+    setIsManualSyncing(true);
+    try {
+      const res = await performSync({ force: true });
+      if (res.success) {
+        toast({
+          title: "Zsynchronizowano",
+          description: "Wszystkie dane są aktualne na Twoim Dysku Google.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Błąd synchronizacji",
+          description: res.error || "Nie udało się zsynchronizować danych.",
+        });
+      }
+    } finally {
+      setIsManualSyncing(false);
+    }
+  };
+
+  const handleResolveInitialSync = async (action: InitialSyncConflictAction) => {
+    setIsResolvingConflict(true);
+    try {
+      const res = await resolveInitialSync(action);
+      if (res.success) {
+        setIsInitialConflictDialogOpen(false);
+        toast({
+          title: "Synchronizacja zakończona",
+          description:
+            action === 'pull'
+              ? "Pobrano dane z Dysku Google."
+              : action === 'push'
+              ? "Zaktualizowano kopię zapasową w chmurze danymi z urządzenia."
+              : "Pomyślnie scalono dane z urządzenia i chmury.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Błąd synchronizacji",
+          description: res.error || "Wystąpił błąd podczas rozstrzygania konfliktu.",
+        });
+      }
+    } finally {
+      setIsResolvingConflict(false);
     }
   };
 
@@ -262,6 +349,58 @@ export const SettingsView: React.FC = () => {
                 </div>
               )}
 
+              {googleUser.hasDriveScope !== false && (
+                <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-white/90">Stan synchronizacji:</span>
+                    {syncStatus === 'syncing' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Synchronizowanie...
+                      </span>
+                    ) : syncStatus === 'offline' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                        <WifiOff className="h-3 w-3" />
+                        Wstrzymana (offline)
+                      </span>
+                    ) : syncStatus === 'error' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-500/15 text-red-400 border border-red-500/30">
+                        <AlertCircle className="h-3 w-3" />
+                        Błąd synchronizacji
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        Zsynchronizowano
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Ostatnia kopia w chmurze:</span>
+                    <span className="font-medium text-white/90">{formatLastSyncedAt(lastSyncedAt)}</span>
+                  </div>
+
+                  {syncError && (
+                    <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 text-[11px] flex items-start gap-2">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                      <span className="leading-tight">{syncError}</span>
+                    </div>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleManualSync}
+                    disabled={syncStatus === 'syncing' || isManualSyncing}
+                    className="w-full border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-500/50 text-xs gap-2 rounded-xl cursor-pointer font-semibold"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${syncStatus === 'syncing' || isManualSyncing ? 'animate-spin' : ''}`} />
+                    <span>{syncStatus === 'syncing' || isManualSyncing ? 'Synchronizowanie...' : 'Synchronizuj teraz'}</span>
+                  </Button>
+                </div>
+              )}
+
               <div className="pt-1">
                 <Button
                   variant="outline"
@@ -383,6 +522,15 @@ export const SettingsView: React.FC = () => {
         onConfirm={handleConfirmDisconnect}
         userEmail={googleUser?.email}
         isDisconnecting={isDisconnecting}
+      />
+
+      {/* MODAL KONFLIKTU POCZĄTKOWEJ SYNCHRONIZACJI */}
+      <InitialSyncConflictDialog
+        isOpen={isInitialConflictDialogOpen}
+        onOpenChange={setIsInitialConflictDialogOpen}
+        conflictDetails={initialConflictDetails}
+        onResolve={handleResolveInitialSync}
+        isResolving={isResolvingConflict}
       />
     </div>
   );
