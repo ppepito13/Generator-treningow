@@ -7,7 +7,7 @@ Zapewnia bezpieczne uwierzytelnianie użytkowników za pomocą Konta Google, zar
 ## Requirements
 
 ### Requirement: Uwierzytelnianie za pomocą Konta Google
-System MUST umożliwiać zalogowanie użytkownika za pośrednictwem Konta Google przy użyciu protokołu OAuth 2.0 z minimalnym zakresem uprawnień, gwarantując niezawodną obsługę w środowisku przeglądarki Web oraz natywnej aplikacji mobilnej Android (Capacitor), wraz z automatycznym zabezpieczeniem przed zawieszeniem interfejsu.
+System MUST umożliwiać zalogowanie użytkownika za pośrednictwem Konta Google przy użyciu protokołu OAuth 2.0 z minimalnym zakresem uprawnień, gwarantując niezawodną obsługę w środowisku przeglądarki Web oraz natywnej aplikacji mobilnej Android (Capacitor), wraz z automatycznym zabezpieczeniem przed zawieszeniem interfejsu oraz prezentacją przyjaznych, zlokalizowanych komunikatów o błędach w języku polskim.
 
 #### Scenario: Udane logowanie przez okno dialogowe Google
 - **WHEN** użytkownik wybierze opcję połączenia konta Google w aplikacji webowej
@@ -28,6 +28,19 @@ System MUST umożliwiać zalogowanie użytkownika za pośrednictwem Konta Google
 - **WHEN** użytkownik zamknie okno logowania Google lub wystąpi błąd sieciowy
 - **THEN** system nie modyfikuje stanu tożsamości lokalnej
 - **AND** ustawia status błędu z czytelnym dla użytkownika komunikatem
+
+#### Scenario: Anulowanie logowania przez użytkownika
+- **WHEN** użytkownik zamknie okno logowania Google lub anuluje wybór konta w natywnym interfejsie Androida
+- **THEN** system nie modyfikuje stanu tożsamości lokalnej
+- **AND** ustawia status błędu z czytelnym komunikatem w języku polskim („Logowanie zostało anulowane.”)
+
+#### Scenario: Błąd braku konta lub braku powiązania w Google Cloud na Androidzie
+- **WHEN** natywny menedżer poświadczeń Androida zgłosi brak dostępnych kont lub brak pasujących poświadczeń dla aplikacji
+- **THEN** system prezentuje zrozumiałą instrukcję wskazującą na konieczność dodania konta w Ustawieniach telefonu lub zakończenie weryfikacji w Google Cloud
+
+#### Scenario: Błąd sieciowy lub konfiguracji usług Google
+- **WHEN** wystąpi błąd połączenia z siecią, brak usług Google Play lub niezarejestrowane źródło JavaScript (origin mismatch)
+- **THEN** system prezentuje dedykowany komunikat wyjaśniający przyczynę w języku polskim bez surowych kodów technicznych
 
 ### Requirement: Zarządzanie Stanem Sesji Użytkownika
 Aplikacja MUST przechowywać dane profilu zalogowanego użytkownika w pamięci stanu oraz odzwierciedlać aktualny stan połączenia w interfejsie.

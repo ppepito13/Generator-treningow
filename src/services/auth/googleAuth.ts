@@ -1,6 +1,9 @@
 import { Capacitor } from '@capacitor/core';
 import { GoogleSignIn } from '@capawesome/capacitor-google-sign-in';
 import type { GoogleUserProfile, AuthSession } from '@/types/auth';
+import { formatAuthError } from './authErrors';
+
+export { formatAuthError };
 
 declare global {
   interface Window {
@@ -280,11 +283,15 @@ export const signInWithGoogle = async (): Promise<GoogleUserProfile> => {
     throw new Error('Logowanie Google jest dostępne wyłącznie w środowisku przeglądarki.');
   }
 
-  if (Capacitor.isNativePlatform()) {
-    return signInWithGoogleNative(clientId);
-  }
+  try {
+    if (Capacitor.isNativePlatform()) {
+      return await signInWithGoogleNative(clientId);
+    }
 
-  return signInWithGoogleWeb(clientId);
+    return await signInWithGoogleWeb(clientId);
+  } catch (err) {
+    throw new Error(formatAuthError(err));
+  }
 };
 
 /**

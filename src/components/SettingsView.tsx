@@ -8,7 +8,7 @@ import { APP_VERSION, APP_WEBSITE_URL, APP_WEBSITE_DISPLAY } from '@/config/appI
 import { ModuleHeader } from '@/components/ui/ModuleHeader';
 import { Button } from '@/components/ui/button';
 import { DisconnectAccountDialog } from '@/components/DisconnectAccountDialog';
-import { signInWithGoogle } from '@/services/auth/googleAuth';
+import { signInWithGoogle, formatAuthError } from '@/services/auth/googleAuth';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
 import { 
   Settings, 
@@ -54,7 +54,7 @@ export const SettingsView: React.FC = () => {
       const profile = await signInWithGoogle();
       setGoogleUser(profile);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Wystąpił błąd podczas logowania Google.';
+      const message = formatAuthError(err);
       setAuthStatus('error', message);
     } finally {
       setIsSigningIn(false);
