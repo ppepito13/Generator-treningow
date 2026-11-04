@@ -224,13 +224,14 @@ export const ExerciseStudioView = () => {
 
   const counts = useMemo(() => {
     const total = allExercises.length;
-    const customCount = customExercises.length;
+    const customCount = customExercises.filter((e) => !e._sync?.isDeleted).length;
     const builtinCount = ALL_EXERCISES.length;
     return { total, customCount, builtinCount };
   }, [allExercises, customExercises]);
 
   const handleExport = () => {
-    if (customExercises.length === 0) {
+    const activeCustomExercises = customExercises.filter((e) => !e._sync?.isDeleted);
+    if (activeCustomExercises.length === 0) {
       toast({
         title: "Brak własnych ćwiczeń",
         description: "Nie dodano ani nie zmodyfikowano jeszcze żadnych ćwiczeń do wyeksportowania.",
@@ -253,7 +254,7 @@ export const ExerciseStudioView = () => {
 
     toast({
       title: "Pomyślnie wyeksportowano",
-      description: `Pobrano plik z ${customExercises.length} zmodyfikowanymi/własnymi ćwiczeniami w formacie JSON.`,
+      description: `Pobrano plik z ${activeCustomExercises.length} zmodyfikowanymi/własnymi ćwiczeniami w formacie JSON.`,
     });
   };
 

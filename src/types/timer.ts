@@ -1,3 +1,5 @@
+import type { SyncMetadata } from './sync';
+
 export type StepColor = 'green' | 'red' | 'blue' | 'yellow' | 'orange' | 'purple' | 'gray';
 
 export interface IntervalStep {
@@ -27,6 +29,7 @@ export interface IntervalPreset {
   opis?: string;
   bloki: IntervalBlock[];
   isCustom?: boolean;
+  _sync?: SyncMetadata;
 }
 
 export interface LapRecord {

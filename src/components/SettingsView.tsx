@@ -20,7 +20,7 @@ import {
   Info, 
   CheckCircle2, 
   ShieldCheck, 
-  Database,
+  Database,
   ExternalLink,
   LogOut,
   AlertCircle,
@@ -51,7 +51,7 @@ export const SettingsView: React.FC = () => {
   }, []);
 
   const baseCount = ALL_EXERCISES.length;
-  const customCount = customExercises.length;
+  const customCount = customExercises.filter((e) => !e._sync?.isDeleted).length;
   const exerciseCountLabel = customCount > 0 
     ? `${baseCount} w bazie (+${customCount} własnych)` 
     : `${baseCount} w bazie`;

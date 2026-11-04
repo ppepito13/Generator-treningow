@@ -86,13 +86,14 @@ export const EquipmentStudioSubView = () => {
 
   const counts = useMemo(() => {
     const total = allEquipment.length;
-    const customCount = customEquipment.length;
+    const customCount = customEquipment.filter((eq) => !eq._sync?.isDeleted).length;
     const builtinCount = ALL_EQUIPMENT.length;
     return { total, customCount, builtinCount };
   }, [allEquipment, customEquipment]);
 
   const handleExport = () => {
-    if (customEquipment.length === 0) {
+    const activeCustomEquipment = customEquipment.filter((eq) => !eq._sync?.isDeleted);
+    if (activeCustomEquipment.length === 0) {
       toast({
         title: "Brak własnego sprzętu",
         description: "Nie dodano jeszcze żadnego własnego sprzętu do wyeksportowania.",
@@ -115,7 +116,7 @@ export const EquipmentStudioSubView = () => {
 
     toast({
       title: "Pomyślnie wyeksportowano sprzęt",
-      description: `Pobrano plik z ${customEquipment.length} pozycjami sprzętowymi w formacie JSON.`,
+      description: `Pobrano plik z ${activeCustomEquipment.length} pozycjami sprzętowymi w formacie JSON.`,
     });
   };
 
@@ -257,7 +258,7 @@ export const EquipmentStudioSubView = () => {
               <Upload className="h-4 w-4 text-cyan-400" />
             </Button>
 
-            {customEquipment.length > 0 && (
+            {customEquipment.some((eq) => !eq._sync?.isDeleted) && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -275,7 +276,7 @@ export const EquipmentStudioSubView = () => {
                       <ShieldAlert className="h-5 w-5" /> Reset Bazy Własnego Sprzętu
                     </AlertDialogTitle>
                     <AlertDialogDescription className="text-xs text-muted-foreground">
-                      Czy na pewno chcesz usunąć cały dodany przez siebie sprzęt ({customEquipment.length})? Sprzęt wbudowany pozostanie nienaruszony. Tej operacji nie można cofnąć.
+                      Czy na pewno chcesz usunąć cały dodany przez siebie sprzęt ({customEquipment.filter((eq) => !eq._sync?.isDeleted).length})? Sprzęt wbudowany pozostanie nienaruszony. Tej operacji nie można cofnąć.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
