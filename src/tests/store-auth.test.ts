@@ -9,6 +9,7 @@ import {
   saveAuthSession,
   getCurrentAuthSession,
   validateGoogleSession,
+  revokeGoogleToken,
 } from '@/services/auth/googleAuth';
 import type { GoogleUserProfile } from '@/types/auth';
 
@@ -218,11 +219,15 @@ describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
       globalThis.fetch = originalFetch;
     });
 
-    it('rejects sign-in and clears session when user skips Google Drive scope permission (#40.1-fix)', async () => {
+    it('rejects sign-in, auto-revokes token in Google, and clears session when user skips Google Drive scope permission (#40.1-fix-revoke)', async () => {
       const originalClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
       const originalWindow = globalThis.window;
       const originalDoc = globalThis.document;
+      const originalFetch = globalThis.fetch;
       process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = 'test-client-id';
+
+      const mockFetch = vi.fn().mockResolvedValue({ ok: true } as Response);
+      globalThis.fetch = mockFetch;
 
       let initConfig: { callback?: (res: { access_token?: string; scope?: string; error?: string }) => void } | null = null;
       const mockClient = {
@@ -246,6 +251,7 @@ describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
         visibilityState: 'visible',
       };
 
+      const revokeMock = vi.fn();
       const mockWindow = {
         localStorage: {
           getItem: vi.fn(),
@@ -265,6 +271,7 @@ describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
                 }
               ),
               hasGrantedAllScopes: vi.fn(() => false),
+              revoke: revokeMock,
             },
           },
         },
@@ -279,6 +286,13 @@ describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
         'Wymagane uprawnienie: Nie przyznano dostępu do Dysku Google'
       );
 
+      // Verify auto-revocation was triggered both via GIS and HTTP revoke endpoint
+      expect(revokeMock).toHaveBeenCalledWith('valid-token-without-drive');
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('https://oauth2.googleapis.com/revoke?token=valid-token-without-drive'),
+        expect.objectContaining({ method: 'POST' })
+      );
+
       // Verify session was cleared
       expect(getCurrentAuthSession().accessToken).toBeUndefined();
 
@@ -289,6 +303,19 @@ describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
       process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = originalClientId;
       globalThis.window = originalWindow;
       globalThis.document = originalDoc;
+      globalThis.fetch = originalFetch;
+    });
+
+    it('revokeGoogleToken handles missing tokens and errors gracefully', async () => {
+      const originalFetch = globalThis.fetch;
+      const mockFetch = vi.fn().mockRejectedValue(new Error('Network error on revoke'));
+      globalThis.fetch = mockFetch;
+
+      // Should not throw even on network failure
+      await expect(revokeGoogleToken('test-token')).resolves.toBeUndefined();
+      await expect(revokeGoogleToken('')).resolves.toBeUndefined();
+
+      globalThis.fetch = originalFetch;
     });
 
     it('safeguards Android sessions from being revoked when idToken is merely expired after 60m', async () => {

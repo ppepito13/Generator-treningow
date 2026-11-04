@@ -279,6 +279,7 @@ const signInWithGoogleWeb = async (clientId: string): Promise<GoogleUserProfile>
             Boolean(window.google?.accounts?.oauth2?.hasGrantedAllScopes?.(tokenResponse, GOOGLE_DRIVE_APPDATA_SCOPE));
 
           if (!hasDriveScope) {
+            await revokeGoogleToken(accessToken);
             clearStoredAuthSession();
             settleReject(new Error('DRIVE_SCOPE_REQUIRED'));
             return;
@@ -452,6 +453,32 @@ export const validateGoogleSession = async (): Promise<AuthValidationResult> => 
 };
 
 /**
+ * Revokes a Google access token via Google Identity Services and the Google OAuth2 revoke endpoint.
+ */
+export const revokeGoogleToken = async (token: string): Promise<void> => {
+  if (!token) return;
+
+  try {
+    if (typeof window !== 'undefined' && window.google?.accounts?.oauth2?.revoke) {
+      window.google.accounts.oauth2.revoke(token);
+    }
+  } catch {
+    // Ignore GIS revoke errors
+  }
+
+  try {
+    await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+  } catch {
+    // Ignore network errors when revoking
+  }
+};
+
+/**
  * Revokes access token and clears session from memory and storage.
  */
 export const signOutFromGoogle = async (): Promise<void> => {
@@ -461,12 +488,8 @@ export const signOutFromGoogle = async (): Promise<void> => {
     } catch {
       // Ignorujemy błędy przy wylogowaniu natywnym
     }
-  } else if (typeof window !== 'undefined' && currentSession.accessToken && window.google?.accounts?.oauth2?.revoke) {
-    try {
-      window.google.accounts.oauth2.revoke(currentSession.accessToken);
-    } catch {
-      // Ignorujemy błędy przy cofaniu tokena webowego
-    }
+  } else if (currentSession.accessToken) {
+    await revokeGoogleToken(currentSession.accessToken);
   }
   clearStoredAuthSession();
 };
