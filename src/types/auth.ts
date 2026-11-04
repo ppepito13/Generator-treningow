@@ -7,6 +7,7 @@ export interface GoogleUserProfile {
   name: string;
   picture?: string;
   verifiedEmail?: boolean;
+  hasDriveScope?: boolean;
 }
 
 /**

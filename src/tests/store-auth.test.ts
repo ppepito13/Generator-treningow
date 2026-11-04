@@ -219,15 +219,22 @@ describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
       globalThis.fetch = originalFetch;
     });
 
-    it('rejects sign-in, auto-revokes token in Google, and clears session when user skips Google Drive scope permission (#40.1-fix-revoke)', async () => {
+    it('authenticates with hasDriveScope: false when user skips Google Drive scope permission (#40.1-granular-scope)', async () => {
       const originalClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
       const originalWindow = globalThis.window;
       const originalDoc = globalThis.document;
       const originalFetch = globalThis.fetch;
       process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = 'test-client-id';
 
-      const mockFetch = vi.fn().mockResolvedValue({ ok: true } as Response);
-      globalThis.fetch = mockFetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          sub: 'google-sub-partial',
+          email: 'trener-partial@sportsway.eu',
+          name: 'Trener Częściowy',
+          email_verified: true,
+        }),
+      } as Response);
 
       let initConfig: { callback?: (res: { access_token?: string; scope?: string; error?: string }) => void } | null = null;
       const mockClient = {
@@ -251,7 +258,6 @@ describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
         visibilityState: 'visible',
       };
 
-      const revokeMock = vi.fn();
       const mockWindow = {
         localStorage: {
           getItem: vi.fn(),
@@ -271,7 +277,6 @@ describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
                 }
               ),
               hasGrantedAllScopes: vi.fn(() => false),
-              revoke: revokeMock,
             },
           },
         },
@@ -282,22 +287,94 @@ describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
       // @ts-expect-error - mock document for test
       globalThis.document = mockDoc;
 
-      await expect(signInWithGoogle()).rejects.toThrow(
-        'Wymagane uprawnienie: Nie przyznano dostępu do Dysku Google'
-      );
+      const profile = await signInWithGoogle();
 
-      // Verify auto-revocation was triggered both via GIS and HTTP revoke endpoint
-      expect(revokeMock).toHaveBeenCalledWith('valid-token-without-drive');
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('https://oauth2.googleapis.com/revoke?token=valid-token-without-drive'),
-        expect.objectContaining({ method: 'POST' })
-      );
+      // Profile is retrieved and hasDriveScope is explicitly false
+      expect(profile.email).toBe('trener-partial@sportsway.eu');
+      expect(profile.hasDriveScope).toBe(false);
 
-      // Verify session was cleared
-      expect(getCurrentAuthSession().accessToken).toBeUndefined();
+      // Session is preserved so user identity is known
+      expect(getCurrentAuthSession().accessToken).toBe('valid-token-without-drive');
 
-      // Verify store remains unauthenticated
-      expect(useAppStore.getState().googleUser).toBeNull();
+      // Restore
+      process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = originalClientId;
+      globalThis.window = originalWindow;
+      globalThis.document = originalDoc;
+      globalThis.fetch = originalFetch;
+    });
+
+    it('authenticates with hasDriveScope: true when user grants Google Drive scope (#40.1-granular-scope)', async () => {
+      const originalClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+      const originalWindow = globalThis.window;
+      const originalDoc = globalThis.document;
+      const originalFetch = globalThis.fetch;
+      process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = 'test-client-id';
+
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          sub: 'google-sub-full',
+          email: 'trener-full@sportsway.eu',
+          name: 'Trener Pełny',
+          email_verified: true,
+        }),
+      } as Response);
+
+      let initConfig: { callback?: (res: { access_token?: string; scope?: string; error?: string }) => void } | null = null;
+      const mockClient = {
+        requestAccessToken: vi.fn(() => {
+          if (initConfig?.callback) {
+            initConfig.callback({
+              access_token: 'valid-token-with-drive',
+              scope: 'openid email profile https://www.googleapis.com/auth/drive.appdata',
+            });
+          }
+        }),
+      };
+
+      const mockDoc = {
+        querySelector: vi.fn().mockReturnValue(null),
+        createElement: vi.fn().mockReturnValue({}),
+        head: { appendChild: vi.fn() },
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        visibilityState: 'visible',
+      };
+
+      const mockWindow = {
+        localStorage: {
+          getItem: vi.fn(),
+          setItem: vi.fn(),
+          removeItem: vi.fn(),
+        },
+        document: mockDoc,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        google: {
+          accounts: {
+            oauth2: {
+              initTokenClient: vi.fn(
+                (config: { callback?: (res: { access_token?: string; scope?: string; error?: string }) => void }) => {
+                  initConfig = config;
+                  return mockClient;
+                }
+              ),
+              hasGrantedAllScopes: vi.fn(() => true),
+            },
+          },
+        },
+      };
+
+      // @ts-expect-error - mock window and document for test
+      globalThis.window = mockWindow;
+      // @ts-expect-error - mock document for test
+      globalThis.document = mockDoc;
+
+      const profile = await signInWithGoogle();
+
+      expect(profile.email).toBe('trener-full@sportsway.eu');
+      expect(profile.hasDriveScope).toBe(true);
+      expect(getCurrentAuthSession().accessToken).toBe('valid-token-with-drive');
 
       // Restore
       process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = originalClientId;

@@ -278,13 +278,6 @@ const signInWithGoogleWeb = async (clientId: string): Promise<GoogleUserProfile>
             grantedScopes.includes(GOOGLE_DRIVE_APPDATA_SCOPE) ||
             Boolean(window.google?.accounts?.oauth2?.hasGrantedAllScopes?.(tokenResponse, GOOGLE_DRIVE_APPDATA_SCOPE));
 
-          if (!hasDriveScope) {
-            await revokeGoogleToken(accessToken);
-            clearStoredAuthSession();
-            settleReject(new Error('DRIVE_SCOPE_REQUIRED'));
-            return;
-          }
-
           const session = {
             accessToken,
             expiresAt: Date.now() + 3500 * 1000,
@@ -293,6 +286,7 @@ const signInWithGoogleWeb = async (clientId: string): Promise<GoogleUserProfile>
 
           try {
             const profile = await fetchGoogleUserProfile(accessToken);
+            profile.hasDriveScope = hasDriveScope;
             settleResolve(profile);
           } catch (profileError) {
             settleReject(profileError instanceof Error ? profileError : new Error(String(profileError)));
@@ -345,6 +339,7 @@ const signInWithGoogleNative = async (clientId: string): Promise<GoogleUserProfi
     name,
     picture,
     verifiedEmail: Boolean(email),
+    hasDriveScope: true,
   };
 };
 

@@ -7,7 +7,7 @@ Zapewnia bezpieczne uwierzytelnianie użytkowników za pomocą Konta Google, zar
 ## Requirements
 
 ### Requirement: Uwierzytelnianie za pomocą Konta Google
-System MUST umożliwiać zalogowanie użytkownika za pośrednictwem Konta Google przy użyciu protokołu OAuth 2.0 z zakresem uprawnień tożsamości oraz dostępu do ukrytego folderu danych aplikacji (`https://www.googleapis.com/auth/drive.appdata`), gwarantując niezawodną obsługę w środowisku przeglądarki Web oraz natywnej aplikacji mobilnej Android (Capacitor), wraz z automatycznym zabezpieczeniem przed zawieszeniem interfejsu oraz prezentacją przyjaznych, zlokalizowanych komunikatów o błędach w języku polskim. W przypadku gdy użytkownik w oknie autoryzacji Google nie zaznaczy wymaganego uprawnienia do Dysku Google, system MUST unieważnić otrzymany token (auto-revoke w Google), odrzucić logowanie i poinformować o konieczności wyrażenia zgody.
+System MUST umożliwiać zalogowanie użytkownika za pośrednictwem Konta Google przy użyciu protokołu OAuth 2.0 z zakresem uprawnień tożsamości oraz dostępu do ukrytego folderu danych aplikacji (`https://www.googleapis.com/auth/drive.appdata`), gwarantując niezawodną obsługę w środowisku przeglądarki Web oraz natywnej aplikacji mobilnej Android (Capacitor), wraz z automatycznym zabezpieczeniem przed zawieszeniem interfejsu oraz prezentacją przyjaznych, zlokalizowanych komunikatów o błędach w języku polskim. W przypadku gdy użytkownik w oknie autoryzacji Google zaloguje się, lecz pominie opcjonalne uprawnienie do Dysku Google, system MUST zapisać profil użytkownika z jawnym oznaczeniem braku uprawnień do Dysku (`hasDriveScope: false`), zachować spójność z Kontem Google oraz udostępnić w interfejsie możliwość doautoryzowania dostępu.
 
 #### Scenario: Udane logowanie przez okno dialogowe Google
 - **WHEN** użytkownik wybierze opcję połączenia konta Google w aplikacji webowej
@@ -21,10 +21,9 @@ System MUST umożliwiać zalogowanie użytkownika za pośrednictwem Konta Google
 
 #### Scenario: Odrzucenie niepełnych uprawnień (brak zgody na Dysk Google)
 - **WHEN** użytkownik w oknie Google pominie lub odznaczy pole wyboru uprawnienia do Dysku Google i kliknie Dalej
-- **THEN** system wykrywa brak uprawnienia `drive.appdata` w przyznanym zakresie tokena
-- **AND** natychmiast wysyła żądanie unieważnienia otrzymanego tokenu (`revoke`) do serwerów Google, usuwając powiązanie aplikacji z Konta Google użytkownika
-- **AND** czyści stan lokalnej sesji i nie zapisuje profilu użytkownika jako połączonego
-- **AND** prezentuje dedykowany komunikat błędu w języku polskim informujący o konieczności zaznaczenia pola wyboru Dysku Google
+- **THEN** system zapisuje profil użytkownika ze statusem połączenia, oznaczając brak uprawnienia do Dysku Google (`hasDriveScope: false`)
+- **AND** wstrzymuje operacje synchronizacji w chmurze
+- **AND** prezentuje w module Ustawień status „Wymaga uprawnień” oraz dedykowany przycisk umożliwiający doautoryzowanie dostępu do Dysku Google
 
 #### Scenario: Limit czasu i przerwanie logowania (Timeout & Focus Recovery)
 - **WHEN** proces autoryzacji Google przekroczy zdefiniowany limit czasu (30 sekund) lub użytkownik powróci do aplikacji bez pomyślnego zakończenia sesji
