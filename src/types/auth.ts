@@ -23,6 +23,14 @@ export interface AuthSession {
 }
 
 /**
+ * Outcome of background silent session validation.
+ */
+export interface AuthValidationResult {
+  status: 'valid' | 'revoked' | 'offline' | 'error';
+  error?: string;
+}
+
+/**
  * Contract for Google Auth Client operations.
  */
 export interface GoogleAuthClient {
@@ -32,4 +40,3 @@ export interface GoogleAuthClient {
   getUserProfile: () => GoogleUserProfile | null;
   isConfigured: () => boolean;
 }
-

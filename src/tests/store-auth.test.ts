@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useAppStore, partializeStoreState } from '@/app/lib/store';
-import { setMockGoogleUser, signInWithGoogle, signOutFromGoogle } from '@/services/auth/googleAuth';
+import {
+  setMockGoogleUser,
+  setMockValidationResult,
+  signInWithGoogle,
+  signOutFromGoogle,
+  formatAuthError,
+} from '@/services/auth/googleAuth';
 import type { GoogleUserProfile } from '@/types/auth';
 
 const mockUser: GoogleUserProfile = {
@@ -11,10 +17,11 @@ const mockUser: GoogleUserProfile = {
   verifiedEmail: true,
 };
 
-describe('Zustand Store - Google Auth State (#39, #47)', () => {
+describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setMockGoogleUser(null);
+    setMockValidationResult(null);
     useAppStore.setState({
       googleUser: null,
       authStatus: 'idle',
@@ -111,5 +118,77 @@ describe('Zustand Store - Google Auth State (#39, #47)', () => {
     const partialized = partializeStoreState(useAppStore.getState());
 
     expect(partialized.googleUser).toEqual(mockUser);
+  });
+
+  describe('Background Session Validation and Revocation Handling (#50)', () => {
+    it('returns false immediately when no user is logged in', async () => {
+      const isValid = await useAppStore.getState().validateGoogleSessionState();
+      expect(isValid).toBe(false);
+      expect(useAppStore.getState().googleUser).toBeNull();
+      expect(useAppStore.getState().authStatus).toBe('idle');
+    });
+
+    it('preserves user profile and returns true when session is valid', async () => {
+      useAppStore.getState().setGoogleUser(mockUser);
+      setMockValidationResult({ status: 'valid' });
+
+      const isValid = await useAppStore.getState().validateGoogleSessionState();
+      expect(isValid).toBe(true);
+
+      const state = useAppStore.getState();
+      expect(state.googleUser).toEqual(mockUser);
+      expect(state.authStatus).toBe('authenticated');
+      expect(state.authError).toBeNull();
+    });
+
+    it('clears user profile, sets status to idle, and displays warning when session is revoked externally', async () => {
+      const customEx = useAppStore.getState().addCustomExercise({ nazwa: 'Autorskie Ćwiczenie Nienaruszone' });
+      useAppStore.getState().setGoogleUser(mockUser);
+      setMockValidationResult({
+        status: 'revoked',
+        error: 'The token provided in the request is already expired or has already been revoked.',
+      });
+
+      const isValid = await useAppStore.getState().validateGoogleSessionState();
+      expect(isValid).toBe(false);
+
+      const state = useAppStore.getState();
+      expect(state.googleUser).toBeNull();
+      expect(state.authStatus).toBe('idle');
+      expect(state.authError).toBe(
+        'Dostęp do Konta Google wygasł lub został cofnięty na Twoim koncie. Zaloguj się ponownie, aby wznowić zabezpieczanie danych.'
+      );
+      // Offline-first local data remains strictly intact
+      expect(state.customExercises.some(e => e.id_cwiczenia === customEx.id_cwiczenia)).toBe(true);
+    });
+
+    it('preserves session and returns true when validation reports offline', async () => {
+      useAppStore.getState().setGoogleUser(mockUser);
+      setMockValidationResult({ status: 'offline' });
+
+      const isValid = await useAppStore.getState().validateGoogleSessionState();
+      expect(isValid).toBe(true);
+
+      const state = useAppStore.getState();
+      expect(state.googleUser).toEqual(mockUser);
+      expect(state.authError).toBeNull();
+    });
+
+    it('formatAuthError correctly identifies revoked tokens and avoids duplicate prefixing', () => {
+      const revokedMsg = formatAuthError('invalid_token: Token has been expired or revoked');
+      expect(revokedMsg).toBe(
+        'Dostęp do Konta Google wygasł lub został cofnięty na Twoim koncie. Zaloguj się ponownie, aby wznowić zabezpieczanie danych.'
+      );
+
+      const alreadyPrefixed = formatAuthError('Błąd logowania Google: Coś poszło nie tak');
+      expect(alreadyPrefixed).toBe('Błąd logowania Google: Coś poszło nie tak');
+
+      const fullLocalized = formatAuthError(
+        'Dostęp do Konta Google wygasł lub został cofnięty na Twoim koncie. Zaloguj się ponownie, aby wznowić zabezpieczanie danych.'
+      );
+      expect(fullLocalized).toBe(
+        'Dostęp do Konta Google wygasł lub został cofnięty na Twoim koncie. Zaloguj się ponownie, aby wznowić zabezpieczanie danych.'
+      );
+    });
   });
 });

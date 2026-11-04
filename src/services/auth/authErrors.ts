@@ -112,11 +112,34 @@ export const formatAuthError = (error: unknown): string => {
     return 'Brak skonfigurowanego identyfikatora Google Client ID.';
   }
 
+  // 9. Expired or revoked access token
+  if (
+    combined.includes('invalid_token') ||
+    combined.includes('invalid_grant') ||
+    combined.includes('token has been expired or revoked') ||
+    combined.includes('already expired or has already been revoked') ||
+    combined.includes('wygasł lub został cofnięty')
+  ) {
+    return 'Dostęp do Konta Google wygasł lub został cofnięty na Twoim koncie. Zaloguj się ponownie, aby wznowić zabezpieczanie danych.';
+  }
+
+  // Prevent double prefixing if the message was already formatted or localized
+  const trimmed = rawMessage ? rawMessage.trim() : '';
+  if (
+    trimmed.startsWith('Błąd logowania Google:') ||
+    trimmed.startsWith('Nie znaleziono konta Google') ||
+    trimmed.startsWith('Logowanie zostało') ||
+    trimmed.startsWith('Usługi Google Play') ||
+    trimmed.startsWith('Brak połączenia z Internetem') ||
+    trimmed.startsWith('Dostęp do Konta Google')
+  ) {
+    return trimmed;
+  }
+
   // Fallback with sanitized message or default
-  if (rawMessage && rawMessage.trim().length > 0) {
-    return `Błąd logowania Google: ${rawMessage.trim()}`;
+  if (trimmed.length > 0) {
+    return `Błąd logowania Google: ${trimmed}`;
   }
 
   return 'Wystąpił błąd podczas logowania Google. Spróbuj ponownie.';
 };
-

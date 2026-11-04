@@ -20,7 +20,7 @@ import { IntervalPreset, TimerAudioSettings } from '@/types/timer';
 import { FlattenedQueueItem } from '@/components/GymViewModal';
 import { UserProfileData } from '@/types/calculators';
 import type { GoogleUserProfile, AuthStatus } from '@/types/auth';
-import { signOutFromGoogle } from '@/services/auth/googleAuth';
+import { signOutFromGoogle, validateGoogleSession } from '@/services/auth/googleAuth';
 import {
   ensureEquipment,
   getEquipmentString,
@@ -164,6 +164,7 @@ interface AppState {
   setGoogleUser: (user: GoogleUserProfile | null) => void;
   setAuthStatus: (status: AuthStatus, error?: string | null) => void;
   disconnectGoogleAccount: () => Promise<void>;
+  validateGoogleSessionState: () => Promise<boolean>;
 }
 
 
@@ -203,6 +204,45 @@ export const useAppStore = create<AppState>()(
       disconnectGoogleAccount: async () => {
         await signOutFromGoogle();
         set({ googleUser: null, authStatus: 'idle', authError: null });
+      },
+      validateGoogleSessionState: async () => {
+        const { googleUser } = get();
+        if (!googleUser) {
+          return false;
+        }
+
+        // Offline-First safeguard: never revoke when device is offline
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          return true;
+        }
+
+        try {
+          const result = await validateGoogleSession();
+
+          if (result.status === 'revoked') {
+            await signOutFromGoogle();
+            set({
+              googleUser: null,
+              authStatus: 'idle',
+              authError: 'Dostęp do Konta Google wygasł lub został cofnięty na Twoim koncie. Zaloguj się ponownie, aby wznowić zabezpieczanie danych.',
+            });
+            return false;
+          }
+
+          if (result.status === 'valid') {
+            set({
+              authStatus: 'authenticated',
+              authError: null,
+            });
+            return true;
+          }
+
+          // In case of 'offline' or server 'error', do not disrupt local session
+          return true;
+        } catch {
+          // On any unexpected exception, do not revoke offline session
+          return true;
+        }
       },
       selectedRoomId: ALL_ROOMS[0].id_sali,
       participants: 8,
