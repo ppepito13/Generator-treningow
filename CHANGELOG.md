@@ -4,6 +4,8 @@ Wszystkie istotne zmiany i wydania aplikacji będą dokumentowane w tym pliku.
 Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+
+## [1.4.0] - 2026-11-05
 ### Dodano
 - **Kosz Usuniętych Ćwiczeń (Trash / Recycle Bin) z 7-Dniową Retencją w Studio Ćwiczeń (#52)**: Wdrożenie 4. zakładki filtrów bazy „Usunięte (X)” w Studio Ćwiczeń z dynamicznym licznikiem usuniętych ćwiczeń i deterministyczną retencją 7 dni (`TRASH_RETENTION_MS`). Dodano dedykowane karty usuniętych pozycji w tonacji ostrzegawczej z odliczaniem pozostałych dni retencji, przycisk natychmiastowego przywrócenia („Przywróć”), trwałe usuwanie z zabezpieczeniem flagą `isPurged: true` chroniącą przed odtworzeniem zombie recordów podczas synchronizacji chmurowej, akcję masowego opróżniania kosza z modalem potwierdzenia (`AlertDialog`) oraz natychmiastową akcję „Cofnij” (`ToastAction`) w dymku powiadomienia po usunięciu ćwiczenia.
 - **Przywracanie Danych z Chmury (Restore from Cloud) i Reset Sesji Synchronizacji (#40.4)**: Wdrożenie funkcji `restoreFromCloudBackup()` oraz przycisku z dedykowanym modalem potwierdzenia (`RestoreCloudBackupDialog`) w module Ustawień, umożliwiających ręczne zastąpienie stanu lokalnego backupem z Dysku Google z wyczyszczeniem lokalnych nagrobków (Tombstones). Zabezpieczenie przed samowolnym cichym uploadem nagrobków do chmury po zalogowaniu na urządzeniu z nagrobkami (wymuszenie dialogu początkowego przy obecności jakichkolwiek rekordów i istniejącym backupie zdalnym) oraz resetowanie pola `lastSyncedAt: null` przy odłączaniu konta Google (`disconnectGoogleAccount`).
