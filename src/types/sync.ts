@@ -5,6 +5,7 @@ export interface SyncMetadata {
   updatedAt: number;
   version: number;
   isDeleted?: boolean;
+  isPurged?: boolean;
 }
 
 export interface WithSyncMetadata {
