@@ -18,7 +18,7 @@ import {
 } from './data';
 import { IntervalPreset, TimerAudioSettings } from '@/types/timer';
 import type { SyncBackupPayload, SyncDataCollections, MergeSummary, SyncStatus } from '@/types/sync';
-import { touchSyncMetadata, markSyncDeleted } from '@/domain/sync/syncMetadata';
+import { touchSyncMetadata, markSyncDeleted, markSyncPurged, isExerciseInTrash } from '@/domain/sync/syncMetadata';
 import { mergeSyncData } from '@/domain/sync/mergeEngine';
 import { scheduleDebouncedSync } from '@/services/sync/syncCoordinator';
 import { FlattenedQueueItem } from '@/components/GymViewModal';
@@ -74,6 +74,9 @@ interface AppState {
   getAllExercises: () => Exercise[];
   addCustomExercise: (input: Partial<Exercise> & { nazwa: string }) => Exercise;
   removeCustomExercise: (id: string) => void;
+  restoreCustomExercise: (id: string) => void;
+  permanentlyDeleteCustomExercise: (id: string) => void;
+  emptyTrash: () => void;
   clearAllCustomExercises: () => void;
   exportCustomExercises: () => string;
   importCustomExercises: (importedData: unknown) => { success: boolean; count: number; error?: string };
@@ -350,6 +353,49 @@ export const useAppStore = create<AppState>()(
         const deleted = markSyncDeleted(target);
         set({ customExercises: existing.map(ex => ex.id_cwiczenia === id ? deleted : ex) });
         scheduleDebouncedSync();
+      },
+
+      restoreCustomExercise: (id) => {
+        const existing = get().customExercises || [];
+        const target = existing.find(ex => ex.id_cwiczenia === id);
+        if (!target) return;
+        const currentVersion = target._sync?.version ?? 0;
+        const restored: Exercise = {
+          ...target,
+          _sync: {
+            updatedAt: Date.now(),
+            version: currentVersion + 1,
+            isDeleted: false,
+          },
+        };
+        set({ customExercises: existing.map(ex => ex.id_cwiczenia === id ? restored : ex) });
+        scheduleDebouncedSync();
+      },
+
+      permanentlyDeleteCustomExercise: (id) => {
+        const existing = get().customExercises || [];
+        const target = existing.find(ex => ex.id_cwiczenia === id);
+        if (!target) return;
+        const purged = markSyncPurged(target);
+        set({ customExercises: existing.map(ex => ex.id_cwiczenia === id ? purged : ex) });
+        scheduleDebouncedSync();
+      },
+
+      emptyTrash: () => {
+        const existing = get().customExercises || [];
+        const now = Date.now();
+        let changed = false;
+        const updated = existing.map(ex => {
+          if (isExerciseInTrash(ex, now)) {
+            changed = true;
+            return markSyncPurged(ex, now);
+          }
+          return ex;
+        });
+        if (changed) {
+          set({ customExercises: updated });
+          scheduleDebouncedSync();
+        }
       },
 
       clearAllCustomExercises: () => {

@@ -35,6 +35,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
+import { isExerciseInTrash, getTrashRemainingDays } from '@/domain/sync/syncMetadata';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +52,102 @@ import {
 import { formatEquipmentName } from '@/app/lib/data';
 export { formatEquipmentName };
 
+interface TrashExerciseCardProps {
+  exercise: Exercise;
+  formatTrashDate: (timestamp: number | undefined) => string;
+  onRestore: (id: string, name: string) => void;
+  onDeletePermanently: (id: string, name: string) => void;
+}
+
+const TrashExerciseCard = ({
+  exercise,
+  formatTrashDate,
+  onRestore,
+  onDeletePermanently,
+}: TrashExerciseCardProps) => {
+  const remainingDays = getTrashRemainingDays(exercise);
+  return (
+    <div
+      key={exercise.id_cwiczenia}
+      className="glass-card p-4 rounded-2xl border border-amber-500/20 bg-amber-950/10 transition-all flex flex-col justify-between gap-3 group relative"
+    >
+      <div>
+        <div className="flex items-start justify-between gap-2 mb-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              W koszu
+            </span>
+            <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-white/5 text-white/50 border border-white/5">
+              {exercise.segment_nazwa}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onRestore(exercise.id_cwiczenia, exercise.nazwa)}
+              className="h-8 px-2.5 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold flex items-center gap-1"
+              title="Przywróć ćwiczenie do bazy"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Przywróć</span>
+            </Button>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  className="text-white/30 hover:text-destructive p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
+                  title="Usuń trwale to ćwiczenie"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="glass-card border-white/10 text-white max-w-sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-destructive text-base">
+                    Usunąć trwale ćwiczenie?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-xs text-white/70">
+                    Ćwiczenie &quot;{exercise.nazwa}&quot; zostanie trwale usunięte z kosza i nie będzie można go już odzyskać.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="pt-2">
+                  <AlertDialogCancel className="rounded-xl text-xs">Anuluj</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => onDeletePermanently(exercise.id_cwiczenia, exercise.nazwa)}
+                    className="rounded-xl text-xs bg-destructive text-white hover:bg-destructive/90 font-bold"
+                  >
+                    Usuń trwale
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+
+        <h3 className="font-bold text-sm text-white/80 leading-tight">
+          {exercise.nazwa}
+        </h3>
+        {exercise.wariant && (
+          <p className="text-[10px] text-white/40 italic font-semibold mt-0.5">
+            Wariant: {exercise.wariant}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-1.5 pt-2 border-t border-white/5 text-[11px]">
+        <div className="flex items-center justify-between text-white/50 text-[10px]">
+          <span>Usunięto: {formatTrashDate(exercise._sync?.updatedAt)}</span>
+          <span className={remainingDays <= 1 ? "text-amber-400 font-bold" : "text-white/60"}>
+            {remainingDays <= 1 ? "Wygasa dzisiaj" : `Pozostało: ${remainingDays} dni`}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const ExerciseStudioView = () => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +155,9 @@ export const ExerciseStudioView = () => {
   const customExercises = useAppStore((state) => state.customExercises);
   const getAllExercises = useAppStore((state) => state.getAllExercises);
   const removeCustomExercise = useAppStore((state) => state.removeCustomExercise);
+  const restoreCustomExercise = useAppStore((state) => state.restoreCustomExercise);
+  const permanentlyDeleteCustomExercise = useAppStore((state) => state.permanentlyDeleteCustomExercise);
+  const emptyTrash = useAppStore((state) => state.emptyTrash);
   const clearAllCustomExercises = useAppStore((state) => state.clearAllCustomExercises);
   const exportCustomExercises = useAppStore((state) => state.exportCustomExercises);
   const importCustomExercises = useAppStore((state) => state.importCustomExercises);
@@ -85,7 +186,7 @@ export const ExerciseStudioView = () => {
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false);
 
   // Stan filtrów
-  const [filterMode, setFilterMode] = useState<'all' | 'builtin' | 'custom'>('all');
+  const [filterMode, setFilterMode] = useState<'all' | 'builtin' | 'custom' | 'deleted'>('all');
   const [filterTrybPracy, setFilterTrybPracy] = useState<'all' | 'Solo' | 'W_Parze'>('all');
   const [filterSegment, setFilterSegment] = useState<number | 'all'>('all');
   const [filterPoziomGroup, setFilterPoziomGroup] = useState<string>('all');
@@ -133,8 +234,38 @@ export const ExerciseStudioView = () => {
     return Array.from(muscleSet).sort((a, b) => a.localeCompare(b, 'pl'));
   }, [allExercises]);
 
+  const formatTrashDate = (timestamp: number | undefined): string => {
+    if (!timestamp) return 'Nieznana data';
+    const d = new Date(timestamp);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    if (isToday) return `Dzisiaj, ${time}`;
+    return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}, ${time}`;
+  };
+
+  const deletedExercises = useMemo(() => {
+    const now = Date.now();
+    return (customExercises || []).filter((e) => isExerciseInTrash(e, now));
+  }, [customExercises]);
+
   // Filtrowanie listy ćwiczeń
   const filteredExercises = useMemo(() => {
+    if (filterMode === 'deleted') {
+      let list = deletedExercises;
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
+        list = list.filter((ex) =>
+          ex.nazwa.toLowerCase().includes(query) ||
+          ex.segment_nazwa.toLowerCase().includes(query) ||
+          (ex.wariant && ex.wariant.toLowerCase().includes(query)) ||
+          (ex.glowne_partie && ex.glowne_partie.some((p) => p.toLowerCase().includes(query)))
+        );
+      }
+      return list;
+    }
+
     let list = allExercises;
 
     // 1. Źródło bazy
@@ -198,7 +329,7 @@ export const ExerciseStudioView = () => {
     }
 
     return list;
-  }, [allExercises, filterMode, filterTrybPracy, filterSegment, filterPoziomGroup, filterEquipment, filterMuscle, searchQuery]);
+  }, [allExercises, deletedExercises, filterMode, filterTrybPracy, filterSegment, filterPoziomGroup, filterEquipment, filterMuscle, searchQuery]);
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -226,8 +357,9 @@ export const ExerciseStudioView = () => {
     const total = allExercises.length;
     const customCount = customExercises.filter((e) => !e._sync?.isDeleted).length;
     const builtinCount = ALL_EXERCISES.length;
-    return { total, customCount, builtinCount };
-  }, [allExercises, customExercises]);
+    const deletedCount = deletedExercises.length;
+    return { total, customCount, builtinCount, deletedCount };
+  }, [allExercises, customExercises, deletedExercises]);
 
   const handleExport = () => {
     const activeCustomExercises = customExercises.filter((e) => !e._sync?.isDeleted);
@@ -290,10 +422,15 @@ export const ExerciseStudioView = () => {
   const handleDeleteSingle = (id: string, name: string, isOverridden?: boolean) => {
     removeCustomExercise(id);
     toast({
-      title: isOverridden ? "Przywrócono wersję wbudowaną" : "Usunięto ćwiczenie",
+      title: isOverridden ? "Przywrócono wersję wbudowaną" : "Przeniesiono do kosza",
       description: isOverridden
-        ? `Ćwiczenie "${name}" zostało przywrócone do fabrycznej wersji wbudowanej.`
-        : `Ćwiczenie "${name}" zostało usunięte z Twojej bazy lokalnej.`,
+        ? `Wersja autorska "${name}" trafiła do kosza (dostępna przez 7 dni).`
+        : `Ćwiczenie "${name}" będzie dostępne w zakładce Usunięte przez 7 dni.`,
+      action: (
+        <ToastAction altText="Cofnij" onClick={() => restoreCustomExercise(id)}>
+          Cofnij
+        </ToastAction>
+      ),
     });
   };
 
@@ -421,6 +558,19 @@ export const ExerciseStudioView = () => {
               }`}
             >
               Zapisane lokalnie ({counts.customCount})
+            </button>
+            <button
+              onClick={() => setFilterMode('deleted')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                filterMode === 'deleted'
+                  ? 'bg-amber-500 text-neutral-950 font-extrabold shadow'
+                  : counts.deletedCount > 0
+                  ? 'text-amber-400 hover:text-amber-300'
+                  : 'text-white/60 hover:text-white'
+              }`}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Usunięte ({counts.deletedCount})</span>
             </button>
           </div>
 
@@ -681,7 +831,7 @@ export const ExerciseStudioView = () => {
             <div className="flex flex-wrap items-center gap-1.5">
               {filterMode !== 'all' && (
                 <span className="text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-lg flex items-center gap-1">
-                  Źródło: {filterMode === 'builtin' ? 'Wbudowane' : 'Lokalne'}
+                  Źródło: {filterMode === 'builtin' ? 'Wbudowane' : filterMode === 'custom' ? 'Lokalne' : 'Usunięte'}
                   <button onClick={() => setFilterMode('all')}><X className="h-3 w-3 hover:text-white" /></button>
                 </span>
               )}
@@ -732,9 +882,95 @@ export const ExerciseStudioView = () => {
         </div>
       </div>
 
+      {/* Baner informacyjny Kosza */}
+      {filterMode === 'deleted' && (
+        <div className="glass-card p-4 rounded-2xl border border-amber-500/20 bg-amber-950/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400 shrink-0">
+              <Trash2 className="h-5 w-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-amber-300">Kosz usuniętych ćwiczeń (7 dni retencji)</h4>
+              <p className="text-[11px] text-white/60">
+                Usunięte ćwiczenia możesz w każdej chwili przywrócić. Po 7 dniach wygasają automatycznie i są trwale ukrywane.
+              </p>
+            </div>
+          </div>
+          {deletedExercises.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-xl h-9 px-3 text-xs font-bold text-destructive hover:text-destructive hover:bg-destructive/10 border border-destructive/20 flex items-center gap-1.5 shrink-0"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Opróżnij kosz</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="glass-card border-white/10 text-white max-w-sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-destructive text-base">Opróżnić kosz?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-xs text-white/70">
+                    Wszystkie pozycje z kosza ({deletedExercises.length}) zostaną trwale wyczyszczone. Tej operacji nie można cofnąć.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="pt-2">
+                  <AlertDialogCancel className="rounded-xl text-xs">Anuluj</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      emptyTrash();
+                      toast({
+                        title: "Kosz opróżniony",
+                        description: "Wszystkie ćwiczenia z kosza zostały trwale usunięte.",
+                      });
+                    }}
+                    className="rounded-xl text-xs bg-destructive text-white hover:bg-destructive/90 font-bold"
+                  >
+                    Opróżnij kosz
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+      )}
+
       {/* Lista przefiltrowanych ćwiczeń */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredExercises.length > 0 ? (
+        {filterMode === 'deleted' && filteredExercises.length === 0 ? (
+          <div className="col-span-full glass-card p-12 text-center rounded-[2rem] border border-white/5 space-y-3">
+            <div className="mx-auto w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/30">
+              <Trash2 className="h-6 w-6" />
+            </div>
+            <h4 className="text-sm font-bold text-white/70">Kosz jest pusty</h4>
+            <p className="text-xs text-white/40 max-w-sm mx-auto">
+              Nie ma obecnie żadnych usuniętych ćwiczeń w okresie 7-dniowej retencji.
+            </p>
+          </div>
+        ) : filterMode === 'deleted' ? (
+          filteredExercises.map((ex) => (
+            <TrashExerciseCard
+              key={ex.id_cwiczenia}
+              exercise={ex}
+              formatTrashDate={formatTrashDate}
+              onRestore={(id, name) => {
+                restoreCustomExercise(id);
+                toast({
+                  title: "Przywrócono ćwiczenie",
+                  description: `Ćwiczenie "${name}" zostało pomyślnie przywrócone do bazy.`,
+                });
+              }}
+              onDeletePermanently={(id, name) => {
+                permanentlyDeleteCustomExercise(id);
+                toast({
+                  title: "Usunięto trwale",
+                  description: `Ćwiczenie "${name}" zostało trwale usunięte z kosza.`,
+                });
+              }}
+            />
+          ))
+        ) : filteredExercises.length > 0 ? (
           filteredExercises.map((ex) => (
             <div
               key={ex.id_cwiczenia}
