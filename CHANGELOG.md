@@ -5,6 +5,13 @@ Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+### Naprawiono
+- **Produkcyjny Fallback Google Client ID dla Wersji Webowej (#55)**: Naprawiono błąd „Brak skonfigurowanego identyfikatora Google Client ID” występujący w wersji webowej hostowanej na Firebase oraz na urządzeniach mobilnych (Safari iOS). Wprowadzono bezpieczny produkcyjny fallback w funkcji `getGoogleClientId()` oraz publiczny plik `.env.production` (z odblokowaniem w `.gitignore`), gwarantujący obecność publicznego Client ID w generowanym statycznym bundle (`out/`) niezależnie od lokalnych plików środowiskowych dewelopera.
+- **Ochrona przed Blokowaniem Okien Logowania przez Safari iOS (#55)**: Dodano asynchroniczne wstępne ładowanie (preload) biblioteki Google Identity Services (`loadGoogleScript()`) na etapie montowania widoku Ustawień (`SettingsView`), dzięki czemu kliknięcie w przycisk logowania Google zachowuje bezpośredni kontekst gestu użytkownika i nie jest blokowane jako niechciany popup na urządzeniach iPhone/iPad.
+
+### Zmieniono
+- **Usunięcie Automatycznego Deployu Firebase z GitHub Actions (#55)**: Całkowicie usunięto plik workflow `.github/workflows/firebase-hosting-merge.yml`, eliminując ryzyko automatycznego nadpisywania hostingu produkcyjnego wersją budowaną w odizolowanym środowisku CI bez poświadczeń. Zgodnie z procedurą operacyjną projektu (`instrukcja-firebase.md`), wdrożenia na Firebase Hosting są w pełni kontrolowane i realizowane manualnie przez administratora z lokalnego środowiska deweloperskiego.
+
 ## [1.4.0] - 2026-11-05
 ### Dodano
 - **Kosz Usuniętych Ćwiczeń (Trash / Recycle Bin) z 7-Dniową Retencją w Studio Ćwiczeń (#52)**: Wdrożenie 4. zakładki filtrów bazy „Usunięte (X)” w Studio Ćwiczeń z dynamicznym licznikiem usuniętych ćwiczeń i deterministyczną retencją 7 dni (`TRASH_RETENTION_MS`). Dodano dedykowane karty usuniętych pozycji w tonacji ostrzegawczej z odliczaniem pozostałych dni retencji, przycisk natychmiastowego przywrócenia („Przywróć”), trwałe usuwanie z zabezpieczeniem flagą `isPurged: true` chroniącą przed odtworzeniem zombie recordów podczas synchronizacji chmurowej, akcję masowego opróżniania kosza z modalem potwierdzenia (`AlertDialog`) oraz natychmiastową akcję „Cofnij” (`ToastAction`) w dymku powiadomienia po usunięciu ćwiczenia.

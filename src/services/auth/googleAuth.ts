@@ -49,8 +49,10 @@ let mockUser: GoogleUserProfile | null = null;
 let mockValidationResult: AuthValidationResult | null = null;
 let isNativeInitialized = false;
 
+export const PRODUCTION_GOOGLE_CLIENT_ID = '973533321658-78hotq9qhh2ahmm8huf8js01br9jqo9v.apps.googleusercontent.com';
+
 export const getGoogleClientId = (): string => {
-  return process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+  return process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || PRODUCTION_GOOGLE_CLIENT_ID;
 };
 
 export const isGoogleAuthConfigured = (): boolean => {
