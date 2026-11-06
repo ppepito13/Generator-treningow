@@ -172,10 +172,10 @@ export const EquipmentStudioSubView = () => {
       <div className="glass-card p-5 rounded-[2rem] border border-white/10 space-y-4">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Filtry źródeł: Wszystkie / Wbudowane / Własne */}
-          <div className="flex items-center gap-1 p-1 bg-white/5 rounded-2xl border border-white/5 self-start sm:self-auto">
+          <div className="flex items-center gap-1 p-1 bg-white/5 rounded-2xl border border-white/5 self-start sm:self-auto max-w-full overflow-x-auto scrollbar-none">
             <button
               onClick={() => setFilterMode('all')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 whitespace-nowrap ${
                 filterMode === 'all'
                   ? 'bg-cyan-500 text-neutral-950 font-extrabold shadow'
                   : 'text-white/60 hover:text-white'
@@ -185,7 +185,7 @@ export const EquipmentStudioSubView = () => {
             </button>
             <button
               onClick={() => setFilterMode('builtin')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 whitespace-nowrap ${
                 filterMode === 'builtin'
                   ? 'bg-cyan-500 text-neutral-950 font-extrabold shadow'
                   : 'text-white/60 hover:text-white'
@@ -195,7 +195,7 @@ export const EquipmentStudioSubView = () => {
             </button>
             <button
               onClick={() => setFilterMode('custom')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 whitespace-nowrap ${
                 filterMode === 'custom'
                   ? 'bg-cyan-500 text-neutral-950 font-extrabold shadow'
                   : 'text-white/60 hover:text-white'
