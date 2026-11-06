@@ -93,5 +93,19 @@ describe('UI: Kosz Usuniętych Ćwiczeń w Studio Ćwiczeń (#52)', () => {
     expect(screen.getByText(/Kosz jest pusty/i)).toBeInTheDocument();
     expect(screen.getByText(/Nie ma obecnie żadnych usuniętych ćwiczeń/i)).toBeInTheDocument();
   });
+
+  it('kontener paska filtrów źródeł posiada klasy responsywnego poziomego suwaka (#53)', () => {
+    render(<ExerciseStudioView />);
+    const deletedBtn = screen.getByText(/Usunięte \(0\)/i).closest('button');
+    expect(deletedBtn).toBeInTheDocument();
+    expect(deletedBtn).toHaveClass('shrink-0');
+    expect(deletedBtn).toHaveClass('whitespace-nowrap');
+
+    const filterContainer = deletedBtn?.parentElement;
+    expect(filterContainer).toBeInTheDocument();
+    expect(filterContainer).toHaveClass('max-w-full');
+    expect(filterContainer).toHaveClass('overflow-x-auto');
+    expect(filterContainer).toHaveClass('scrollbar-none');
+  });
 });
 
