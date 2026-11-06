@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { DisconnectAccountDialog } from '@/components/DisconnectAccountDialog';
 import { InitialSyncConflictDialog } from '@/components/InitialSyncConflictDialog';
 import { RestoreCloudBackupDialog } from '@/components/RestoreCloudBackupDialog';
-import { signInWithGoogle, formatAuthError } from '@/services/auth/googleAuth';
+import { signInWithGoogle, formatAuthError, loadGoogleScript } from '@/services/auth/googleAuth';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -68,6 +68,10 @@ export const SettingsView: React.FC = () => {
   const [isRestoringBackup, setIsRestoringBackup] = useState(false);
 
   useEffect(() => {
+    // Preload biblioteki Google Identity Services w tle pod kątem Safari (iOS)
+    void loadGoogleScript().catch(() => {
+      // Ignoruj błędy wstępnego ładowania w tle (np. tryb offline)
+    });
     if (useAppStore.getState().googleUser) {
       validateGoogleSessionState();
     }

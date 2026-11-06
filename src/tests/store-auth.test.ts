@@ -10,6 +10,8 @@ import {
   getCurrentAuthSession,
   validateGoogleSession,
   revokeGoogleToken,
+  getGoogleClientId,
+  PRODUCTION_GOOGLE_CLIENT_ID,
 } from '@/services/auth/googleAuth';
 import type { GoogleUserProfile } from '@/types/auth';
 
@@ -421,5 +423,32 @@ describe('Zustand Store - Google Auth State (#39, #47, #50)', () => {
 
       globalThis.fetch = originalFetch;
     });
+  });
+});
+
+
+describe('Google Client ID Configuration and Production Fallback (#55)', () => {
+  it('returns process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID if defined and non-empty', () => {
+    const originalEnv = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    try {
+      process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = 'custom-env-client-id';
+      expect(getGoogleClientId()).toBe('custom-env-client-id');
+    } finally {
+      process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = originalEnv;
+    }
+  });
+
+  it('falls back to PRODUCTION_GOOGLE_CLIENT_ID when NEXT_PUBLIC_GOOGLE_CLIENT_ID is empty string or undefined', () => {
+    const originalEnv = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    try {
+      process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = '';
+      expect(getGoogleClientId()).toBe(PRODUCTION_GOOGLE_CLIENT_ID);
+      expect(getGoogleClientId()).toBe('973533321658-78hotq9qhh2ahmm8huf8js01br9jqo9v.apps.googleusercontent.com');
+
+      delete process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+      expect(getGoogleClientId()).toBe(PRODUCTION_GOOGLE_CLIENT_ID);
+    } finally {
+      process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = originalEnv;
+    }
   });
 });
