@@ -22,7 +22,19 @@ W tym repozytorium **ŻADEN agent AI nie ma prawa napisać ani zmienić ani jedn
 3. **Izolowana implementacja (`/opsx-apply`):**
    - Kodowanie wyłącznie zadań z `tasks.md`, realizacja krok po kroku, natychmiastowe oznaczanie `[x]` i lokalna weryfikacja.
 
-4. **Domknięcie cyklu, bramka jakości, Pull Request i pełne sprzątanie:**
+4. **🛑 Obowiązkowa Bramka Weryfikacji Manualnej (Human-in-the-Loop Test Gate):**
+   - Po zrealizowaniu zadań technicznych z `tasks.md` i zaliczeniu automatycznej bramki jakości (`npm run verify` oraz `npm run build`), agent **MA BEZWZGLĘDNY ZAKAZ samowolnego przechodzenia do archiwizacji (`/opsx-archive`), commita, pusha czy tworzenia Pull Requesta**.
+   - W podsumowaniu odpowiedzi kończącej `/opsx-apply` agent **MUSI dostarczyć Użytkownikowi kompletną instrukcję wykonania testów manualnych krok po kroku**:
+     * **Gotowe polecenia w blokach kodu:** np. `npm run dev` lub `npx serve out -p 9002` (Web), `npx cap sync android` (Capacitor/Android).
+     * **Dokładne adresy i ścieżki:** bezpośredni URL (np. `http://localhost:9002`), wskazanie konkretnego widoku i przycisków/interakcji do przetestowania.
+     * **Checklista weryfikacji w podziale na platformy:**
+       - *Web / UI:* weryfikacja poprawności layoutu (w tym symulacja wąskich ekranów mobilnych 360–390px w DevTools), brak elementów wystających poza kafelki, poprawne zachowanie okienek/popupów.
+       - *Android / Capacitor:* zachowanie na emulatorze/telefonie, Safe Area / notch, pasek statusu, sprzętowy przycisk Back, chowanie klawiatury.
+       - *Logika / dane:* zachowanie filtrów, losowania w generatorze, synchronizacji lub przywracania danych.
+   - **Warunek przejścia:** Agent **kończy wypowiedź i CZEKA na jednoznaczne potwierdzenie od Użytkownika** (np. „działa”, „przetestowane”). Jeśli użytkownik zgłosi usterkę lub niedociągnięcie, agent kontynuuje poprawki w ramach tej samej otwartej zmiany OpenSpec. Dopiero po uzyskaniu akceptacji wolno przejść do kroku 5.
+   - *Wyjątek:* Użytkownik może samodzielnie zignorować instrukcję lub wydać polecenie jej pominięcia – jest to jednak wyłącznie decyzja Użytkownika, nigdy agenta.
+
+5. **Domknięcie cyklu, archiwizacja OpenSpec, Pull Request i pełne sprzątanie (wyłącznie po akceptacji testów manualnych):**
    - Weryfikacja `npm run verify` (**0 błędów TypeScript, 0 błędów ESLint, 100% testów Vitest zielonych**) oraz `npm run build`.
    - Aktualizacja lokalnego `todo.md` oraz `CHANGELOG.md` w sekcji `[Unreleased]`.
    - Archiwizacja `/opsx-archive` -> aktualizacja głównych specyfikacji -> commit na dedykowanej gałęzi -> push gałęzi do `origin`.

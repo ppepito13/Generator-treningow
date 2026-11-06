@@ -5,6 +5,9 @@ Struktura oparta jest o standard [Keep a Changelog](https://keepachangelog.com/e
 
 ## [Unreleased]
 
+### Dodano
+- **Obowiązkowa Bramka Weryfikacji Manualnej dla Agentów AI (#54)**: Wprowadzono formalny Krok 4 w procesie Spec-Driven Development w `AGENTS.md` oraz dedykowaną regułę `.agents/rules/manual-testing-gate.md`. Każdy agent AI ma bezwzględny zakaz samowolnej archiwizacji OpenSpec, commita, pusha i tworzenia Pull Requesta bez wcześniejszego dostarczenia deweloperowi gotowej instrukcji testów manualnych krok po kroku (komendy terminala, adresy URL, checklista responsywności Web i specyfiki mobilnej Android/Capacitor) oraz uzyskania jednoznacznej akceptacji człowieka.
+
 ### Naprawiono
 - **Produkcyjny Fallback Google Client ID dla Wersji Webowej (#55)**: Naprawiono błąd „Brak skonfigurowanego identyfikatora Google Client ID” występujący w wersji webowej hostowanej na Firebase oraz na urządzeniach mobilnych (Safari iOS). Wprowadzono bezpieczny produkcyjny fallback w funkcji `getGoogleClientId()` oraz publiczny plik `.env.production` (z odblokowaniem w `.gitignore`), gwarantujący obecność publicznego Client ID w generowanym statycznym bundle (`out/`) niezależnie od lokalnych plików środowiskowych dewelopera.
 - **Ochrona przed Blokowaniem Okien Logowania przez Safari iOS (#55)**: Dodano asynchroniczne wstępne ładowanie (preload) biblioteki Google Identity Services (`loadGoogleScript()`) na etapie montowania widoku Ustawień (`SettingsView`), dzięki czemu kliknięcie w przycisk logowania Google zachowuje bezpośredni kontekst gestu użytkownika i nie jest blokowane jako niechciany popup na urządzeniach iPhone/iPad.
